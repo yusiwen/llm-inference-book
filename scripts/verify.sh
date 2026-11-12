@@ -37,16 +37,10 @@ if [ "$remote_js" -ne 0 ] || [ "$remote_css" -ne 0 ]; then
 fi
 
 echo
-echo "== 4. figures: colour comes from the theme variables =="
-if [ -d src/figures ]; then
-  if rg -n '#[0-9a-fA-F]{3,6}' src/figures/ ; then
-    echo "FAIL: a figure hardcodes a colour instead of using a theme variable" >&2
-    exit 1
-  fi
-  echo "clean ($(ls src/figures/*.svg 2>/dev/null | wc -l | tr -d ' ') figure(s))"
-else
-  echo "clean (no figures yet)"
-fi
+echo "== 4. figures: structure, theme classes, geometry, captions (figcheck --strict) =="
+# scripts/figcheck.py is copied from the mdbook-figures skill; the copy in the repo is the one CI
+# runs, so it must stay self-contained (stdlib Python only, no toolchain).
+python3 scripts/figcheck.py --root . --strict
 
 echo
 echo "== 5. display maths: every block wrapped =="
