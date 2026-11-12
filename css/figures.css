@@ -1,0 +1,28 @@
+/* Figures.
+ *
+ * A figure is an SVG file in src/figures/ , pulled into a page with
+ * {{#include}} and wrapped in <figure class="book-figure"> so the raw SVG forms a
+ * single HTML block (CommonMark only treats a fixed list of tags as block tags, and
+ * <svg> is not one of them - unwrapped, mdBook warns about unbalanced HTML).
+ *
+ * Wrapping also matters for the theme: CSS custom properties do not cross into
+ * <img> or <object>, so a figure has to be inline to follow the theme switch.
+ */
+
+.book-figure {
+  margin: 1.8em 0;
+  padding: 0;
+}
+
+.book-figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Captions are ordinary markdown italics right after a figure; keep them tight to it. */
+.book-figure + p em:only-child {
+  color: var(--sidebar-fg);
+  font-size: 0.86em;
+  line-height: 1.5;
+}

@@ -1,0 +1,33 @@
+[book]
+title = "Learning LLM Inference the Hard Way"
+authors = ["Siwen Yu"]
+language = "en"
+src = "src"
+description = "Building an inference engine from scratch in Rust: the file format, the arithmetic, the graph, the devices, and the measurements that prove it"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+smart-punctuation = false
+# MathJax is vendored in mathjax/ and loaded by additional-js below. mdBook's built-in
+# mathjax-support injects MathJax 2.7 from cdnjs, which renders nothing when that CDN is
+# unreachable or blocked by a content-security-policy. Keep it off.
+mathjax-support = false
+additional-js = ["mathjax/config.js", "mathjax/tex-svg.js"]
+additional-css = ["css/figures.css"]
+no-section-label = false
+
+# GitHub Pages, project site: site-url must equal the repository name so the 404 page and its
+# assets resolve from the subdirectory. Do NOT set `cname` for a project site.
+# site-url = "/llm-inference-book/"
+
+[output.html.fold]
+enable = true
+level = 0
+
+[output.html.search]
+limit-results = 30
+expand = true
+
+[output.html.print]
+enable = true

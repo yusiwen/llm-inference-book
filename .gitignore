@@ -1,0 +1,10 @@
+# mdBook build output
+/book/
+/result
+
+# Nix / direnv
+.direnv/
+result
+
+# macOS
+.DS_Store

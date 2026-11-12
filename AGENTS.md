@@ -1,0 +1,49 @@
+# Working in this repository
+
+An mdBook. The book describes the `minfer` inference engine at a pinned commit and teaches a reader
+to build the same thing. These rules are enforced by `scripts/verify.sh` unless stated otherwise.
+
+## The gate
+
+```bash
+nix develop --command bash scripts/verify.sh
+```
+
+Run it before reporting any work as done. It builds, rejects a build warning, scans characters,
+checks that the site fetches nothing remotely, checks display-maths wrappers, checks for a page
+mdBook silently stubbed, checks that the measurements page still carries its commands, and runs
+`scripts/probe.py` (skeleton sections, link resolution, lesson-item pairing, count drift).
+
+## Non-negotiables
+
+1. **English only.** Anything outside ASCII and Latin-1 fails the gate apart from the allowlist in
+   `scripts/verify.sh` (dashes, arrows, the tier marks, a few Greek notation letters).
+2. **The chapter skeleton is fixed** and its order is fixed: gist, abilities, lessons, one
+   chapter-specific ledger, Project, Deliverable, How you know you passed, Reading, Backfill.
+   Reference pages (appendices) carry a status block and `## Reading` instead.
+3. **A checklist item and its `### Lesson N` heading open with the same clause** once the prose
+   exists. `scripts/probe.py` compares them.
+4. **Status vocabulary is two words**: `stub` (skeleton only), `draft` (prose exists, a claim is
+   known missing or wrong), `written` (prose complete; the qualifier says what the evidence covers).
+5. **Claims are labelled**: measured / arithmetic on stated assumptions / reported / textbook fact /
+   my judgement. Never upgrade a reported number into something this book measured.
+6. **Numbers live in `src/appendix/measurements.md`** with the command and the commit. A count
+   anywhere else must be derivable and must agree with the tree.
+7. **Code citations are path + symbol + commit**, never a bare line number, because line numbers
+   drift (see `src/appendix/cuda-docs-audit.md` for what that drift cost the reference project).
+8. **Do not copy the reference project's documentation.** Link it. Mechanics are re-derived for a
+   reader who is building; depth stays in the project.
+
+## Adding a chapter
+
+1. `src/NN-english-slug/index.md`, following an existing stub exactly.
+2. Add the entry to `src/SUMMARY.md` under its part.
+3. Re-run the gate; `probe.py` will tell you what the page is missing.
+4. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit.
+
+## Do not
+
+- Do not hand-edit `book/` (generated) or add a remote asset (the site must work offline).
+- Do not weaken a gate to make a page pass; fix the page, or change the rule here and in
+  `src/appendix/conventions.md` together.
+- Do not touch the `minfer` tree from this repository's work.
