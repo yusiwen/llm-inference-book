@@ -20,7 +20,7 @@ The obvious way to write a forward pass is a function that computes each layer i
 - [ ] 2. Build and execute as two passes: purity as a testable property, not a style preference
 - [ ] 3. Topology as a function of parameters: why positions and ids are data, never structure
 - [ ] 4. Graph identity and reuse: what has to be equal for the cached graph to be valid (payoff: the microseconds that make decode usable)
-- [ ] 5. Inspecting a graph: a textual and a JSON dump, and what you look for in them
+- [ ] 5. Inspecting a graph: a textual dump, a JSON dump, and the live visualizer (payoff: seeing the topology is how a shape bug becomes obvious)
 
 ## What moved out of the forward pass
 
@@ -54,7 +54,7 @@ Start with a two-layer toy model rather than a real one. The graph machinery is 
 
 - code: `src/graph/mod.rs`, `src/graph/builder.rs`, `src/graph/params.rs` at commit `88ffa5d`
 - decisions: ADR-0001 (inference runs through one declarative compute graph), ADR-0002 (topology is a function of graph params)
-- docs: `docs/COMPUTE-GRAPH-DESIGN.md`, `docs/inference_e2e_walkthrough/05-graph-builder-ir.md`
+- docs: `docs/COMPUTE-GRAPH-DESIGN.md`, `crates/minfer-cli/src/server/viz.rs`, `docs/inference_e2e_walkthrough/05-graph-builder-ir.md`
 
 ## Backfill
 

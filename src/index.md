@@ -55,11 +55,11 @@ The compute tier on each chapter is honest about what hardware it needs: ✅ run
 | **1 The ground truth** | 1-5 | 25 | ✅ | A GGUF parser, a tensor type, and dequantizers for nine formats |
 | **2 Arithmetic** | 6-10 | 25 | ✅ | Quantized dot products in scalar and SIMD, matmul shapes, ops, attention |
 | **3 Language** | 11-13 | 15 | ✅ | Text to ids, ids to prompts, scores to sampled tokens |
-| **4 The graph** | 14-20 | 35 | ✅ | A declarative graph with allocator, KV subsystem and a generation loop |
+| **4 The graph** | 14-20 | 36 | ✅ | A declarative graph with allocator, KV subsystem and a generation loop |
 | **5 Devices** | 21-26 | 30 | ⚠️ | A Metal backend, then CUDA from the machine model to a measured campaign |
 | **6 Proving it** | 27-29 | 15 | ✅⚠️ | An identity gate, a defensible benchmark, and a server |
 
-**29 chapters, 145 lessons** in total: roughly 25-30 hours of reading plus 120-200 hours of hands-on work, spread over months rather than weekends. *(arithmetic on stated assumptions: the same per-chapter load as the author's previous handbook.)*
+**29 chapters, 146 lessons** in total: roughly 25-30 hours of reading plus 120-200 hours of hands-on work, spread over months rather than weekends. *(arithmetic on stated assumptions: the same per-chapter load as the author's previous handbook.)*
 
 ## Why the book is shaped this way
 

@@ -46,7 +46,7 @@ Use the machine you will actually measure on, and record its CUDA version, drive
 ## How you know you passed
 
 - Your predicted bound is within a factor of two of the measured time, and you say why it errs.
-- Ncu (the NVIDIA Compute Sanitizer profiler) or the toolkit's profiler confirms the bottleneck you named.
+- Nsight Compute (`ncu`) confirms the bottleneck you named, and the counter it reports is the one you predicted.
 - The divergent variant is measurably slower and you can explain the mechanism without the manual.
 
 ## Reading

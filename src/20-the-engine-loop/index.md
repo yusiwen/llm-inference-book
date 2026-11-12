@@ -21,6 +21,7 @@ With a graph, weights, a cache and a sampler, the engine is a loop: build once f
 - [ ] 3. Multi-turn: incremental prefill with an append-only prefix (payoff: why re-prefilling the whole conversation is quadratic in turns)
 - [ ] 4. Cancellation, stop ids and a drain that finishes the token in flight
 - [ ] 5. Overflow: what happens at the context limit, and the three policies an engine can have
+- [ ] 6. The engine as a library: two API tiers, and a configuration installed once (payoff: the environment stops being the configuration)
 
 ## The loop's own cost
 
@@ -52,10 +53,10 @@ Test cancellation by cancelling mid-generation and then continuing the same sess
 
 ## Reading
 
-- code: `crates/minfer-cli/src/main.rs`, `src/engine/generate.rs`, `src/graph/cache.rs`, `src/conversation.rs` at commit `88ffa5d`
+- code: `crates/minfer-cli/src/main.rs`, `src/engine/generate.rs`, `src/graph/cache.rs`, `src/conversation.rs`, `src/advanced.rs`, `src/config.rs` at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/09-prefill-forward-path.md`, `13-decode-loop-graph-reuse.md`
-- docs: `docs/CLI-CONVERSATION-PLAN.md`
-- decisions: ADR-0017 (speculative decoding refuses what its identity contract cannot carry)
+- docs: `docs/CLI-CONVERSATION-PLAN.md`, `docs/CRATE-API-DESIGN.md`
+- decisions: ADR-0017 (speculative decoding refuses what its identity contract cannot carry), ADR-0079 (the engine is a crate with two API tiers), ADR-0082 (the application layer is its own package)
 
 ## Backfill
 
