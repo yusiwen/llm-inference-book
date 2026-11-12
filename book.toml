@@ -17,9 +17,13 @@ additional-js = ["mathjax/config.js", "mathjax/tex-svg.js"]
 additional-css = ["css/figures.css"]
 no-section-label = false
 
-# GitHub Pages, project site: site-url must equal the repository name so the 404 page and its
-# assets resolve from the subdirectory. Do NOT set `cname` for a project site.
-# site-url = "/llm-inference-book/"
+# GitHub Pages, project site. The custom domain yusiwen.cn is set on the *user* site
+# (yusiwen.github.io), and GitHub serves every project site of that account under it, so this
+# book is published at https://yusiwen.cn/llm-inference-book/ . site-url must equal the
+# repository name exactly, or the 404 page and its assets resolve against the wrong prefix.
+# Do NOT set `cname` here: a CNAME file would claim the apex domain for this repository and
+# fight the user site.
+site-url = "/llm-inference-book/"
 
 [output.html.fold]
 enable = true

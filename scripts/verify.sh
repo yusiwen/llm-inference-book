@@ -15,9 +15,11 @@ fi
 
 echo
 echo "== 2. English only: nothing outside ASCII and Latin-1, apart from the allowlist =="
+# LICENSE is excluded: it is the Creative Commons legal code, verbatim. Its curly quotes are the
+# licence's own typography, and editing them to satisfy a prose rule is not ours to do.
 allowlist='—–…→↔►▲─│┌┐└┘✅⚠️❌≈γλδπθβτ'
 if rg -n --hidden "[^\x00-\x7F\x{A1}-\x{AC}\x{AE}-\x{FF}${allowlist}]" \
-     -g '!book/**' -g '!result/**' -g '!.direnv/**' -g '!.git/**' -g '!mathjax/**' . ; then
+     -g '!book/**' -g '!result/**' -g '!.direnv/**' -g '!.git/**' -g '!mathjax/**' -g '!LICENSE' . ; then
   echo "FAIL: character outside ASCII and Latin-1 (and not on the allowlist)" >&2
   exit 1
 fi

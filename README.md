@@ -45,8 +45,18 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
   tree; `src/appendix/measurements.md` records the command behind each.
 - **Code pointers are path + symbol + commit.** Never a bare line number.
 
+## Publishing
+
+`.github/workflows/pages.yml` builds the site with the pinned toolchain, runs `scripts/verify.sh`,
+and deploys to GitHub Pages on every push to `main`. One-time setup: repository Settings -> Pages ->
+Source: **GitHub Actions**.
+
+The site is served under the user site's custom domain, so it lands at
+`https://yusiwen.cn/llm-inference-book/`; `site-url` in `book.toml` must equal the repository name,
+and a `CNAME` file must never be added.
+
 ## License
 
-Not chosen yet: the intent is a Creative Commons text license (CC BY 4.0, or CC BY-NC-SA 4.0 to
-forbid commercial reuse). The prose is the author's; the reference implementation keeps its own MIT
-license.
+[CC BY-NC-SA 4.0](LICENSE) - the same licence as the author's other handbook: reuse with
+attribution, no commercial reuse, share-alike. The prose is the author's; the reference
+implementation `minfer` keeps its own MIT licence.

@@ -1,0 +1,64 @@
+name: Publish the book
+
+# Builds the site with the toolchain pinned in flake.nix, enforces the repository's rules via
+# scripts/verify.sh (the same script a human runs locally), and publishes to GitHub Pages.
+#
+# Where it appears: the custom domain yusiwen.cn is set on the user site (yusiwen.github.io),
+# and GitHub serves every project site of the same account under it, so this book lands at
+# https://yusiwen.cn/llm-inference-book/ . Nothing here writes a CNAME file, and it must not: a
+# CNAME file in this repository would claim the apex domain for this project and fight the user
+# site. (For a dedicated subdomain, set `cname` in book.toml and add the DNS record instead.)
+#
+# One-time setup in the repository: Settings -> Pages -> Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deployments race; do not cancel one that is already publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      # One step: the checks and the build belong together. verify.sh builds with mdbook, fails
+      # on any warning, then gates the English-only character rule, offline assets, the maths
+      # wrappers, the page floor and the book's own skeleton/link probe.
+      - name: Verify and build
+        run: nix develop --command bash scripts/verify.sh
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: book
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
