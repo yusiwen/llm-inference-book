@@ -2,13 +2,38 @@
 
 ### Building an Inference Engine from Scratch in Rust
 
-The source of an mdBook that walks a reader from a quantized model file to a serving engine: the
-file format, the arithmetic, the declarative graph, the devices, and the measurements that prove it.
-The reference implementation read beside it is [`minfer`](https://github.com/yusiwen/minfer), at
-commit `88ffa5d`.
+<p align="center">
+
+[![mdBook 0.5](https://img.shields.io/badge/mdBook-0.5-informational?logo=rust&logoColor=white)](#)
+[![Language: English](https://img.shields.io/badge/text-English-blue)](#)
+[![Chapters: 29](https://img.shields.io/badge/chapters-29-lightgrey)](#)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-green)](LICENSE)
+[![Publish the book](https://github.com/yusiwen/llm-inference-book/actions/workflows/pages.yml/badge.svg)](https://github.com/yusiwen/llm-inference-book/actions/workflows/pages.yml)
+[![Reference engine](https://img.shields.io/badge/reference-minfer-orange?logo=rust&logoColor=white)](https://github.com/yusiwen/minfer)
+
+</p>
+
+**Read it online: [yusiwen.cn/llm-inference-book](https://yusiwen.cn/llm-inference-book/)** - the built
+site is published from this repository on every push to `main`, so that address is always the current
+commit.
+
+This is the source of an mdBook that walks a reader from a quantized model file to a serving engine:
+the file format, the arithmetic, the declarative graph, the devices, and the measurements that prove
+it. Every chapter ends with something to build in the reader's own tree, not with a summary to read.
+
+The reference implementation read beside it is **[`minfer`](https://github.com/yusiwen/minfer)**. It
+is a personal hobby project, not a product: it started in 2021 as a way to learn how inference really
+works, and has been rewritten along several different lines since - different graph designs, different
+backends, different opinions about where the boundary between the engine and a device belongs. What
+survives in the code is the part that was measured, and that habit is what this book teaches. This
+book describes minfer at commit `88ffa5d`; its kernels are hand-written, from the AVX2 and NEON dot
+products to the CUDA matmuls, with no machine-learning framework underneath.
 
 **Status: skeleton.** All 29 chapters are stubs: the outline, lesson checklists, empty ledgers and
-acceptance criteria exist; the prose is being written one chapter at a time.
+acceptance criteria exist; the prose is being written one chapter at a time, and each chapter's
+figures ship with it. What is finished is the shape of the book, the
+[reference index](src/appendix/references.md), and the [audit](src/appendix/cuda-docs-audit.md) of the
+documentation this book follows.
 
 ## Build
 
@@ -17,7 +42,8 @@ nix develop                       # mdbook 0.5 + ripgrep + python3, pinned by fl
 mdbook serve --open               # http://localhost:3000
 mdbook build                      # writes the site to book/
 bash scripts/verify.sh            # the gate: build-with-no-warnings, character scan,
-                                  # offline assets, maths wrappers, page floor, skeleton, links
+                                  # offline assets, figures, maths wrappers, page floor,
+                                  # reference index, skeleton and links
 nix build                         # reproducible site into result/
 ```
 
@@ -30,6 +56,7 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `src/index.md` | the landing page: what the book is, the four questions, the map |
 | `src/start/` | Part 0: the contract, machines, the workspace, the routing map |
 | `src/NN-<slug>/index.md` | one chapter per directory, English slug, fixed skeleton |
+| `src/figures/` | hand-authored SVGs, included inline so they follow the page theme |
 | `src/appendix/` | conventions, the decision map (82 ADRs), the reference index, measurements, the CUDA-tutorial audit, glossary, limits, where the code lives |
 | `FIGURES.md` | the figure plan: 46 planned figures, their batch order and acceptance test |
 | `scripts/verify.sh` | the gate CI runs; a green local run is a green deploy |
@@ -46,17 +73,9 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
   out of order, and a landing page whose chapter or lesson count disagrees with the tree.
 - **Counts are derived.** The counts on the landing page, the appendix and this file come from the
   tree; `src/appendix/measurements.md` records the command behind each.
+- **Every page cites a source.** `scripts/references.py` fails on a page with no external reference, or
+  on a cite key that the index does not hold.
 - **Code pointers are path + symbol + commit.** Never a bare line number.
-
-## Publishing
-
-`.github/workflows/pages.yml` builds the site with the pinned toolchain, runs `scripts/verify.sh`,
-and deploys to GitHub Pages on every push to `main`. One-time setup: repository Settings -> Pages ->
-Source: **GitHub Actions**.
-
-The site is served under the user site's custom domain, so it lands at
-`https://yusiwen.cn/llm-inference-book/`; `site-url` in `book.toml` must equal the repository name,
-and a `CNAME` file must never be added.
 
 ## License
 
