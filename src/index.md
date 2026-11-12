@@ -44,7 +44,7 @@ You are in the right place if:
 
 1. **Straight through.** The six parts are a ladder: each chapter's build step assumes the previous one compiles.
 2. **As a checklist.** Every chapter ends with a deliverable and a "how you know you passed" list. Reading is not finishing; shipping the deliverable is.
-3. **As an index.** [The decision map](appendix/adr-map.md) links 82 architecture decision records to the chapters that use them, and the [glossary](appendix/glossary.md) is the backstop for any term.
+3. **As an index.** [The decision map](appendix/adr-map.md) links 82 architecture decision records to the chapters that use them, [the reference index](appendix/references.md) files every paper, book and manual the book sends you to, and the [glossary](appendix/glossary.md) is the backstop for any term.
 
 The compute tier on each chapter is honest about what hardware it needs: ✅ runs on any laptop, ⚠️ needs the hardware named in the chapter, ❌ is not used in this book at all.
 

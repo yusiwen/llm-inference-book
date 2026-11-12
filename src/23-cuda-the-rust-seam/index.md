@@ -55,6 +55,7 @@ Do not add a convenience `unsafe` escape hatch until Chapter 24 is written; the 
 - code: `src/cuda.rs`, `src/cuda/ffi_runtime.rs`, `src/cuda/methods/{init,buffers,copy,stream,events,capture}.rs` at commit `88ffa5d`
 - decisions: ADR-0008 (GPU safety: bounded waits, runtime device limits), ADR-0009 (a failure is an error), ADR-0030 (launch severity lives in the helper), ADR-0033 (the pool recycles exact byte lengths)
 - docs: `docs/GPU_SAFETY.md`, `docs/BUILD.md` (the `cuda` and `cuda_static` features)
+- [cuda-guide] *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual)
 
 ## Backfill
 

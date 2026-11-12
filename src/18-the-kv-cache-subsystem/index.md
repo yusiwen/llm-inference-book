@@ -55,6 +55,7 @@ Save a session, restart the process, reload it, and require the next token to be
 - code: `src/graph/kvcache.rs`, `src/graph/kvformat.rs`, `src/graph/kvsession.rs` at commit `88ffa5d`
 - decisions: ADR-0006 (the KV format is a per-engine gate), ADR-0014 (a KV session is a versioned file), ADR-0032 (the packed-KV staging window is f32)
 - docs: `docs/KV-CACHE-DESIGN.md`
+- [paged-attention] Kwon et al., *Efficient Memory Management for Large Language Model Serving with PagedAttention* (2023) - arXiv:2309.06180
 
 ## Backfill
 

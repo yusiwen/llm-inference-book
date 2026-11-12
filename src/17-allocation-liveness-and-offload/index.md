@@ -55,6 +55,8 @@ Test the reuse by deliberate misuse: shrink the arena below the requirement and 
 - code: `src/graph/alloc.rs`, `src/graph/allocplan.rs`, `src/graph/offload.rs` at commit `88ffa5d`
 - decisions: ADR-0015 (the offload auto-fit takes a prefix), ADR-0016 (a failed device query is not a zero budget), ADR-0033 (the CUDA pool recycles exact byte lengths)
 - docs: `docs/MEMORY-POLICY-DESIGN.md`, `docs/inference_e2e_walkthrough/07-allocator-liveness-kv.md`
+- [paged-attention] Kwon et al., *Efficient Memory Management for Large Language Model Serving with PagedAttention* (2023) - arXiv:2309.06180
+- [scaling-inference] Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102
 
 ## Backfill
 

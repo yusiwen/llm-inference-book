@@ -54,6 +54,7 @@ Write the refusal tests first: an op nothing supports, and a `--backend` value t
 - code: `src/graph/registry.rs`, `src/graph/backend.rs`, `src/graph/scheduler.rs` at commit `88ffa5d`
 - decisions: ADR-0011 (backend ids are append-only), ADR-0009 (a failure is an error, never a silent fallback), ADR-0012 (device is the first axis)
 - docs: `docs/BACKEND-REGISTRY-DESIGN.md`, `docs/BACKENDS.md`
+- [tvm] Chen et al., *TVM: An Automated End-to-End Optimizing Compiler for Deep Learning* (2018) - arXiv:1802.04799
 
 ## Backfill
 

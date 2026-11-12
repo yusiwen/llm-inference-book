@@ -2,6 +2,7 @@
 
 > **Status**: planning only - **0 of 46 figures drawn**. This file is repository material, not book content: it is the drawing order and the acceptance test, and it never appears in the built site.
 > **Rule**: a figure must be cheaper to author than the paragraph it replaces, and must carry a claim the prose cannot make as quickly. A diagram nobody remembers is a table.
+> **Ship rule**: a chapter's P0 figures are written *with* the chapter, in the same sitting, and are part of what "the chapter is drafted" means - a stub may have none, a `draft` may not owe a P0. P1 figures are added when the chapter is revised, or dropped.
 
 46 figures across the 30 pages that have figures: **31 core (P0)** and **15 supporting (P1)**. P1 figures are drawn only after every P0 exists; a P1 that never gets drawn costs nothing, because its lesson is written to stand without it.
 

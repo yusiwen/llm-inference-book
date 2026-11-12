@@ -55,6 +55,7 @@ Keep the reference implementation in the repository, behind a test-only feature,
 - code: `src/kernel.rs`, `src/kernel/dispatch.rs`, `src/quants.rs` at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/10-cpu-matmul-kernels.md`
 - decision: ADR-0013 (the CPU quantizes activations to Q8_0; a device reads f32)
+- [ggml-quant] The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification)
 
 ## Backfill
 

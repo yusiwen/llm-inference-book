@@ -30,9 +30,12 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `src/index.md` | the landing page: what the book is, the four questions, the map |
 | `src/start/` | Part 0: the contract, machines, the workspace, the routing map |
 | `src/NN-<slug>/index.md` | one chapter per directory, English slug, fixed skeleton |
-| `src/appendix/` | conventions, the decision map (82 ADRs), measurements, the CUDA-tutorial audit, glossary, limits, where the code lives |
+| `src/appendix/` | conventions, the decision map (82 ADRs), the reference index, measurements, the CUDA-tutorial audit, glossary, limits, where the code lives |
+| `FIGURES.md` | the figure plan: 46 planned figures, their batch order and acceptance test |
 | `scripts/verify.sh` | the gate CI runs; a green local run is a green deploy |
 | `scripts/probe.py` | the checks the build cannot see: skeleton sections, links, counts |
+| `scripts/references.py` | derives the index's "used in" column from the chapters; fails on a dangling key |
+| `scripts/figcheck.py` | figure lint (structure, theme classes, geometry, captions), copied from the `mdbook-figures` skill |
 | `mathjax/`, `css/` | vendored renderer and figure styles; the site fetches nothing remotely |
 
 ## Rules that are enforced, not just stated

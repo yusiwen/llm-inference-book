@@ -59,6 +59,7 @@
 
 - [Writing and Formatting Rules](appendix/conventions.md)
 - [The Decision Map](appendix/adr-map.md)
+- [The Reference Index](appendix/references.md)
 - [Measurements](appendix/measurements.md)
 - [Audit: the CUDA tutorial against this commit](appendix/cuda-docs-audit.md)
 - [Glossary](appendix/glossary.md)

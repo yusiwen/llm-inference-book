@@ -54,6 +54,7 @@ If you have no Mac, read this chapter for the four-layer split and start at Chap
 - code: `src/metal.rs`, `src/metal/{runtime,encode,ops,policy}.rs`, `src/metal/kernels/*.metal`, `src/graph/metal_backend.rs` at commit `88ffa5d`
 - decisions: ADR-0005 (Metal becomes a first-class backend), ADR-0037 (a weight dtype a kernel cannot consume is refused), ADR-0080 (the backend is a Cargo feature and a build without it refuses the name)
 - docs: `docs/METAL-BACKEND-DESIGN.md`, `docs/METAL_OPTIMIZATIONS.md`, `docs/inference_e2e_walkthrough/14-metal-backend.md`
+- [metal] *Metal Shading Language Specification*, Apple - no arXiv ID (vendor manual)
 
 ## Backfill
 

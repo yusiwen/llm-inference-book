@@ -57,6 +57,8 @@ Test cancellation by cancelling mid-generation and then continuing the same sess
 - docs: `docs/inference_e2e_walkthrough/09-prefill-forward-path.md`, `13-decode-loop-graph-reuse.md`
 - docs: `docs/CLI-CONVERSATION-PLAN.md`, `docs/CRATE-API-DESIGN.md`
 - decisions: ADR-0017 (speculative decoding refuses what its identity contract cannot carry), ADR-0079 (the engine is a crate with two API tiers), ADR-0082 (the application layer is its own package)
+- [scaling-inference] Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102
+- [paged-attention] Kwon et al., *Efficient Memory Management for Large Language Model Serving with PagedAttention* (2023) - arXiv:2309.06180
 
 ## Backfill
 

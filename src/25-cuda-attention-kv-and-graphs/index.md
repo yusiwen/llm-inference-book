@@ -54,6 +54,8 @@ Test graph replay by comparing against a non-captured run at the same position, 
 - code: `src/cuda/kernels/attention_prefill.cu`, `attention_decode.cu`, `kv_store.cu`, `src/cuda/methods/capture.rs`, `src/graph/cuda_backend.rs` at commit `88ffa5d`
 - docs: `docs/cuda_tutorial/05-kernels-attention-host.md`, `docs/inference_e2e_walkthrough/15-cuda-backend.md`
 - decisions: ADR-0031 (capture runs in thread-local mode), ADR-0032 (the packed-KV staging window is f32), ADR-0034 (the smem opt-in is an eager pre-warm)
+- [fa2] Dao, *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning* (2023) - arXiv:2307.08691
+- [online-softmax] Milakov and Gimelshein, *Online normalizer calculation for softmax* (2018) - arXiv:1805.02867
 
 ## Backfill
 

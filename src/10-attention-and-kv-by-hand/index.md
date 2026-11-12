@@ -54,7 +54,7 @@ Deliberately break the mask in your own code and observe which test catches it. 
 - code: `src/graph/kvcache.rs`, `src/graph/kvformat.rs`, `src/graph/cpu_backend.rs` (attention) at commit `88ffa5d`
 - docs: `docs/KV-CACHE-DESIGN.md`, `docs/inference_e2e_walkthrough/11-attention-vecops-kv.md`
 - decisions: ADR-0002 (topology is a function of graph params, so positions cannot be structure), ADR-0006 (the KV format is a per-engine gate)
-- background: Ainslie et al., "GQA: training generalized multi-query transformer models" (2023) - arXiv ID to verify
+- [gqa] Ainslie et al., *GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints* (2023) - arXiv:2305.13245
 
 ## Backfill
 

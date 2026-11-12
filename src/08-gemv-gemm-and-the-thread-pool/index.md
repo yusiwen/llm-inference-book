@@ -54,6 +54,7 @@ Time it at decode sizes, not at prefill sizes. A pool that looks free at 2000 to
 - code: `src/kernel/pool.rs`, `src/kernel.rs`, `src/graph/scheduler.rs` at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/10-cpu-matmul-kernels.md`, `08-scheduler-execute.md`
 - decision: ADR-0059 (the batched worker queues against a bound and fails a lagging run)
+- [scaling-inference] Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102
 
 ## Backfill
 

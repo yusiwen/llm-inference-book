@@ -55,7 +55,8 @@ Do not test by decoding the model's answers. Test ids directly; a tokenizer bug 
 - code: `src/tokenizer.rs`, `src/tokenizer/nfc.rs` at commit `88ffa5d`
 - decisions: ADR-0042 (the tokenizer applies the model's declared NFC normalizer), ADR-0043 (a special token is declared by the file), ADR-0052 (vocabulary-less files refuse at the checked entry points)
 - docs: `docs/CHAT-TEMPLATE-AND-TOKENIZER-DESIGN.md`
-- background: Sennrich et al., neural machine translation of rare words with subword units (2016) - arXiv ID to verify
+- [bpe] Sennrich, Haddow and Birch, *Neural Machine Translation of Rare Words with Subword Units* (arXiv 2015, ACL 2016) - arXiv:1508.07909
+- [jm] Jurafsky and Martin, *Speech and Language Processing* (3rd edition draft) - no arXiv ID (book; the tokenization chapter)
 
 ## Backfill
 

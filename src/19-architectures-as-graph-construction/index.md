@@ -55,6 +55,9 @@ Keep the per-family code to shapes, flags and a stop set. If a family needs a ne
 - code: `src/models/mod.rs`, `src/models/qwen2/graph.rs`, `src/models/qwen3/graph.rs`, `src/models/weight_reg.rs` at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/03-model-dispatch-weights.md`, `docs/MODEL-SUPPORT-ROADMAP.md`, `docs/SUPPORT-MATRIX.md`
 - decisions: ADR-0038 (the per-tensor registration dispatch is one shared rule), ADR-0075 (a model owns the mapping it reads)
+- [qwen3] Yang et al., *Qwen3 Technical Report* (2025) - arXiv:2505.09388
+- [llama3] Grattafiori et al., *The Llama 3 Herd of Models* (2024) - arXiv:2407.21783
+- [qwen2] Yang et al., *Qwen2 Technical Report* (2024) - arXiv:2407.10671
 
 ## Backfill
 

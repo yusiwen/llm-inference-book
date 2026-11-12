@@ -54,7 +54,7 @@ Keep every kernel behind the same signature: the caller should never branch on i
 
 - code: `src/quants/avx2.rs`, `src/quants/avx2_correctness.rs`, `src/quants/neon.rs`, `src/quants/neon_correctness.rs` at commit `88ffa5d`
 - docs: `docs/CPU_OPTIMIZATIONS.md`
-- background: ARM's `SDOT` instruction documentation (Arm Architecture Reference Manual) - no arXiv ID
+- [arm-sdot] *Arm Architecture Reference Manual* and the ACLE integer dot-product instructions (`SDOT`, `SMMLA`) - no arXiv ID (vendor manual)
 
 ## Backfill
 

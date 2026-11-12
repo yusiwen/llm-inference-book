@@ -38,12 +38,20 @@ mdBook silently stubbed, checks that the measurements page still carries its com
 
 1. `src/NN-english-slug/index.md`, following an existing stub exactly.
 2. Add the entry to `src/SUMMARY.md` under its part.
-3. Re-run the gate; `probe.py` will tell you what the page is missing.
-4. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit.
+3. **Figures ship with the chapter**: draw the chapter's P0 figures from `FIGURES.md` in the same
+   sitting, include them where the prose needs them, and mark them drawn in `FIGURES.md`.
+4. **Cite at least one source by key** in `## Reading`, and regenerate the reference index with
+   `python3 scripts/references.py` (the gate fails on a stale "used in" column).
+5. Re-run the gate; `probe.py` will tell you what the page is missing.
+6. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit.
 
 ## Do not
 
 - Do not hand-edit `book/` (generated) or add a remote asset (the site must work offline).
+- Do not add a figure outside `FIGURES.md` without adding its row there first, and do not introduce
+  a cite key without a row in `src/appendix/references.md`.
+- Do not cite an arXiv ID from memory, and do not mark an unchecked one "to verify": resolve it or
+  drop the source.
 - Do not weaken a gate to make a page pass; fix the page, or change the rule here and in
   `src/appendix/conventions.md` together.
 - Do not touch the `minfer` tree from this repository's work.

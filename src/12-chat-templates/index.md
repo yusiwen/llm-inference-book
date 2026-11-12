@@ -55,6 +55,7 @@ Keep the refusal path: an unrenderable template must fail at load, and the messa
 - code: `src/template.rs`, `src/template/tool_json.rs` at commit `88ffa5d`
 - decisions: ADR-0019 (a template that cannot render refuses the load), ADR-0057 (a template file overrides the model's), ADR-0058 (tools reach the prompt as the client wrote them), ADR-0062 (a request message reaches the prompt as written)
 - docs: `docs/CHAT-TEMPLATE-AND-TOKENIZER-DESIGN.md`
+- [gguf] The GGUF file-format specification, in the ggml repository - no arXiv ID (specification)
 
 ## Backfill
 

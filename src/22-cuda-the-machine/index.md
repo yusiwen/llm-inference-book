@@ -55,6 +55,8 @@ Use the machine you will actually measure on, and record its CUDA version, drive
 - docs: `docs/cuda_tutorial/01-gpu-mental-model.md`, `02-minimal-cuda.md` (the book's own audit of these chapters is Appendix D)
 - docs: `docs/CUDA-TECH-PRIMER.md` for terminology at reference depth
 - docs: `docs/GPU_SAFETY.md` before you touch any GPU code you did not write
+- [cuda-guide] *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual)
+- [pmpp] Kirk and Hwu, *Programming Massively Parallel Processors* (4th edition, 2022) - no arXiv ID (book)
 
 ## Backfill
 

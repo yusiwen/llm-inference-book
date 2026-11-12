@@ -54,6 +54,7 @@ Resist adding a `dtype` enum with per-dtype accessors everywhere. One opaque buf
 - code: `src/tensor.rs`, `src/block.rs` (`repr(C)` block structs) at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/03-model-dispatch-weights.md`
 - docs: `docs/PARAMETER_AUDIT.md` for the real shapes of a Qwen3 model
+- [ggml-quant] The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification)
 
 ## Backfill
 

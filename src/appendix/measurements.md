@@ -14,6 +14,8 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Pages under `src/` | 32 | `find src -name '*.md' \| wc -l` |
 | Prose bytes under `src/` (all stubs) | 130552 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
 | Status | all 29 chapters `stub` | `rg -c 'Status\*\*: stub' src` |
+| Sources in the reference index | 29 | `python3 scripts/references.py` (prints the count) |
+| Figures planned / drawn | 46 / 0 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
 
 None of these are performance numbers. A chapter count is a fact about an outline, not evidence that the book teaches anything.
 

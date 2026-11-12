@@ -55,6 +55,7 @@ The engine's loader (`gguf.rs`, `load_gguf_model` and `MmapFile`) is the referen
 - code: `src/gguf.rs` (`load_gguf_model`, `MmapFile`), `src/gguf/tests.rs` at commit `88ffa5d`
 - docs: `docs/inference_e2e_walkthrough/02-gguf-load.md`
 - spec: the GGUF file-format specification in the ggml repository - no arXiv ID
+- [gguf] The GGUF file-format specification, in the ggml repository - no arXiv ID (specification)
 
 ## Backfill
 

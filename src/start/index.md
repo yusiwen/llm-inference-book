@@ -64,6 +64,7 @@ You are going to write an inference engine. The reference engine is in Rust, and
 - `https://github.com/yusiwen/minfer` - the reference engine; read `README.md` and `docs/BUILD.md` for the toolchain
 - `docs/SUPPORT-MATRIX.md` in the same repository - which quantized formats and model families are in scope
 - `docs/GATE-CONTRACT.md` - what the reference project requires before a change counts as done
+- [trpl] Klabnik and Nichols, *The Rust Programming Language* - no arXiv ID (book)
 
 ## Backfill
 

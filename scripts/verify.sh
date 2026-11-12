@@ -71,7 +71,11 @@ fi
 echo "clean"
 
 echo
-echo "== 8. the book's own skeleton and links =="
+echo "== 8. the reference index matches the chapters =="
+python3 scripts/references.py --check
+
+echo
+echo "== 9. the book's own skeleton and links =="
 python3 scripts/probe.py .
 
 echo

@@ -55,6 +55,8 @@ Keep one fixture you can regenerate with a single command, and hash it. A fixtur
 - code: `src/testfail.rs`, `docs/GATE-CONTRACT.md`, `src/graph/dot.rs`, `src/graph/json.rs`, `src/dump.rs`, `src/trace.rs`, `src/live.rs`, `src/optiming.rs` at commit `88ffa5d`
 - decisions: ADR-0010 (the identity gate: bitwise by default), ADR-0020 (a quantized file is byte-identical), ADR-0023 (machine ledgers live beside their checkers)
 - docs: `docs/TEST-BASELINES.md`, `docs/debug-dump.md`
+- [goldberg] Goldberg, *What Every Computer Scientist Should Know About Floating-Point Arithmetic* (ACM Computing Surveys, 1991) - no arXiv ID (journal paper)
+- [ieee754] *IEEE 754-2019, Standard for Floating-Point Arithmetic* - no arXiv ID (standard)
 
 ## Backfill
 

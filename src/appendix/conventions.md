@@ -64,6 +64,13 @@ The failure this rule exists for: a stub's numbers are not facts either. A lesso
 - **Maths is vendored**: MathJax lives in `mathjax/`, loaded through `additional-js`. The built-in injects a CDN copy, which leaves every page showing raw dollar signs when the CDN is blocked - and the build stays green while it happens.
 - **Every display equation is wrapped** in a block element. Markdown parses the inside of a display block as ordinary text, so a subscript pair can be read as emphasis and that one equation silently does not render.
 
+## Reading and citations
+
+- **Every page's `## Reading` section cites at least one source from the [reference index](references.md), by key.** The key is written in square brackets: `- [gqa] Ainslie et al., ... - arXiv:2305.13245`. `scripts/references.py` fails the build when a page cites nothing external, or cites a key the index does not hold.
+- **The index owns the metadata, the page owns the reason.** Title, year and identifier live once, on the index; the chapter's Reading line says what the reader is being sent there *for* when that is not obvious.
+- **An arXiv ID is resolved, never recalled.** The index records the date each ID was checked against the API. A source with no ID says so in words; an unchecked ID is removed rather than marked pending.
+- **A reported number stays reported.** A figure or claim taken from a paper is labelled as such and is never upgraded into something this book measured.
+
 ## Status vocabulary (two words, defined)
 
 - **stub**: the skeleton exists (gist, checklist, ledgers, acceptance criteria); the prose does not.

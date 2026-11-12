@@ -55,6 +55,8 @@ Test the drain: send a request, start shutting down, and require the in-flight t
 - docs: `docs/OPENAI-CHAT-API-PLAN.md`, `docs/SPECULATIVE-DECODING-PLAN.md`, `docs/LLAMA-CPP-SPECULATIVE-ANALYSIS.md`
 - docs: `docs/cuda_optimization_steps/83-d5-r-stage1-spec-loop.md`, `88-d5-r-stage5-final-battery.md`, `94-greedy-identity-and-d8-crossing.md`
 - decisions: ADR-0017 (speculation refuses what its identity contract cannot carry), ADR-0059 (the batched worker queues against a bound), ADR-0072 (a draft proposal is the target's own filtered pick)
+- [spec-decoding] Leviathan, Kalman and Matias, *Fast Inference from Transformers via Speculative Decoding* (2022) - arXiv:2211.17192
+- [paged-attention] Kwon et al., *Efficient Memory Management for Large Language Model Serving with PagedAttention* (2023) - arXiv:2309.06180
 
 ## Backfill
 
