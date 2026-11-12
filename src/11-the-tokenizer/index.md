@@ -50,7 +50,7 @@ Do not test by decoding the model's answers. Test ids directly; a tokenizer bug 
 
 ## Reading
 
-- code: `src/tokenizer.rs`, `src/tokenizer/nfc.rs` at commit `88ffa5d`
+- code: `src/tokenizer.rs`, `src/tokenizer/nfc.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - decisions: ADR-0042 (the tokenizer applies the model's declared NFC normalizer), ADR-0043 (a special token is declared by the file), ADR-0052 (vocabulary-less files refuse at the checked entry points)
 - docs: `docs/CHAT-TEMPLATE-AND-TOKENIZER-DESIGN.md`
 - [bpe] Sennrich, Haddow and Birch, *Neural Machine Translation of Rare Words with Subword Units* (arXiv 2015, ACL 2016) - arXiv:1508.07909

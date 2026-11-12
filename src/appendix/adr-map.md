@@ -1,6 +1,6 @@
 # The Decision Map
 
-> **Status**: stub - the table is generated from the project at commit `88ffa5d`; the book's prose about *why* each decision matters is still to write.
+> **Status**: stub - the table is generated from the project at the [pinned baseline](baseline.md); the book's prose about *why* each decision matters is still to write.
 > **Rule of this book**: this page lists what the book's contract depends on. The arguments live in the chapters; the record lives here.
 
 minfer keeps **82 architecture decision records** (ADRs) in `docs/adr/`. An ADR is one page that says: here is a decision, here is what it rules out, here is what would make us revisit it. They are the project's most reusable artifact, because an engine is mostly a pile of decisions that were expensive to make and cheap to forget.

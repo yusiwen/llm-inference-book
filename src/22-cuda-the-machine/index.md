@@ -49,7 +49,7 @@ Use the machine you will actually measure on, and record its CUDA version, drive
 
 ## Reading
 
-- code: `src/cuda/kernels/*.cu` (18 files, `common.cuh` first), `src/cuda/ffi_runtime.rs` at commit `88ffa5d`
+- code: `src/cuda/kernels/*.cu` (18 files, `common.cuh` first), `src/cuda/ffi_runtime.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/cuda_tutorial/01-gpu-mental-model.md`, `02-minimal-cuda.md` (the book's own audit of the tutorial is in [the CUDA docs audit](../appendix/cuda-docs-audit.md))
 - docs: `docs/CUDA-TECH-PRIMER.md` for terminology at reference depth
 - docs: `docs/GPU_SAFETY.md` before you touch any GPU code you did not write

@@ -1,6 +1,6 @@
 # Audit: the CUDA Tutorial Against This Commit
 
-> **Status**: draft - the mechanical findings are re-derivable from the commands below at commit `88ffa5d`; the chapter-by-chapter judgement is still being written.
+> **Status**: draft - the mechanical findings are re-derivable from the commands below at the [pinned baseline](baseline.md); the chapter-by-chapter judgement is still being written.
 > **Rule of this book**: the CUDA tutorial in the reference project is a contributor onboarding series. This book re-derives its content from the current tree instead of copying it, because a tutorial's line references and counts drift while its prose keeps reading as true.
 
 This book's CUDA part (Chapters 22-26) covers the same ladder as the project's tutorial (`docs/cuda_tutorial/`: seven chapters plus an index and a writing contract, 9 files, 5250 lines) and differs in three ways: it teaches the Rust boundary as its own chapter, it treats the optimization campaign as a method rather than a technique catalogue, and it cites **symbols plus a commit** instead of line numbers. Before writing any of it, the tutorial was checked against the tree. What follows is what that check found.
@@ -68,6 +68,6 @@ The tutorial's toys (`toy1_vec_add.cu` and friends) are embedded in the chapters
 
 ## Reading
 
-- `docs/cuda_tutorial/` at commit `88ffa5d` - the tutorial this page audits, still the best short on-ramp in the project
+- `docs/cuda_tutorial/` at the pinned baseline - the tutorial this page audits, still the best short on-ramp in the project
 - `docs/CUDA-TECH-PRIMER.md`, `docs/GLOSSARY.md` - reference depth, and the campaign's own vocabulary
 - `docs/cuda_optimization_steps/77-verification-methodology.md` - the method Chapter 26 teaches

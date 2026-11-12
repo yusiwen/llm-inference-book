@@ -26,7 +26,7 @@ is a personal hobby project, not a product: it started in 2021 as a way to learn
 works, and has been rewritten along several different lines since - different graph designs, different
 backends, different opinions about where the boundary between the engine and a device belongs. What
 survives in the code is the part that was measured, and that habit is what this book teaches. This
-book describes minfer at commit `88ffa5d`; its kernels are hand-written, from the AVX2 and NEON dot
+book describes minfer at the commit recorded in [`minfer.lock`](minfer.lock); its kernels are hand-written, from the AVX2 and NEON dot
 products to the CUDA matmuls, with no machine-learning framework underneath.
 
 **Status: skeleton.** All 29 chapters are stubs: the outline, lesson checklists, empty ledgers and
@@ -59,10 +59,15 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `src/figures/` | hand-authored SVGs, included inline so they follow the page theme |
 | `src/appendix/` | conventions, the decision map (82 ADRs), the reference index, measurements, the CUDA-tutorial audit, glossary, limits, where the code lives |
 | `FIGURES.md` | the figure plan: 46 planned figures, their batch order and acceptance test |
+| `minfer.lock` | the pinned minfer commit and the counts the book quotes - the only place the hash lives |
+| `reference/` | the citation inventory, resolved at that commit, plus the citations that must stay broken |
+| `runs/` | behaviour probe records; two of them are compared by hand when the engine moves |
 | `scripts/verify.sh` | the gate CI runs; a green local run is a green deploy |
 | `scripts/probe.py` | the checks the build cannot see: skeleton sections, links, counts |
 | `scripts/references.py` | derives the index's "used in" column from the chapters; fails on a dangling key |
 | `scripts/figcheck.py` | figure lint (structure, theme classes, geometry, captions), copied from the `mdbook-figures` skill |
+| `scripts/minfer-drift.py` | compares the book's citations and counts against minfer at the baseline or at master |
+| `scripts/contract-probes.sh` | records what the engine actually does (flags, graph size, determinism, server surface) |
 | `mathjax/`, `css/` | vendored renderer and figure styles; the site fetches nothing remotely |
 
 ## Rules that are enforced, not just stated
@@ -75,7 +80,10 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
   tree; `src/appendix/measurements.md` records the command behind each.
 - **Every page cites a source.** `scripts/references.py` fails on a page with no external reference, or
   on a cite key that the index does not hold.
-- **Code pointers are path + symbol + commit.** Never a bare line number.
+- **Code pointers are path + symbol.** Never a bare line number, and never a commit hash in prose:
+  the hash lives in `minfer.lock`, and every citation is checked against the committed inventory.
+- **Drift is tracked, not chased.** A daily advisory job reports what moved against the baseline and
+  against master; the book moves its baseline deliberately, following the ledger's procedure.
 
 ## License
 

@@ -50,7 +50,7 @@ Fix the decision rule in the record before the first measurement. A rule chosen 
 
 ## Reading
 
-- code: `src/device_tier.rs`, `src/graph/cuda_backend.rs`, `src/cuda/methods/policy.rs` at commit `88ffa5d`
+- code: `src/device_tier.rs`, `src/graph/cuda_backend.rs`, `src/cuda/methods/policy.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/CUDA_OPTIMIZATION.md` (the master history table), `docs/cuda_optimization_steps/` (110 step records plus index and writing contract), `77-verification-methodology.md`, `101-steady-state-method.md`
 - docs: `docs/cuda_tutorial/06-optimization-methods.md`, `07-where-next.md`
 - decisions: ADR-0035, ADR-0059, ADR-0072 (draft proposals), ADR-0034 (smem pre-warm)

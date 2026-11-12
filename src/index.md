@@ -6,7 +6,7 @@ This is a build book, not a survey. It takes you from a quantized file on disk t
 
 > **This build**: a skeleton. All 29 chapters are stubs: the outline, the lesson checklists, the empty ledgers and the acceptance criteria exist; the prose does not, and none of the 46 planned figures is drawn. What *is* finished is the shape of the book, the [reference index](appendix/references.md), and [the audit](appendix/cuda-docs-audit.md) of the documentation this book follows.
 
-The reference engine is **minfer**, a pure-Rust inference engine with no machine-learning framework underneath it: every kernel is hand-written, from the AVX2 and NEON dot products to the CUDA matmuls. This book describes minfer at commit `88ffa5d`, and every code pointer in it is a file plus a symbol, not a line number, because line numbers move.
+The reference engine is **minfer**, a pure-Rust inference engine with no machine-learning framework underneath it: every kernel is hand-written, from the AVX2 and NEON dot products to the CUDA matmuls. This book describes minfer at the commit recorded on [the baseline page](appendix/baseline.md), and every code pointer in it is a file plus a symbol, not a line number, because line numbers move.
 
 ## What "the hard way" means
 
@@ -71,7 +71,7 @@ Three decisions explain most of the distance between this book and the project's
 
 ## Where the code lives
 
-- **The reference engine**: `github.com/yusiwen/minfer`, at commit `88ffa5d`. Its documentation site is `yusiwen.cn/minfer`.
+- **The reference engine**: `github.com/yusiwen/minfer`, at the pinned baseline in [`minfer.lock`](https://github.com/yusiwen/llm-inference-book/blob/main/minfer.lock). Its documentation site is `yusiwen.cn/minfer`.
 - **The decision record**: 82 ADRs in `docs/adr/`, indexed by [the decision map](appendix/adr-map.md).
 - **The optimization record**: 110 step records in `docs/cuda_optimization_steps/`, referenced from Chapter 26 and quoted in [Measurements](appendix/measurements.md).
 

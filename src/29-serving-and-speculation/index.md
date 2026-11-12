@@ -49,7 +49,7 @@ Test the drain: send a request, start shutting down, and require the in-flight t
 
 ## Reading
 
-- code: `crates/minfer-cli/src/server/{mod,slot,worker,metrics,batch,toolcall}.rs`, `src/spec.rs`, `crates/minfer-cli/src/spec_verify.rs` at commit `88ffa5d`
+- code: `crates/minfer-cli/src/server/{mod,slot,worker,metrics,batch,toolcall}.rs`, `src/spec.rs`, `crates/minfer-cli/src/spec_verify.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/OPENAI-CHAT-API-PLAN.md`, `docs/SPECULATIVE-DECODING-PLAN.md`, `docs/LLAMA-CPP-SPECULATIVE-ANALYSIS.md`
 - docs: `docs/cuda_optimization_steps/83-d5-r-stage1-spec-loop.md`, `88-d5-r-stage5-final-battery.md`, `94-greedy-identity-and-d8-crossing.md`
 - decisions: ADR-0017 (speculation refuses what its identity contract cannot carry), ADR-0059 (the batched worker queues against a bound), ADR-0072 (a draft proposal is the target's own filtered pick)

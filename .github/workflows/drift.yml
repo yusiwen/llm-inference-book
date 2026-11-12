@@ -1,0 +1,92 @@
+name: minfer drift report
+
+# Advisory only: this job never fails the build and never edits the book. It answers one question
+# every day - "has minfer moved away from the baseline the book describes, and where?" - and keeps the
+# answer in a single rolling issue, so the notification is one thread rather than one per day.
+#
+# The book's own gate (scripts/verify.sh) stays hermetic: it checks the committed inventory offline.
+# This workflow is the only place that reaches the network for minfer.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # 03:17 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: minfer-drift
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the book
+        uses: actions/checkout@v7
+
+      - name: Check out minfer
+        uses: actions/checkout@v7
+        with:
+          repository: yusiwen/minfer
+          path: minfer
+          fetch-depth: 0
+
+      # The baseline sha may be older than the default clone depth, and the report wants the tag
+      # distance too, so the minfer clone keeps its history.
+      - name: Resolve the baseline
+        run: |
+          sha=$(grep -oE '[0-9a-f]{40}' minfer.lock | head -1)
+          echo "baseline=$sha" >> "$GITHUB_ENV"
+          git -C minfer cat-file -e "$sha^{commit}" && echo "baseline present in the clone"
+
+      - name: Static drift against the baseline
+        run: |
+          python3 scripts/minfer-drift.py --repo minfer --ref "$baseline" --report drift-baseline.md | tee drift-baseline.log
+
+      - name: Advisory drift against master
+        run: |
+          python3 scripts/minfer-drift.py --repo minfer --head --report drift-head.md | tee drift-head.log
+          echo "--- head summary ---" >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^(minfer|counts|\[)' drift-head.log | head -40 >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload the reports
+        uses: actions/upload-artifact@v5
+        with:
+          name: minfer-drift
+          path: |
+            drift-baseline.md
+            drift-head.md
+            drift-baseline.log
+            drift-head.log
+
+      - name: Keep one rolling issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="minfer drift report"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
+                     --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+          {
+            echo "Baseline: \`$baseline\` (see \`minfer.lock\`)"
+            echo "Master: \`$(git -C minfer rev-parse --short HEAD)\` on $(date -u +%Y-%m-%d)"
+            echo
+            echo '## Against the baseline'
+            echo '```'
+            head -60 drift-baseline.log
+            echo '```'
+            echo '## Against master (forecast, not a target)'
+            echo '```'
+            head -60 drift-head.log
+            echo '```'
+            echo
+            echo "Full reports are attached to this workflow run as the \`minfer-drift\` artifact."
+          } > issue-body.md
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file issue-body.md
+            gh issue comment "$number" --body "Updated $(date -u +%Y-%m-%dT%H:%MZ)."
+          else
+            gh issue create --title "$title" --body-file issue-body.md
+          fi

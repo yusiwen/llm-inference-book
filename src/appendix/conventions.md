@@ -43,7 +43,10 @@ An arithmetic estimate is not a measurement, and a reported number is not someth
 
 ## Code citations
 
-- **Path plus symbol plus commit.** Never a bare line number: the audit in [the CUDA appendix](cuda-docs-audit.md) found three references to files that no longer exist, in a tutorial whose own rule was already "the symbol is the stable address".
+- **Path plus symbol.** Write `src/graph/alloc.rs::GraphAllocator` inside backticks. The path alone is allowed only when the sentence really is about a whole file (the kernel sources, the ADR directory); a sentence about a behaviour names the symbol, because the symbol is what the sentence is actually claiming.
+- **Never a bare line number.** [The CUDA audit](cuda-docs-audit.md) found three references to files that no longer exist, in a tutorial whose own rule was already "the symbol is the stable address" - line numbers drift the same way, only faster.
+- **No commit hash outside [`minfer.lock`](https://github.com/yusiwen/llm-inference-book/blob/main/minfer.lock) and [the baseline page](baseline.md).** Every other page says "at the book's pinned baseline" and links there. One hash to bump, not thirty.
+- **Every citation is checked.** `scripts/minfer-drift.py --check-inventory` fails the gate when a page cites an address that is not in the committed inventory, so a new pointer cannot reach a reader unchecked.
 - **Symbol names are re-verified when the chapter is written**, not when the outline is written. An outline's citation is a plan.
 - **Where the behaviour is inferred from a name and not read**, the sentence says *assumed*.
 
@@ -70,6 +73,15 @@ The failure this rule exists for: a stub's numbers are not facts either. A lesso
 - **The index owns the metadata, the page owns the reason.** Title, year and identifier live once, on the index; the chapter's Reading line says what the reader is being sent there *for* when that is not obvious.
 - **An arXiv ID is resolved, never recalled.** The index records the date each ID was checked against the API. A source with no ID says so in words; an unchecked ID is removed rather than marked pending.
 - **A reported number stays reported.** A figure or claim taken from a paper is labelled as such and is never upgraded into something this book measured.
+
+## Statements about minfer itself
+
+Two kinds of sentence, and they age differently.
+
+- **What an engine must do** is timeless: "decode is limited by bytes read" does not go stale. No date needed.
+- **What minfer currently does** is dated by the baseline. Write it next to a link to [the baseline page](baseline.md), or do not write it. A capability sentence ("minfer cannot ...") belongs in [Limits](limits.md) as a pointer to the project's own inventory, never as a property of the world.
+
+When minfer moves, `scripts/minfer-drift.py` finds the addresses and the counts, and `scripts/contract-probes.sh` records the behaviour. Neither of them edits prose: a difference is a question for whoever knows the chapter.
 
 ## Status vocabulary (two words, defined)
 

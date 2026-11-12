@@ -50,7 +50,7 @@ Record a golden vector per op (input bytes and expected output bytes). These bec
 
 ## Reading
 
-- code: `src/vec_ops.rs`, `src/vec_ops/` (rms_norm, rope, softmax, silu, bf16, f16), `src/models/rope_scaling.rs` at commit `88ffa5d`
+- code: `src/vec_ops.rs`, `src/vec_ops/` (rms_norm, rope, softmax, silu, bf16, f16), `src/models/rope_scaling.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/inference_e2e_walkthrough/11-attention-vecops-kv.md`
 - decisions: ADR-0021 (bf16 rounds to nearest even, 1-D tensors stay f32), ADR-0074 (the Llama-3 RoPE table is read from the file)
 - [online-softmax] Milakov and Gimelshein, *Online normalizer calculation for softmax* (2018) - arXiv:1805.02867

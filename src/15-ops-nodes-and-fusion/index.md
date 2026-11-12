@@ -49,7 +49,7 @@ Keep the unfused path alive behind a flag: it is the oracle, and it is also the 
 
 ## Reading
 
-- code: `src/graph/ops.rs`, `src/graph/fusion.rs`, `src/graph/op_matrix.rs` at commit `88ffa5d`
+- code: `src/graph/ops.rs`, `src/graph/fusion.rs`, `src/graph/op_matrix.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/inference_e2e_walkthrough/06-assign-fusion.md`
 - docs: `docs/COMPUTE-GRAPH-DESIGN.md`
 - [tvm] Chen et al., *TVM: An Automated End-to-End Optimizing Compiler for Deep Learning* (2018) - arXiv:1802.04799

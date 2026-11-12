@@ -50,7 +50,7 @@ Record the shape, the tile size and the throughput for every kernel. A number wi
 
 ## Reading
 
-- code: `src/cuda/kernels/ops_elementwise.cu`, `gemm_wmma.cu`, `mmq_int8.cu`, `mmq_raw.cu`, `mmq_bt_q6k.cu`, `mmvq_q6k.cu`, `mmvq_multi.cu` at commit `88ffa5d`
+- code: `src/cuda/kernels/ops_elementwise.cu`, `gemm_wmma.cu`, `mmq_int8.cu`, `mmq_raw.cu`, `mmq_bt_q6k.cu`, `mmvq_q6k.cu`, `mmvq_multi.cu` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/cuda_tutorial/03-kernels-elementwise.md`, `04-kernels-matmul.md` (the audit of these two chapters is in [the CUDA docs audit](../appendix/cuda-docs-audit.md))
 - docs: `docs/LLAMA-CPP-MMQ-ANALYSIS.md` for the reference implementation's design, `docs/CUDA-TECH-PRIMER.md` for terms
 - [ptx] *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions)

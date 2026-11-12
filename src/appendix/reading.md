@@ -1,12 +1,12 @@
 # Where the Code Lives
 
-> **Status**: draft - the pointers are correct at commit `88ffa5d`; the annotated tour of each directory grows as chapters cite it.
+> **Status**: draft - the pointers are correct at the [pinned baseline](baseline.md); the annotated tour of each directory grows as chapters cite it.
 > **Rule of this book**: every code pointer is a path plus a symbol plus the commit it was read at. Line numbers are never published.
 
 ## The reference engine
 
 - Repository: `github.com/yusiwen/minfer`
-- Commit this book describes: **`88ffa5d`** (2026-11-11)
+- Commit this book describes: the [pinned baseline](baseline.md), recorded in `minfer.lock`
 - Documentation site: `yusiwen.cn/minfer`
 
 Later commits exist. When the tree and a chapter disagree, the chapter is the thing that needs updating, and the symbol is how you find where.
@@ -42,7 +42,7 @@ Three habits, learned from the audit in this appendix:
 
 ```bash
 git clone https://github.com/yusiwen/minfer
-cd minfer && git checkout 88ffa5d      # the commit this book describes
+cd minfer && git checkout $(grep -oE '[0-9a-f]{40}' ../llm-inference-book/minfer.lock | head -1)
 cargo build --release                  # CPU + Metal on macOS
 cargo build --release --features cuda  # on an NVIDIA machine
 ```

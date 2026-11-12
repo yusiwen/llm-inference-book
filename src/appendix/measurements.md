@@ -15,13 +15,15 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Prose bytes under `src/` (all stubs) | 183977 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
 | Status | all 29 chapter pages `stub` | `rg -l 'Status\*\*: stub' src/[0-9][0-9]-*/index.md \| wc -l` |
 | Sources in the reference index | 29 | `python3 scripts/references.py` (prints the count) |
+| minfer citations tracked | 142 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
+| Behaviour probes recorded | 1 run, 1 probe executed / 7 defined | `ls runs/*.json`, `bash scripts/contract-probes.sh --list` |
 | Figures planned / drawn | 46 / 0 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
 
 None of these are performance numbers. A chapter count is a fact about an outline, not evidence that the book teaches anything.
 
 ## The reference project
 
-Read at commit `88ffa5d` (2026-11-11) in `github.com/yusiwen/minfer`.
+Read at the [pinned baseline](baseline.md) (2026-11-11) in `github.com/yusiwen/minfer`. The counts are re-derived by `scripts/minfer-drift.py`, which compares them against `minfer.lock`.
 
 | Quantity | Value | Command |
 |---|---|---|

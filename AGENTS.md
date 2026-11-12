@@ -10,9 +10,33 @@ nix develop --command bash scripts/verify.sh
 ```
 
 Run it before reporting any work as done. It builds, rejects a build warning, scans characters,
-checks that the site fetches nothing remotely, checks display-maths wrappers, checks for a page
-mdBook silently stubbed, checks that the measurements page still carries its commands, and runs
-`scripts/probe.py` (skeleton sections, link resolution, lesson-item pairing, count drift).
+checks that the site fetches nothing remotely, lints the figures, checks display-maths wrappers,
+checks for a page mdBook silently stubbed, checks that the measurements page still carries its
+commands, checks every minfer citation against the committed inventory, and runs `scripts/probe.py`
+(skeleton sections, link resolution, lesson-item pairing, count drift).
+
+## Tracking minfer
+
+The engine this book describes is unfinished and changes daily, so it is pinned. The machinery:
+
+| File | Role |
+|---|---|
+| `minfer.lock` | **the only place the baseline commit and the quoted counts live** |
+| `reference/baseline-citations.json` | every citation, resolved at the baseline; regenerated only on a bump |
+| `reference/intentional-broken.txt` | citations that must NOT resolve (the audit's findings) |
+| `scripts/minfer-drift.py` | static comparator: paths, `path::symbol`, ADR numbers, counts |
+| `scripts/contract-probes.sh` | behaviour probes; records under `runs/` for a human to diff |
+| `src/appendix/baseline.md` | the ledger, the coupling table and the bump procedure |
+| `.github/workflows/drift.yml` | daily advisory report in one rolling issue; never fails the build |
+
+Rules that follow:
+
+1. **Never write the commit hash in prose.** Say "at the book's pinned baseline" and link.
+2. **A statement about minfer's current behaviour is dated** by the baseline page; a statement about
+   what an engine must do is not dated at all.
+3. **A new citation must be added to the inventory** - the gate fails otherwise, by design.
+4. **A baseline bump follows the six steps on the baseline page**, reads the drift report, and commits
+   as `docs(baseline): move to <tag or sha>`.
 
 ## Non-negotiables
 

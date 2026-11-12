@@ -50,7 +50,7 @@ Start with a two-layer toy model rather than a real one. The graph machinery is 
 
 ## Reading
 
-- code: `src/graph/mod.rs`, `src/graph/builder.rs`, `src/graph/params.rs` at commit `88ffa5d`
+- code: `src/graph/mod.rs`, `src/graph/builder.rs`, `src/graph/params.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - decisions: ADR-0001 (inference runs through one declarative compute graph), ADR-0002 (topology is a function of graph params)
 - docs: `docs/COMPUTE-GRAPH-DESIGN.md`, `crates/minfer-cli/src/server/viz.rs`, `docs/inference_e2e_walkthrough/05-graph-builder-ir.md`
 - [tvm] Chen et al., *TVM: An Automated End-to-End Optimizing Compiler for Deep Learning* (2018) - arXiv:1802.04799

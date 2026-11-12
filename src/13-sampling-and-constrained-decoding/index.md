@@ -51,7 +51,7 @@ For the grammar, test the negative: assert that a token outside the constraint n
 
 ## Reading
 
-- code: `src/sampler.rs`, `src/grammar.rs` at commit `88ffa5d`
+- code: `src/sampler.rs`, `src/grammar.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - decisions: ADR-0018 (the grammar mask is one stage inside the single sampler pipeline)
 - docs: `docs/GRAMMAR-DESIGN.md`, `docs/inference_e2e_walkthrough/12-sampler.md`
 - [nucleus] Holtzman et al., *The Curious Case of Neural Text Degeneration* (2019) - arXiv:1904.09751

@@ -71,11 +71,17 @@ fi
 echo "clean"
 
 echo
-echo "== 8. the reference index matches the chapters =="
+echo "== 8. every minfer citation is in the committed inventory =="
+# Offline on purpose: the book's gate never reaches the network. The inventory is regenerated only
+# when the baseline moves (see src/appendix/baseline.md), so a new citation nobody checked fails here.
+python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json
+
+echo
+echo "== 9. the reference index matches the chapters =="
 python3 scripts/references.py --check
 
 echo
-echo "== 9. the book's own skeleton and links =="
+echo "== 10. the book's own skeleton and links =="
 python3 scripts/probe.py .
 
 echo

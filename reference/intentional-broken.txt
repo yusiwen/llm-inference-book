@@ -1,0 +1,11 @@
+# Citations that must NOT resolve.
+#
+# Appendix: the CUDA tutorial audit is a list of defects in another repository's
+# documentation. Two of its findings are citations of files that no longer exist,
+# and the audit is wrong if they start resolving. `minfer-drift.py` reports them as
+# intentional instead of broken.
+#
+# One entry per line: `path` or `path::symbol`, `#` starts a comment.
+
+src/cuda_kernels.cu                     # the tutorial cites it; the tree has src/cuda/kernels/*.cu instead
+src/cuda/kernels/common.cu              # the tutorial cites it; the tree has common.cuh (a header)

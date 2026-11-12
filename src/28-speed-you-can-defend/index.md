@@ -51,7 +51,7 @@ Re-measure one of your earlier claims with the new harness. If it moves, that is
 
 ## Reading
 
-- code: `crates/minfer-cli/src/bench.rs`, `crates/minfer-cli/src/spec_verify.rs` at commit `88ffa5d`
+- code: `crates/minfer-cli/src/bench.rs`, `crates/minfer-cli/src/spec_verify.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/cuda_optimization_steps/101-steady-state-method.md`, `63-r59b-clean-remeasure.md`, `77-verification-methodology.md`
 - docs: `docs/TEST-BASELINES.md`, `docs/PERF-QWEN3-4B-VS-LLAMACPP.md`
 - docs: `docs/CUDA_OPTIMIZATION.md` section 0 for how the campaign recorded deltas across sessions

@@ -47,7 +47,7 @@ Write the loop against a placeholder model first. Everything this chapter assert
 
 ## Reading
 
-- code: `src/engine.rs`, `crates/minfer-cli/src/main.rs` (the decode loop) - for shape only, at commit `88ffa5d`
+- code: `src/engine.rs`, `crates/minfer-cli/src/main.rs` (the decode loop) - for shape only, at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/ARCHITECTURE.md` section 3 (the inference pipeline)
 - [scaling-inference] Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102
 - [roofline] Williams, Waterman and Patterson, *Roofline: an insightful visual performance model for multicore architectures* (CACM, 2009) - no arXiv ID (journal paper)

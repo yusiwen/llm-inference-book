@@ -1,0 +1,5 @@
+{
+ "recorded": "2026-11-12T16:19:36Z",
+ "baseline": {"commit": "88ffa5d89905053729de4d814e4a368ac3f63af5", "describe": "v0.0.9-118-g88ffa5d"},
+ "probes": {"flags":{"status":"ran","bin":"minfer","present":{"--meta":true,"--no-template":true,"--chat-template":true,"--cnv":true,"--session":true,"--greedy":true,"--top-k":true,"--top-p":true,"--min-p":true,"--mirostat":true,"--xtc-probability":true,"--dry-multiplier":true,"--grammar":true,"--json-schema":true,"--stop":true,"--n-predict":true,"--seed":true,"--backend":true,"--gpu-layers":true,"--spec-draft":true,"--spec-draft-adaptive":true,"--n-ctx":true,"--threads":true,"--n-slots":true,"--slots-file":true,"--dump-graph":true,"--dump-graph-json":true}},"meta":{"status":"skipped","reason":"set MINFER_MODEL to a .gguf file"},"graph-json":{"status":"skipped","reason":"needs MINFER_MODEL"},"greedy-ids":{"status":"skipped","reason":"needs MINFER_MODEL"},"backend-cpu":{"status":"skipped","reason":"needs MINFER_MODEL"},"serve-keys":{"status":"skipped","reason":"needs MINFER_MODEL and curl"},"cuda-gate":{"status":"skipped","reason":"needs a CUDA build, a device and MINFER_MODEL"}}
+}

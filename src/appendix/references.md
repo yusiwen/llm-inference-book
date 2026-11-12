@@ -64,7 +64,7 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 
 ## Shelf 4 · The reference implementation
 
-minfer is not a citation, and this book reads a specific commit of it (`88ffa5d`). Its documentation tree is the largest body of reading the book assigns, and it is listed per chapter rather than here, because the same document often serves two chapters for different reasons.
+minfer is not a citation, and this book reads a specific commit of it, the [pinned baseline](baseline.md). Its documentation tree is the largest body of reading the book assigns, and it is listed per chapter rather than here, because the same document often serves two chapters for different reasons.
 
 | Question | Where it is answered |
 |---|---|

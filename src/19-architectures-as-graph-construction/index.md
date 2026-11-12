@@ -50,7 +50,7 @@ Keep the per-family code to shapes, flags and a stop set. If a family needs a ne
 
 ## Reading
 
-- code: `src/models/mod.rs`, `src/models/qwen2/graph.rs`, `src/models/qwen3/graph.rs`, `src/models/weight_reg.rs` at commit `88ffa5d`
+- code: `src/models/mod.rs`, `src/models/qwen2/graph.rs`, `src/models/qwen3/graph.rs`, `src/models/weight_reg.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/inference_e2e_walkthrough/03-model-dispatch-weights.md`, `docs/MODEL-SUPPORT-ROADMAP.md`, `docs/SUPPORT-MATRIX.md`
 - decisions: ADR-0038 (the per-tensor registration dispatch is one shared rule), ADR-0075 (a model owns the mapping it reads)
 - [qwen3] Yang et al., *Qwen3 Technical Report* (2025) - arXiv:2505.09388

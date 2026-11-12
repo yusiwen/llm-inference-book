@@ -48,7 +48,7 @@ When the bytes differ, do not weaken the test. Bisect the difference to a field 
 
 ## Reading
 
-- code: `src/quants/kquant.rs`, `src/quantize.rs`, `src/q4k_dsc.rs` at commit `88ffa5d`
+- code: `src/quants/kquant.rs`, `src/quantize.rs`, `src/q4k_dsc.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/GGUF-TOOLING.md`, `docs/inference_e2e_walkthrough/10-cpu-matmul-kernels.md`
 - decision: ADR-0020 (a quantized file is byte-identical to llama-quantize, or it is wrong)
 - [ggml-quant] The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification)

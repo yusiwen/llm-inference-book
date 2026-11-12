@@ -50,7 +50,7 @@ Write the dequantizer twice: once scalar and obviously correct, once with the SI
 
 ## Reading
 
-- code: `src/block.rs`, `src/quants.rs` and `src/quants/dot_q4_0.rs`, `dot_q4_1.rs`, `dot_q5.rs`, `dot_q8_0.rs` at commit `88ffa5d`
+- code: `src/block.rs`, `src/quants.rs` and `src/quants/dot_q4_0.rs`, `dot_q4_1.rs`, `dot_q5.rs`, `dot_q8_0.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/GGUF-TOOLING.md` (convert and quantize), `docs/inference_e2e_walkthrough/10-cpu-matmul-kernels.md`
 - [kbit] Dettmers and Zettlemoyer, *The case for 4-bit precision: k-bit Inference Scaling Laws* (2022) - arXiv:2212.09720
 - [ggml-quant] The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification)

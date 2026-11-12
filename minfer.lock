@@ -1,0 +1,24 @@
+# The minfer baseline this book describes.
+#
+# This file is the single source of truth for "which minfer does the book talk about".
+# The commit is printed on the baseline page and nowhere else; every other page says
+# "the book's pinned baseline" and links there, so bumping it is one edit, not thirty.
+#
+# `counts` are the numbers the book quotes about the project. They are re-derived by
+# scripts/minfer-drift.py, never copied: when one disagrees with the tree, the drift
+# report says so and the measurements page is updated.
+
+[baseline]
+commit = "88ffa5d89905053729de4d814e4a368ac3f63af5"
+short  = "88ffa5d"
+describe = "v0.0.9-118-g88ffa5d"
+date   = "2026-11-11"
+note   = "q4_K/q6_K MMQ default-on, CUDA Graph replay, kv sessions; the tree the outline and the CUDA audit were verified against"
+
+[counts]
+# re-derived at the baseline by scripts/minfer-drift.py
+adrs = 82
+step_records = 110
+cuda_kernels = 108
+rust_lines = 107726
+tests = 749

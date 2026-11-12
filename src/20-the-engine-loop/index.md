@@ -51,7 +51,7 @@ Test cancellation by cancelling mid-generation and then continuing the same sess
 
 ## Reading
 
-- code: `crates/minfer-cli/src/main.rs`, `src/engine/generate.rs`, `src/graph/cache.rs`, `src/conversation.rs`, `src/advanced.rs`, `src/config.rs` at commit `88ffa5d`
+- code: `crates/minfer-cli/src/main.rs`, `src/engine/generate.rs`, `src/graph/cache.rs`, `src/conversation.rs`, `src/advanced.rs`, `src/config.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/inference_e2e_walkthrough/09-prefill-forward-path.md`, `13-decode-loop-graph-reuse.md`
 - docs: `docs/CLI-CONVERSATION-PLAN.md`, `docs/CRATE-API-DESIGN.md`
 - decisions: ADR-0017 (speculative decoding refuses what its identity contract cannot carry), ADR-0079 (the engine is a crate with two API tiers), ADR-0082 (the application layer is its own package)

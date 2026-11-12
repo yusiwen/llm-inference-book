@@ -1,0 +1,1199 @@
+{
+ "baseline": {
+  "commit": "88ffa5d89905053729de4d814e4a368ac3f63af5",
+  "ref": "88ffa5d89905053729de4d814e4a368ac3f63af5"
+ },
+ "citations": [
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "crates/minfer-cli/src",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 28"
+   ],
+   "path": "crates/minfer-cli/src/bench.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 1",
+    "ch 20"
+   ],
+   "path": "crates/minfer-cli/src/main.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14"
+   ],
+   "path": "crates/minfer-cli/src/server/viz.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 28",
+    "ch 29"
+   ],
+   "path": "crates/minfer-cli/src/spec_verify.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/ARCHITECTURE-ROADMAP.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 1"
+   ],
+   "path": "docs/ARCHITECTURE.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 16"
+   ],
+   "path": "docs/BACKEND-REGISTRY-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 16"
+   ],
+   "path": "docs/BACKENDS.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 23",
+    "part 0"
+   ],
+   "path": "docs/BUILD.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 11",
+    "ch 12"
+   ],
+   "path": "docs/CHAT-TEMPLATE-AND-TOKENIZER-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "docs/CLI-CONVERSATION-PLAN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14",
+    "ch 15"
+   ],
+   "path": "docs/COMPUTE-GRAPH-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 7"
+   ],
+   "path": "docs/CPU_OPTIMIZATIONS.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "docs/CRATE-API-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 22",
+    "ch 24"
+   ],
+   "path": "docs/CUDA-TECH-PRIMER.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 26",
+    "ch 28"
+   ],
+   "path": "docs/CUDA_OPTIMIZATION.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 27",
+    "part 0"
+   ],
+   "path": "docs/GATE-CONTRACT.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 4",
+    "ch 5"
+   ],
+   "path": "docs/GGUF-TOOLING.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/GLOSSARY.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 22",
+    "ch 23"
+   ],
+   "path": "docs/GPU_SAFETY.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 13"
+   ],
+   "path": "docs/GRAMMAR-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 10",
+    "ch 18"
+   ],
+   "path": "docs/KV-CACHE-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 24"
+   ],
+   "path": "docs/LLAMA-CPP-MMQ-ANALYSIS.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 29"
+   ],
+   "path": "docs/LLAMA-CPP-SPECULATIVE-ANALYSIS.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 17"
+   ],
+   "path": "docs/MEMORY-POLICY-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "docs/METAL-BACKEND-DESIGN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "docs/METAL_OPTIMIZATIONS.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 19"
+   ],
+   "path": "docs/MODEL-SUPPORT-ROADMAP.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 29"
+   ],
+   "path": "docs/OPENAI-CHAT-API-PLAN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 3"
+   ],
+   "path": "docs/PARAMETER_AUDIT.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 28"
+   ],
+   "path": "docs/PERF-QWEN3-4B-VS-LLAMACPP.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 29"
+   ],
+   "path": "docs/SPECULATIVE-DECODING-PLAN.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 19",
+    "part 0"
+   ],
+   "path": "docs/SUPPORT-MATRIX.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 27",
+    "ch 28"
+   ],
+   "path": "docs/TEST-BASELINES.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/adr",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/adr/README.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 26"
+   ],
+   "path": "docs/cuda_optimization_steps",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 28"
+   ],
+   "path": "docs/cuda_optimization_steps/101-steady-state-method.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/cuda_optimization_steps/77-verification-methodology.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 29"
+   ],
+   "path": "docs/cuda_optimization_steps/83-d5-r-stage1-spec-loop.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/cuda_tutorial",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 22"
+   ],
+   "path": "docs/cuda_tutorial/01-gpu-mental-model.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 24"
+   ],
+   "path": "docs/cuda_tutorial/03-kernels-elementwise.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 25"
+   ],
+   "path": "docs/cuda_tutorial/05-kernels-attention-host.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 26"
+   ],
+   "path": "docs/cuda_tutorial/06-optimization-methods.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "docs/debug-dump.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "docs/inference_e2e_walkthrough",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 2"
+   ],
+   "path": "docs/inference_e2e_walkthrough/02-gguf-load.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 19",
+    "ch 3"
+   ],
+   "path": "docs/inference_e2e_walkthrough/03-model-dispatch-weights.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14"
+   ],
+   "path": "docs/inference_e2e_walkthrough/05-graph-builder-ir.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 15"
+   ],
+   "path": "docs/inference_e2e_walkthrough/06-assign-fusion.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 17"
+   ],
+   "path": "docs/inference_e2e_walkthrough/07-allocator-liveness-kv.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "docs/inference_e2e_walkthrough/09-prefill-forward-path.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 4",
+    "ch 5",
+    "ch 6",
+    "ch 8"
+   ],
+   "path": "docs/inference_e2e_walkthrough/10-cpu-matmul-kernels.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 10",
+    "ch 9"
+   ],
+   "path": "docs/inference_e2e_walkthrough/11-attention-vecops-kv.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 13"
+   ],
+   "path": "docs/inference_e2e_walkthrough/12-sampler.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "docs/inference_e2e_walkthrough/14-metal-backend.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 25"
+   ],
+   "path": "docs/inference_e2e_walkthrough/15-cuda-backend.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "src/advanced.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 3",
+    "ch 4"
+   ],
+   "path": "src/block.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "src/config.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 20"
+   ],
+   "path": "src/conversation.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 23"
+   ],
+   "path": "src/cuda.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 22",
+    "ch 23"
+   ],
+   "path": "src/cuda/ffi_runtime.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda/kernels",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 25"
+   ],
+   "path": "src/cuda/kernels/attention_prefill.cu",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda/kernels/common.cu",
+   "resolved": false,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda/kernels/common.cuh",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 24"
+   ],
+   "path": "src/cuda/kernels/ops_elementwise.cu",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda/methods",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 25"
+   ],
+   "path": "src/cuda/methods/capture.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 26"
+   ],
+   "path": "src/cuda/methods/policy.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/cuda_kernels.cu",
+   "resolved": false,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 26"
+   ],
+   "path": "src/device_tier.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/dump.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/engine",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 1"
+   ],
+   "path": "src/engine.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "src/engine/generate.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 2"
+   ],
+   "path": "src/gguf.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 2"
+   ],
+   "path": "src/gguf/tests.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 13"
+   ],
+   "path": "src/grammar.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/graph",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 17"
+   ],
+   "path": "src/graph/alloc.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/graph/alloc.rs",
+   "resolved": true,
+   "symbol": "GraphAllocator"
+  },
+  {
+   "pages": [
+    "ch 17"
+   ],
+   "path": "src/graph/allocplan.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 16"
+   ],
+   "path": "src/graph/backend.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14"
+   ],
+   "path": "src/graph/builder.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 20"
+   ],
+   "path": "src/graph/cache.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 10"
+   ],
+   "path": "src/graph/cpu_backend.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 25",
+    "ch 26"
+   ],
+   "path": "src/graph/cuda_backend.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/graph/dot.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 15"
+   ],
+   "path": "src/graph/fusion.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/graph/json.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 10",
+    "ch 18"
+   ],
+   "path": "src/graph/kvcache.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 10",
+    "ch 18"
+   ],
+   "path": "src/graph/kvformat.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 18"
+   ],
+   "path": "src/graph/kvsession.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "src/graph/metal_backend.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14"
+   ],
+   "path": "src/graph/mod.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 17"
+   ],
+   "path": "src/graph/offload.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 15"
+   ],
+   "path": "src/graph/op_matrix.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 15"
+   ],
+   "path": "src/graph/ops.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 14"
+   ],
+   "path": "src/graph/params.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 16"
+   ],
+   "path": "src/graph/registry.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 16",
+    "ch 8"
+   ],
+   "path": "src/graph/scheduler.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/kernel",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 6",
+    "ch 8"
+   ],
+   "path": "src/kernel.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 6"
+   ],
+   "path": "src/kernel/dispatch.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 8"
+   ],
+   "path": "src/kernel/pool.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/live.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/metal",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "src/metal.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 19"
+   ],
+   "path": "src/models/mod.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/models/qwen2",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 19"
+   ],
+   "path": "src/models/qwen2/graph.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/models/qwen3",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 19"
+   ],
+   "path": "src/models/qwen3/graph.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 9"
+   ],
+   "path": "src/models/rope_scaling.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 19"
+   ],
+   "path": "src/models/weight_reg.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/optiming.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 5"
+   ],
+   "path": "src/q4k_dsc.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 5"
+   ],
+   "path": "src/quantize.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home"
+   ],
+   "path": "src/quants",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 4",
+    "ch 6"
+   ],
+   "path": "src/quants.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 7"
+   ],
+   "path": "src/quants/avx2.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 7"
+   ],
+   "path": "src/quants/avx2_correctness.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 4"
+   ],
+   "path": "src/quants/dot_q4_0.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 5"
+   ],
+   "path": "src/quants/kquant.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 7"
+   ],
+   "path": "src/quants/neon.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 7"
+   ],
+   "path": "src/quants/neon_correctness.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 13"
+   ],
+   "path": "src/sampler.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 29"
+   ],
+   "path": "src/spec.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 12"
+   ],
+   "path": "src/template.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 12"
+   ],
+   "path": "src/template/tool_json.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 3"
+   ],
+   "path": "src/tensor.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/testfail.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 11"
+   ],
+   "path": "src/tokenizer.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 11"
+   ],
+   "path": "src/tokenizer/nfc.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 27"
+   ],
+   "path": "src/trace.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 9"
+   ],
+   "path": "src/vec_ops",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "appendix/home",
+    "ch 9"
+   ],
+   "path": "src/vec_ops.rs",
+   "resolved": true,
+   "symbol": null
+  }
+ ],
+ "counts": {
+  "adrs": 82,
+  "cuda_kernels": 108,
+  "rust_lines": 107726,
+  "step_records": 110,
+  "tests": 749
+ },
+ "generated": "2026-11-13"
+}

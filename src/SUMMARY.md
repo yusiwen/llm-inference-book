@@ -58,6 +58,7 @@
 # Appendix
 
 - [Writing and Formatting Rules](appendix/conventions.md)
+- [The minfer Baseline](appendix/baseline.md)
 - [The Decision Map](appendix/adr-map.md)
 - [The Reference Index](appendix/references.md)
 - [Measurements](appendix/measurements.md)
