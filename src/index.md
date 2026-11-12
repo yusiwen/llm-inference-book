@@ -4,7 +4,7 @@
 
 This is a build book, not a survey. It takes you from a quantized file on disk to a serving engine that answers requests on the CPU, on Apple silicon and on an NVIDIA GPU - and it makes you write each part yourself, in your own tree, with one real engine open beside you as the reference.
 
-> **This build**: a skeleton. All 29 chapters are stubs: the outline, the lesson checklists, the empty ledgers and the acceptance criteria exist; the prose does not. What is finished is the shape of the book and the audit of the project it follows (Appendix D).
+> **This build**: a skeleton. All 29 chapters are stubs: the outline, the lesson checklists, the empty ledgers and the acceptance criteria exist; the prose does not, and none of the 46 planned figures is drawn. What *is* finished is the shape of the book, the [reference index](appendix/references.md), and [the audit](appendix/cuda-docs-audit.md) of the documentation this book follows.
 
 The reference engine is **minfer**, a pure-Rust inference engine with no machine-learning framework underneath it: every kernel is hand-written, from the AVX2 and NEON dot products to the CUDA matmuls. This book describes minfer at commit `88ffa5d`, and every code pointer in it is a file plus a symbol, not a line number, because line numbers move.
 
@@ -38,7 +38,7 @@ You are in the right place if:
 - **You want to train or fine-tune models.** This book is inference only: no gradients, no optimizer, no dataset.
 - **You want a framework to use.** The deliverable is your own engine, and the reference is one you read - not a library you import.
 - **You want a tour of every model architecture.** Two dense families appear (Qwen2/Qwen2.5 and Qwen3, with Llama 3.x noted where it differs). Mixture-of-experts, multi-modal and state-space models are out of scope.
-- **You have no GPU and no way to rent one.** Parts 1-4, and Chapters 21, 27 and 28, run on a laptop. Chapters 22-26 need an NVIDIA GPU with a toolkit; the book says where the boundary is instead of pretending it does not exist.
+- **You have no GPU and no way to rent one.** Parts 1-4, and Chapters 21 (on a Mac), 27 and 28, run on a laptop. Chapters 22-26 need an NVIDIA GPU with a toolkit; the book says where the boundary is instead of pretending it does not exist.
 
 ## How to read it
 
@@ -66,7 +66,7 @@ The compute tier on each chapter is honest about what hardware it needs: ✅ run
 Three decisions explain most of the distance between this book and the project's own documentation, which is excellent and is a different kind of artifact.
 
 1. **It is ordered by build dependency, not by module.** The project's walkthrough follows one run through the engine, which is the right order for understanding a finished system. A book you build along with has to follow what compiles onto what: file format, then numbers, then text, then the graph, then devices, then the proof.
-2. **The CUDA part is five chapters, not one.** The machine model, the Rust boundary, the kernel ladder, attention and graphs, and the optimization campaign are five different skills. The project's own CUDA tutorial teaches them well (see [Appendix D](appendix/cuda-docs-audit.md) for how this book differs and what it corrected), but a tutorial written for contributors can assume the rest of the engine; a book cannot.
+2. **The CUDA part is five chapters, not one.** The machine model, the Rust boundary, the kernel ladder, attention and graphs, and the optimization campaign are five different skills. The project's own CUDA tutorial teaches them well (see [the CUDA audit](appendix/cuda-docs-audit.md) for how this book differs and what it corrected), but a tutorial written for contributors can assume the rest of the engine; a book cannot.
 3. **Correctness and measurement are chapters, not appendices.** They are the two disciplines that separate an engine from a pile of kernels, and the project learned that the hard way - its own optimization record contains as many reverted levers as landed ones.
 
 ## Where the code lives

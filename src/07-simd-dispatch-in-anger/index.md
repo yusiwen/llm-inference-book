@@ -1,8 +1,6 @@
 # Chapter 7 · SIMD Dispatch in Anger
 
-> **Compute tier**: ✅ any laptop (this chapter is CPU only; no GPU needed) | **Status**: stub
-> **Build step S7**: AVX2 and NEON versions of your dot product, selected at compile time, each checked against the scalar oracle.
-> **Rule of this book**: This chapter is about making one operation fast on one core. Threads, cache blocking and the matrix-vector versus matrix-matrix decision are Chapter 8.
+> **Compute tier**: ✅ any laptop (this chapter is CPU only; no GPU needed) | **Status**: stub | **Build step S7**: AVX2 and NEON versions of your dot product, selected at compile time, each checked against the scalar oracle. | **Rule of this book**: This chapter is about making one operation fast on one core. Threads, cache blocking and the matrix-vector versus matrix-matrix decision are Chapter 8.
 
 ## First, the gist
 

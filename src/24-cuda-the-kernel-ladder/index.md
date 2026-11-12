@@ -1,8 +1,6 @@
 # Chapter 24 · CUDA III: The Kernel Ladder
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU; every kernel here is a re-implementation you can run on rented time | **Status**: stub
-> **Build step S24**: Four kernels in order: elementwise, dequantize-and-gather, a tiled f16 GEMM using tensor-core fragments, and an integer matmul for prefill plus a matrix-vector path for decode.
-> **Rule of this book**: Attention kernels are Chapter 25. This chapter is the matmul family, and the ladder is cumulative: each rung is written only after the previous one passes the identity gate.
+> **Compute tier**: ⚠️ needs an NVIDIA GPU; every kernel here is a re-implementation you can run on rented time | **Status**: stub | **Build step S24**: Four kernels in order: elementwise, dequantize-and-gather, a tiled f16 GEMM using tensor-core fragments, and an integer matmul for prefill plus a matrix-vector path for decode. | **Rule of this book**: Attention kernels are Chapter 25. This chapter is the matmul family, and the ladder is cumulative: each rung is written only after the previous one passes the identity gate.
 
 ## First, the gist
 
@@ -53,7 +51,7 @@ Record the shape, the tile size and the throughput for every kernel. A number wi
 ## Reading
 
 - code: `src/cuda/kernels/ops_elementwise.cu`, `gemm_wmma.cu`, `mmq_int8.cu`, `mmq_raw.cu`, `mmq_bt_q6k.cu`, `mmvq_q6k.cu`, `mmvq_multi.cu` at commit `88ffa5d`
-- docs: `docs/cuda_tutorial/03-kernels-elementwise.md`, `04-kernels-matmul.md` (see Appendix D for the audit of these two chapters)
+- docs: `docs/cuda_tutorial/03-kernels-elementwise.md`, `04-kernels-matmul.md` (the audit of these two chapters is in [the CUDA docs audit](../appendix/cuda-docs-audit.md))
 - docs: `docs/LLAMA-CPP-MMQ-ANALYSIS.md` for the reference implementation's design, `docs/CUDA-TECH-PRIMER.md` for terms
 - [ptx] *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions)
 - [sze] Sze et al., *Efficient Processing of Deep Neural Networks* (2020) - no arXiv ID (book)

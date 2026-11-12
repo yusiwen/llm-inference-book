@@ -3,7 +3,7 @@
 > **Status**: draft - the mechanical findings are re-derivable from the commands below at commit `88ffa5d`; the chapter-by-chapter judgement is still being written.
 > **Rule of this book**: the CUDA tutorial in the reference project is a contributor onboarding series. This book re-derives its content from the current tree instead of copying it, because a tutorial's line references and counts drift while its prose keeps reading as true.
 
-This book's CUDA part (Chapters 22-26) covers the same ladder as the project's tutorial (`docs/cuda_tutorial/`, 8 files, 5250 lines) and differs in three ways: it teaches the Rust boundary as its own chapter, it treats the optimization campaign as a method rather than a technique catalogue, and it cites **symbols plus a commit** instead of line numbers. Before writing any of it, the tutorial was checked against the tree. What follows is what that check found.
+This book's CUDA part (Chapters 22-26) covers the same ladder as the project's tutorial (`docs/cuda_tutorial/`: seven chapters plus an index and a writing contract, 9 files, 5250 lines) and differs in three ways: it teaches the Rust boundary as its own chapter, it treats the optimization campaign as a method rather than a technique catalogue, and it cites **symbols plus a commit** instead of line numbers. Before writing any of it, the tutorial was checked against the tree. What follows is what that check found.
 
 ## Method
 
@@ -35,15 +35,16 @@ ls docs/cuda_optimization_steps/[0-9]*.md | wc -l
 
 This is the failure mode a book has to design against rather than fix once: the tutorial's own convention already says the function name is the stable address and the line number is a convenience, but a *path* has the same problem and no such warning. Chapters 22-25 therefore cite `src/cuda/kernels/<file>.cu` plus a symbol, and name the commit they were read at.
 
-## Finding 2 - a stale count, stated twice
+## Finding 2 - a stale count, stated three times
 
-The tutorial's index and its writing contract both describe the optimization campaign as holding `70+` step records. The tree holds **110**:
+The tutorial describes the optimization campaign as holding `70+` step records in three places: its index, its writing contract (`STYLE.md`), and the reading-order table in `07-where-next.md`. The tree holds **110**:
 
 ```bash
 ls docs/cuda_optimization_steps/[0-9]*.md | wc -l   # 110
+rg -n '70\+' docs/cuda_tutorial/                     # three files
 ```
 
-The number is not wrong in the sense of a broken fact - 110 is more than 70 - but a reader who plans by it underestimates the record by a third, and a count that only ever grows is a sign nobody re-reads it. This book states the count with its command on the [Measurements](measurements.md) page.
+The number is not wrong in the sense of a broken fact - 110 is more than 70 - but a reader who plans by it underestimates the record by a third. Three copies of one count, none of them derived, is how a document tells a reader it has not been re-read. This book states the count with its command on the [Measurements](measurements.md) page.
 
 ## Finding 3 - what the tutorial gets right, and this book keeps
 

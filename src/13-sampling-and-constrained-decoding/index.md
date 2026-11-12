@@ -1,8 +1,6 @@
 # Chapter 13 · Sampling and Constrained Decoding
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S13**: A sampler pipeline with penalties, top-k, top-p, temperature and a seed you control, plus a grammar mask that makes one class of outputs impossible.
-> **Rule of this book**: This chapter turns scores into an id. The loop that calls it per step is Chapter 20; speculative decoding, which changes how many ids arrive at once, is Chapter 29.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S13**: A sampler pipeline with penalties, top-k, top-p, temperature and a seed you control, plus a grammar mask that makes one class of outputs impossible. | **Rule of this book**: This chapter turns scores into an id. The loop that calls it per step is Chapter 20; speculative decoding, which changes how many ids arrive at once, is Chapter 29.
 
 ## First, the gist
 

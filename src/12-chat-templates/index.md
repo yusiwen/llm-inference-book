@@ -1,8 +1,6 @@
 # Chapter 12 · Chat Templates and Special Tokens
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S12**: A template renderer that turns a list of messages into the exact prompt bytes the model was trained on, and refuses loudly when it cannot.
-> **Rule of this book**: Tokenization is Chapter 11. Tool-call parsing of the model's output appears here only as far as the prompt is concerned; the sampler is Chapter 13.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S12**: A template renderer that turns a list of messages into the exact prompt bytes the model was trained on, and refuses loudly when it cannot. | **Rule of this book**: Tokenization is Chapter 11. Tool-call parsing of the model's output appears here only as far as the prompt is concerned; the sampler is Chapter 13.
 
 ## First, the gist
 

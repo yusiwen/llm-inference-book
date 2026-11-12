@@ -1,8 +1,6 @@
 # Part 0 · Before you start
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S0**: a repository of your own, a model file, a toolchain, and a notes file with four empty sections.
-> **Rule of this book**: this page sets up the work. It teaches no engine internals; the routing map at the end tells you which chapter answers which question.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S0**: a repository of your own, a model file, a toolchain, and a notes file with four empty sections. | **Rule of this book**: this page sets up the work. It teaches no engine internals; the routing map at the end tells you which chapter answers which question.
 
 ## First, the gist
 

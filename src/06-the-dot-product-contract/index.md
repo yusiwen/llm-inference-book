@@ -1,8 +1,6 @@
 # Chapter 6 · The Dot Product Is the Engine
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S6**: A matmul that computes one row of a quantized weight matrix against an activation vector, with the activation quantized to Q8_0 first.
-> **Rule of this book**: This chapter is about the arithmetic contract and its scalar version. SIMD is Chapter 7; splitting the work across threads and choosing between matrix-vector and matrix-matrix shapes is Chapter 8.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S6**: A matmul that computes one row of a quantized weight matrix against an activation vector, with the activation quantized to Q8_0 first. | **Rule of this book**: This chapter is about the arithmetic contract and its scalar version. SIMD is Chapter 7; splitting the work across threads and choosing between matrix-vector and matrix-matrix shapes is Chapter 8.
 
 ## First, the gist
 

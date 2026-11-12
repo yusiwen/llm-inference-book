@@ -1,8 +1,6 @@
 # Chapter 5 · K-Quants and Byte Identity
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S5**: A Q4_K / Q5_K / Q6_K dequantizer, plus a quantizer whose output is byte-identical to the reference tool's.
-> **Rule of this book**: The super-block idea is explained here, once, in full. What the kernels do with it on a GPU is Chapter 24, and the campaign that optimized those kernels is Chapter 26.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S5**: A Q4_K / Q5_K / Q6_K dequantizer, plus a quantizer whose output is byte-identical to the reference tool's. | **Rule of this book**: The super-block idea is explained here, once, in full. What the kernels do with it on a GPU is Chapter 24, and the campaign that optimized those kernels is Chapter 26.
 
 ## First, the gist
 

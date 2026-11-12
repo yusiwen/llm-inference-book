@@ -1,8 +1,6 @@
 # Chapter 3 · Tensors, Strides, and Bytes
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S3**: A tensor type that owns a byte buffer plus shape, strides and dtype, and can produce a zero-copy view of any 2-D sub-block.
-> **Rule of this book**: This chapter builds the container for numbers inside the process. Which numbers the bytes encode is Chapter 4; how to multiply by them is Chapter 6.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S3**: A tensor type that owns a byte buffer plus shape, strides and dtype, and can produce a zero-copy view of any 2-D sub-block. | **Rule of this book**: This chapter builds the container for numbers inside the process. Which numbers the bytes encode is Chapter 4; how to multiply by them is Chapter 6.
 
 ## First, the gist
 

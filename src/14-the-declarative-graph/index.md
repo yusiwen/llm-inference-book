@@ -1,8 +1,6 @@
 # Chapter 14 · From Imperative Loop to Declarative Graph
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S14**: Your forward pass rebuilt as a pure data structure: nodes, inputs, outputs, built without touching memory, then executed by a separate walk.
-> **Rule of this book**: This chapter is the graph's shape and why it exists. The op vocabulary and fusion are Chapter 15; who executes a node is Chapter 16; where buffers come from is Chapter 17.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S14**: Your forward pass rebuilt as a pure data structure: nodes, inputs, outputs, built without touching memory, then executed by a separate walk. | **Rule of this book**: This chapter is the graph's shape and why it exists. The op vocabulary and fusion are Chapter 15; who executes a node is Chapter 16; where buffers come from is Chapter 17.
 
 ## First, the gist
 

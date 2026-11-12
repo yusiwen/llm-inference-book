@@ -1,8 +1,6 @@
 # Chapter 17 · Allocation: Liveness, Arena, and Offload
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S17**: A liveness-based allocator that reuses one arena across a graph, keeps KV regions persistent, and decides what fits on a device before running.
-> **Rule of this book**: The KV cache's internal structure is Chapter 18. This chapter is about memory as a whole: who owns it, when it can be reused, and what happens when it does not fit.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S17**: A liveness-based allocator that reuses one arena across a graph, keeps KV regions persistent, and decides what fits on a device before running. | **Rule of this book**: The KV cache's internal structure is Chapter 18. This chapter is about memory as a whole: who owns it, when it can be reused, and what happens when it does not fit.
 
 ## First, the gist
 

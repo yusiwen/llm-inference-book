@@ -1,8 +1,6 @@
 # Chapter 1 · One Token at a Time
 
-> **Compute tier**: ✅ any laptop (arithmetic on paper plus a stub loop that prints ids) | **Status**: stub
-> **Build step S1**: A loop that reads a prompt, calls a placeholder `model.forward(ids) -> logits`, and prints one token per step. No arithmetic yet: the skeleton every later chapter hangs code on.
-> **Rule of this book**: This chapter measures the shape of the problem and nothing else. The model file is Chapter 2, the arithmetic starts in Chapter 6, the graph that schedules it in Chapter 14.
+> **Compute tier**: ✅ any laptop (arithmetic on paper plus a stub loop that prints ids) | **Status**: stub | **Build step S1**: A loop that reads a prompt, calls a placeholder `model.forward(ids) -> logits`, and prints one token per step. No arithmetic yet: the skeleton every later chapter hangs code on. | **Rule of this book**: This chapter measures the shape of the problem and nothing else. The model file is Chapter 2, the arithmetic starts in Chapter 6, the graph that schedules it in Chapter 14.
 
 ## First, the gist
 

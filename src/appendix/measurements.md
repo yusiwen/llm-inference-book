@@ -11,9 +11,9 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 |---|---|---|
 | Chapters | 29 | `ls -d src/[0-9][0-9]-*/ \| wc -l` |
 | Lessons (checklist items under `## Lessons`) | 146 | counted per page by `scripts/probe.py` |
-| Pages under `src/` | 32 | `find src -name '*.md' \| wc -l` |
-| Prose bytes under `src/` (all stubs) | 130552 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
-| Status | all 29 chapters `stub` | `rg -c 'Status\*\*: stub' src` |
+| Pages under `src/` | 40 | `find src -name '*.md' \| wc -l` |
+| Prose bytes under `src/` (all stubs) | 183977 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
+| Status | all 29 chapter pages `stub` | `rg -l 'Status\*\*: stub' src/[0-9][0-9]-*/index.md \| wc -l` |
 | Sources in the reference index | 29 | `python3 scripts/references.py` (prints the count) |
 | Figures planned / drawn | 46 / 0 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
 

@@ -1,8 +1,6 @@
 # Chapter 22 · CUDA I: What Kind of Machine a GPU Is
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU with a toolkit (the DGX Spark in this book's notes, or rented time); the toys run anywhere with `nvcc` | **Status**: stub
-> **Build step S22**: A compiled and run kernel of your own: vector add, then a branch-divergent variant you can explain, with the launch arithmetic written down first.
-> **Rule of this book**: This chapter is the machine model and the first kernel. The Rust seam is Chapter 23, the kernel families are Chapter 24, attention and graphs are Chapter 25, the campaign is Chapter 26.
+> **Compute tier**: ⚠️ needs an NVIDIA GPU with a toolkit (the DGX Spark in this book's notes, or rented time); the toys run anywhere with `nvcc` | **Status**: stub | **Build step S22**: A compiled and run kernel of your own: vector add, then a branch-divergent variant you can explain, with the launch arithmetic written down first. | **Rule of this book**: This chapter is the machine model and the first kernel. The Rust seam is Chapter 23, the kernel families are Chapter 24, attention and graphs are Chapter 25, the campaign is Chapter 26.
 
 ## First, the gist
 
@@ -52,7 +50,7 @@ Use the machine you will actually measure on, and record its CUDA version, drive
 ## Reading
 
 - code: `src/cuda/kernels/*.cu` (18 files, `common.cuh` first), `src/cuda/ffi_runtime.rs` at commit `88ffa5d`
-- docs: `docs/cuda_tutorial/01-gpu-mental-model.md`, `02-minimal-cuda.md` (the book's own audit of these chapters is Appendix D)
+- docs: `docs/cuda_tutorial/01-gpu-mental-model.md`, `02-minimal-cuda.md` (the book's own audit of the tutorial is in [the CUDA docs audit](../appendix/cuda-docs-audit.md))
 - docs: `docs/CUDA-TECH-PRIMER.md` for terminology at reference depth
 - docs: `docs/GPU_SAFETY.md` before you touch any GPU code you did not write
 - [cuda-guide] *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual)

@@ -1,8 +1,6 @@
 # Chapter 8 · GEMV, GEMM, and the Thread Pool
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S8**: A matrix-vector path for decode and a matrix-matrix path for prefill, both using a persistent thread pool with an explicit work split.
-> **Rule of this book**: The attention-specific arithmetic is Chapter 10. What this chapter owns is the general matmul shape problem: how work is divided, and why the two regimes want different kernels.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S8**: A matrix-vector path for decode and a matrix-matrix path for prefill, both using a persistent thread pool with an explicit work split. | **Rule of this book**: The attention-specific arithmetic is Chapter 10. What this chapter owns is the general matmul shape problem: how work is divided, and why the two regimes want different kernels.
 
 ## First, the gist
 

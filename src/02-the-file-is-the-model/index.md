@@ -1,8 +1,6 @@
 # Chapter 2 · The File Is the Model
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S2**: A GGUF reader that prints the header, every metadata key, and the tensor table (name, dtype, shape, byte range) of a real quantized file.
-> **Rule of this book**: This chapter stops at the container: bytes and their map. Tensor strides, block layouts and the meaning of the numbers inside a tensor are Chapters 3 and 4; loading weights into an engine is Chapter 19.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S2**: A GGUF reader that prints the header, every metadata key, and the tensor table (name, dtype, shape, byte range) of a real quantized file. | **Rule of this book**: This chapter stops at the container: bytes and their map. Tensor strides, block layouts and the meaning of the numbers inside a tensor are Chapters 3 and 4; loading weights into an engine is Chapter 19.
 
 ## First, the gist
 

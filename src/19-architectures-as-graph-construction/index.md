@@ -1,8 +1,6 @@
 # Chapter 19 · Architectures as Graph Construction
 
-> **Compute tier**: ✅ any laptop | **Status**: stub
-> **Build step S19**: Two model architectures built from the same graph vocabulary, plus a loader that dispatches on the file's declared architecture.
-> **Rule of this book**: The graph machinery is Chapters 14-17. This chapter is the shape of a particular family of models: what a Qwen3 layer contains that a Qwen2 layer does not, and what adding a third costs.
+> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S19**: Two model architectures built from the same graph vocabulary, plus a loader that dispatches on the file's declared architecture. | **Rule of this book**: The graph machinery is Chapters 14-17. This chapter is the shape of a particular family of models: what a Qwen3 layer contains that a Qwen2 layer does not, and what adding a third costs.
 
 ## First, the gist
 
