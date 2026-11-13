@@ -31,17 +31,19 @@ Two decisions in that command that a reader should not have to guess:
 
 ### Measured
 
-| Machine | Command | Read (GB/s) | Copy (GB/s) | Conditions, measured 2026-11-13 |
+The same protocol on all three machines: **five runs, median with the spread in brackets, and the machine state written beside it.** A single run is not a measurement; a median without its spread hides the only thing that decides whether a later comparison means anything.
+
+| Machine | Command | Read (GB/s) | Copy (GB/s) | Conditions, 2026-11-13 |
 |---|---|---|---|---|
-| M4 Pro | `./membw 1024 10` | 190-207 | 204-211 | repeated runs at load average ~4.4 (my own session); stable to about 5% |
-| NUC11 | `./membw 2048 8` | 45.1 | 41.5 | idle, load average 0.31; 16 threads adds nothing over 8, as expected on two channels |
-| GB10 | `./membw 2048 10..30` | **66-97** | **85-119** | **unstable**: five runs, a Jupyter kernel holding 57-410% of a core throughout |
+| M4 Pro | `./membw 2048 10` | **198** (184-202) | **205** (202-207) | the author's own session running, load average 4.4 |
+| NUC11 | `./membw 2048 8` | **45.1** (45.0-45.2) | **41.4** (41.3-41.4) | idle, load average 0.07 |
+| GB10 | `./membw 2048 20` | **101** (101-108) | **125** (125-134) | idle: load average 1.0, GPU at 0%; 40 threads (SMT) reaches 117 / 150 |
 
-Three honest notes, because the numbers are worse than the spec sheets and that is the point:
+Three honest notes, because the numbers are below the spec sheets and that is the point:
 
-1. **The M4 Pro's LPDDR5X is specified well above this.** The gap is what a streaming kernel actually achieves without hand-tuned prefetching and page placement. The book uses the measured number, because that is what a kernel gets to use.
-2. **The GB10 number is not a number yet, it is a range** - and that is the most useful thing on this page. Five runs on the same machine, same binary, same array size, gave read 96.7, 81.7, 90.3, 67.7, 66.3 GB/s, while a Jupyter kernel on the box drifted between 57 and 410 per cent of a core. Nothing about the kernel changed: the machine did. A single reading from a machine you do not control is an anecdote, and this is why Chapter 28 insists on a stated noise floor before any two numbers are compared. Until an idle-machine measurement exists, no chapter may quote a single figure for the GB10; the range above is what may be quoted, labelled `measured, unstable`.
-3. **A spec number is `reported`, never `measured`.** If a chapter needs a figure for a machine not listed here, it says so and labels it.
+1. **Every machine lands well below its specification.** The M4 Pro's LPDDR5X is specified far above 200 GB/s and the GB10's unified memory above 270; a streaming kernel without hand-tuned prefetching gets what is in this table. The book uses the measured number, because that is what a kernel gets to use.
+2. **The spreads differ by a factor of twenty, and that is information.** The NUC11, sitting idle on a shelf, repeats to within half a per cent. The M4 Pro, with an editor and a browser and this build running on it, moves eight per cent. The GB10 moves seven. A number from a machine you are also using is a number with a floor under it - and on your own laptop, that floor is the one you have.
+3. **This table had a fourth column's worth of history.** The GB10's first series, taken while a Jupyter kernel on the box drifted between 57 and 410 per cent of a core, read 66-97 GB/s: same binary, same array size, same machine, thirty per cent slower than the idle run above. Nothing about the kernel changed - the machine did. That is why every row here carries its state, and why Chapter 28 refuses to compare two measurements before stating a noise floor.
 
 ## What the numbers are for
 
@@ -53,7 +55,7 @@ $$
 $$
 </div>
 
-where the denominator is essentially the model's file size, because every weight is read once per token. On the M4 Pro at 200 GB/s, a 4 GB quantized model cannot exceed about 50 tokens per second no matter what the kernels do. The same model on the GB10, at the 66-97 GB/s it actually delivered, lands somewhere between about 16 and 24 - a range wide enough to be awkward, which is the honest state of that machine's measurement. The NUC11's 45 GB/s puts the ceiling near 11 tokens per second, which is what a server without a GPU really is for this job.
+where the denominator is essentially the model's file size, because every weight is read once per token. On the M4 Pro at 198 GB/s, a 4 GB quantized model cannot exceed about 50 tokens per second no matter what the kernels do. The same model on the GB10, at 101 GB/s, cannot exceed about 25 - or about 29 if the SMT run is believed. The NUC11's 45 GB/s puts the ceiling near 11 tokens per second, which is what a server without a GPU really is for this job.
 
 Every one of those numbers is arithmetic on this page's measurements, not a result - which is exactly why the page exists before Chapter 1 is written.
 
