@@ -45,7 +45,7 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 |---|---|---|---|
 | `[pmpp]` | Kirk and Hwu, *Programming Massively Parallel Processors* (4th edition, 2022) - no arXiv ID (book) | no arXiv ID | 22 |
 | `[sze]` | Sze et al., *Efficient Processing of Deep Neural Networks* (2020) - no arXiv ID (book) | no arXiv ID | 24 |
-| `[caqa]` | Hennessy and Patterson, *Computer Architecture: A Quantitative Approach* (6th edition, 2017) - no arXiv ID (book) | no arXiv ID | 1 |
+| `[caqa]` | Hennessy and Patterson, *Computer Architecture: A Quantitative Approach* (6th edition, 2017) - no arXiv ID (book) | no arXiv ID | 0, 1 |
 | `[jm]` | Jurafsky and Martin, *Speech and Language Processing* (3rd edition draft) - no arXiv ID (book; the tokenization chapter) | no arXiv ID | 11 |
 | `[trpl]` | Klabnik and Nichols, *The Rust Programming Language* - no arXiv ID (book) | no arXiv ID | 0 |
 

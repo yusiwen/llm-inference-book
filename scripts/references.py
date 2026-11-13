@@ -29,8 +29,18 @@ def pages(src):
     return [(n, p) for n, p in out if p.exists()]
 
 
+FENCE = re.compile(r"^```.*?^```", re.M | re.S)
+INLINE = re.compile(r"`[^`]*`")
+
+
 def keys_cited(text):
-    return set(ANY_KEY.findall(text))
+    """Cite keys in prose only.
+
+    A shell command such as `pip install "huggingface_hub[cli]"` contains a bracketed word that looks
+    exactly like a cite key, and an earlier version of this script reported it as a dangling citation
+    from Part 0 - the page was right and the checker was wrong. Code is not prose: strip it first.
+    """
+    return set(ANY_KEY.findall(INLINE.sub("", FENCE.sub("", text))))
 
 
 def main(*argv):

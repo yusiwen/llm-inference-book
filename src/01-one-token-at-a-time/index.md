@@ -16,7 +16,7 @@ That is an inference engine. Not a summary of one: the whole loop is about forty
 
 The first cost to understand is that the loop runs in two regimes that behave nothing alike. Your whole prompt arrives at once, so the first pass multiplies the model by many token rows simultaneously - a matrix times a matrix - and the machine is paid per unit of arithmetic. Every token after that arrives alone, so each later pass multiplies the model by a single row, a matrix times a vector, and to produce one token the engine must read the entire model out of memory. The first regime is limited by how much arithmetic the machine can do. The second is limited by how many bytes it can move.
 
-That asymmetry is the spine of the book. Since the second regime is bandwidth-bound, and the weights are what has to be moved, the number of tokens per second a single request can produce has a ceiling you can compute on paper before writing a kernel: *the model's size divided by the machine's memory bandwidth*. For a 4 GB Q4 model on a laptop measuring 198 GB/s, that ceiling is about 50 tokens per second. No amount of clever kernel work goes through it; the only ways past are reading fewer bytes or producing several tokens per read.
+That asymmetry is the spine of the book. Since the second regime is bandwidth-bound, and the weights are what has to be moved, the number of tokens per second a single request can produce has a ceiling you can compute on paper before writing a kernel: *the model's size divided by the machine's memory bandwidth*. For the 4.68 GB file this book uses - Qwen2.5-7B-Instruct at Q4_K_M - on a laptop measuring 198 GB/s, that ceiling is about 42 tokens per second. No amount of clever kernel work goes through it; the only ways past are reading fewer bytes or producing several tokens per read.
 
 That number also decides the book's structure. Quantization (Part 2) attacks the numerator. Batching and speculation (Part 5, and Chapter 29) attack the implied "per token" in the denominator. The graph and its allocation (Part 4) decide whether each byte is read once or twice. Correctness and measurement (Part 6) are how you know any of it worked.
 
@@ -71,11 +71,11 @@ The loop looks stateless - `forward(ids)` - but it is not, and this is the secon
 
 ```text
 bytes per token = 2 (K and V) x layers x kv_heads x head_dim x bytes_per_element
-                = 2 x 32 x 8 x 128 x 2
-                = 131,072 bytes = 128 KiB per token
+                = 2 x 28 x 4 x 128 x 2
+                = 57,344 bytes = 56 KiB per token
 ```
 
-At 4,096 tokens that is 512 MiB for one conversation - half a gigabyte a naive engine does not budget for, allocated per layer and reused across turns. On a machine with 128 GB of unified memory it sounds free; multiply by eight concurrent slots and it is 4 GiB, which is the difference between a model that fits and one that does not. Chapter 18 is entirely about this structure: cells, spans, prefix sharing, defragmentation. Nothing in this chapter needs any of that - a `Vec<f32>` per layer is enough - but the state has to live somewhere named, because the loop will not get smaller later.
+The layer count and the four key/value heads are the 7B model's own numbers (reported from its config; 128 is the head dimension). At 4,096 tokens that is 224 MiB for one conversation - a quarter of a gigabyte a naive engine does not budget for, allocated per layer and reused across turns. At the model's full 32,768-token context it is 1.75 GiB, and eight concurrent slots at that length would need 14 GiB: that is the difference between a model that fits and one that does not, and it is why Chapter 18 treats the cache as a subsystem. Chapter 18 is entirely about this structure: cells, spans, prefix sharing, defragmentation. Nothing in this chapter needs any of that - a `Vec<f32>` per layer is enough - but the state has to live somewhere named, because the loop will not get smaller later.
 
 **State 2: the position counter.** A token's meaning depends on where it is. The positional encoding (RoPE in every model this book builds) is a function of the absolute position, so the engine must know it, and must keep it correct across turns of a conversation, across a prefix shared between two requests, and across the moment a cache is truncated. The failure mode is nasty because it is quiet: an off-by-one gives output that is slightly worse - `the the` instead of `the`, a wrong date, a broken list - rather than a crash. This is the first place where "it runs" and "it is right" diverge, and the divergence is invisible without a reference output.
 
@@ -93,11 +93,11 @@ Here is the same weight matrix, used two ways.
 
 *Figure 1.1 - prefill multiplies the weights by every prompt row at once and is limited by arithmetic; decode multiplies them by one row and is limited by the bytes it reads.*
 
-Take one layer of a 7B model: a weight matrix of roughly 4,096 by 4,096 values. During prefill, a 500-token prompt arrives as a 500 by 4,096 activation block, and the layer produces a 500 by 4,096 output block. Each weight is multiplied by 500 different activation values. The cost is arithmetic, and the machine's job is keeping its floating-point units busy. This is what compute-bound means: the bytes are a small fraction of the work.
+Take one attention projection from the 7B model: a weight matrix of 3,584 by 3,584 values (the model's hidden size is 3,584; round it to 4,096 in your head and nothing in the argument changes). During prefill, a 500-token prompt arrives as a 500 by 3,584 activation block, and the projection produces a 500 by 3,584 output block. Each weight is multiplied by 500 different activation values. The cost is arithmetic, and the machine's job is keeping its floating-point units busy. This is what compute-bound means: the bytes are a small fraction of the work.
 
-During decode, the same matrix meets a 1 by 4,096 row. Each weight is used exactly once, contributes to one output number, and is discarded until the next token asks for it again. The arithmetic is 16.7 million multiply-adds - microseconds of work - and the bytes are 16.7 million values, about 9.4 MB at four and a half bits each. The floating-point units idle; the memory system does not. That is bandwidth-bound.
+During decode, the same matrix meets a 1 by 3,584 row. Each weight is used exactly once, contributes to one output number, and is discarded until the next token asks for it again. The arithmetic is 12.8 million multiply-adds - microseconds of work - and the bytes are 12.8 million values, about 7.2 MB at four and a half bits each. The floating-point units idle; the memory system does not. That is bandwidth-bound.
 
-For a whole model and one token (arithmetic on stated assumptions): decode does about **2 x params** FLOPs - 14 GFLOP for a 7B - and reads **one file's worth** of bytes, 4 GB at 4.5 bits. Prefill of an N-token prompt does 14N GFLOP and reads the same 4 GB once. So prefilling a 100-token prompt reads 4 GB and does 1.4 TFLOP; a hundred decode steps read 400 GB and do the same 1.4 TFLOP. Identical arithmetic, one hundred times the bytes.
+For a whole model and one token (arithmetic on stated assumptions): decode does about **2 x params** FLOPs - 15 GFLOP for the 7.6B model - and reads **one file's worth** of bytes, 4.68 GB as the file actually stands. Prefill of an N-token prompt does the same 15N GFLOP and reads those 4.68 GB once. So prefilling a 100-token prompt reads 4.68 GB and does 1.5 TFLOP; a hundred decode steps read 468 GB and do the same 1.5 TFLOP. Identical arithmetic, one hundred times the bytes.
 
 Two consequences follow, and they are the two things most worth knowing before you optimize anything.
 
@@ -136,7 +136,7 @@ Two corollaries the rest of the book leans on.
 
 **Batching multiplies intensity by the batch size.** B decode steps sharing one weight read have intensity 16B/b, so a batch of eight moves a Q4 model from 3.6 to 29 FLOP/byte - past many CPUs' ridge points, and into the range where arithmetic starts to matter. This is the arithmetic behind "the same engine is memory-bound for one user and compute-bound for sixty".
 
-**The KV cache is bytes too.** Nothing in the formula counts the cache, but decode reads it every step and it grows with context. At 128 KiB per token, an 8,000-token conversation reads an extra gigabyte per step - which at 198 GB/s is 5 milliseconds, a quarter of a token's budget at the 4 GB model's ceiling. Long context moves the decode bound from the weights to the cache, which is why Chapter 18 treats the cache as a subsystem and not a `Vec`.
+**The KV cache is bytes too.** Nothing in the formula counts the cache, but decode reads it every step and it grows with context. At 56 KiB per token, an 8,000-token conversation reads an extra 448 MiB per step - which at 198 GB/s is 2.4 milliseconds, a tenth of a token's budget at the 7B file's ceiling. At the model's full 32,768 tokens it is 1.75 GiB per step, nine milliseconds, and the cache is no longer a footnote. Long context moves the decode bound from the weights to the cache, which is why Chapter 18 treats the cache as a subsystem and not a `Vec`.
 
 ### Lesson 4 · A decode ceiling you can compute by hand: file size divided by bandwidth
 
@@ -156,22 +156,24 @@ The approximation in the second step is the important one: it assumes every byte
 
 Worked once, slowly, because this is the calculation every later speed claim is checked against.
 
-A 7B model at four and a half bits per weight is `7e9 x 4.5 / 8 = 3.94e9` bytes, about 4 GB (arithmetic, and the real number comes from the file's own metadata in Chapter 2 - quantized formats pad and mix, so 4 GB is an estimate to within about ten per cent). The M4 Pro's CPU-side measured read bandwidth is 198 GB/s. One token therefore costs at least `4 / 198` seconds = 20.2 milliseconds, and `1 / 0.0202` = **49.5 tokens per second** (arithmetic on a measured input).
+The 7B file in this book is Qwen2.5-7B-Instruct at Q4_K_M: 7,615,616,512 parameters, 4.68 GB on disk across two shards (*reported* from the repository listing, and confirmed with `ls -l` after downloading). The M4 Pro's CPU-side measured read bandwidth is 198 GB/s. One token therefore costs at least `4.68 / 198` seconds = 23.6 milliseconds, and `1 / 0.0236` = **42.3 tokens per second** (arithmetic on a measured input).
+
+Notice what the file's size just taught you: 4.68 GB for 7.6 billion weights is 4.92 bits per weight, not the 4.5 that the format's name suggests, and not the 4.0 GB the outline of this chapter first estimated. A quantization name describes a recipe - some tensors kept at six bits, some at four - so the file is the only honest denominator. That is the whole argument of Chapter 2, arriving early.
 
 Do the same division on the appendix's machines and it becomes a table worth keeping:
 
-| Where the engine runs | Bandwidth | 4 GB model | 0.34 GB model (0.6B at 4.5 bits) |
+| Where the engine runs | Bandwidth | 4.68 GB file (7B, Q4_K_M) | 0.49 GB file (0.5B, Q4_K_M) |
 |---|---|---|---|
-| M4 Pro, CPU | 198 GB/s | ~50 tok/s | ~580 tok/s |
-| M4 Pro, Metal | 212 GB/s | ~53 tok/s | ~620 tok/s |
-| GB10, CUDA | 242 GB/s | ~61 tok/s | ~710 tok/s |
-| NUC11, CPU | 45 GB/s | ~11 tok/s | ~130 tok/s |
+| M4 Pro, CPU | 198 GB/s | ~42 tok/s | ~400 tok/s |
+| M4 Pro, Metal | 212 GB/s | ~45 tok/s | ~430 tok/s |
+| GB10, CUDA | 242 GB/s | ~52 tok/s | ~490 tok/s |
+| NUC11, CPU | 45.1 GB/s | ~10 tok/s | ~92 tok/s |
 
 Four things this table is not.
 
-**It is not a forecast.** Real engines land at 70-85 per cent of their ceiling: the KV cache is read too, every step pays launch and dispatch overheads, and the logits must reach the sampler. A ceiling of 49.5 that an engine reaches 38 of is a healthy engine, not a disappointing one.
+**It is not a forecast.** Real engines land at 70-85 per cent of their ceiling: the KV cache is read too, every step pays launch and dispatch overheads, and the logits must reach the sampler. A ceiling of 42.3 that an engine reaches 34 of is a healthy engine, not a disappointing one.
 
-**It does not apply to small models.** A 0.6B model's 1.7-millisecond step is shorter than the cost of dispatching a few hundred kernels, so at that size the ceiling stops describing anything real and the engine becomes launch-bound (my judgement; Chapter 20 is where per-step overhead becomes measurable). That is why the book measures with a 7B-class file and treats sub-2B numbers as a different problem.
+**It does not apply to small models.** The 0.5B file's step is 2.5 milliseconds at 198 GB/s, which is comparable to the cost of dispatching a few hundred kernels - so at that size the ceiling stops describing anything real and the engine becomes launch-bound (my judgement; Chapter 20 is where per-step overhead becomes measurable). That is why the book measures with the 7B file and treats sub-1B numbers as a different problem. The 0.5B file's other lesson is in the size itself: 0.49 GB over 494 million parameters is 7.9 bits per weight, because at that scale the embedding and output matrices - kept at higher precision - are most of the model.
 
 **It says nothing about prefill.** For a prompt of N tokens the cost is arithmetic, and the bound is a FLOP bound instead: `2 x params x N` FLOPs against the machine's measured FLOP/s.
 

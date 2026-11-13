@@ -687,6 +687,14 @@
   },
   {
    "pages": [
+    "part 0"
+   ],
+   "path": "src/gguf.rs",
+   "resolved": true,
+   "symbol": "resolve_splits"
+  },
+  {
+   "pages": [
     "ch 2"
    ],
    "path": "src/gguf/tests.rs",

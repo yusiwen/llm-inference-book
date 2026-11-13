@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 420" width="100%" style="max-width:100%;height:auto"
-     role="img" aria-label="A nomogram: model file size on the vertical axis, memory bandwidth on the horizontal axis, and straight iso-lines for ten, twenty-five, fifty and one hundred tokens per second, with the four measured machine bandwidths marked on the four gigabyte grid line">
+     role="img" aria-label="A nomogram: model file size on the vertical axis, memory bandwidth on the horizontal axis, and straight iso-lines for ten, twenty-five, fifty and one hundred tokens per second, with the four measured machine bandwidths marked at the 4.68 GB file this book uses">
   <style>
     .fig-card { fill: var(--quote-bg, #13293d); stroke: var(--quote-border, #274357); stroke-width: 1; }
     .fig-grid { stroke: var(--table-border-color, #274357); stroke-width: .7; opacity: .5; fill: none; }
@@ -30,7 +30,7 @@
   <text class="fig-s" x="697.8" y="348.0" text-anchor="middle">250</text>
   <line class="fig-grid" x1="96.0" y1="330.0" x2="770.0" y2="330.0"/>
   <text class="fig-s" x="86.0" y="334.0" text-anchor="end">0</text>
-  <line class="fig-grid" x1="96.0" y1="261.5" x2="770.0" y2="261.5"/>
+  <line class="fig-grid" x1="96.0" y1="249.9" x2="770.0" y2="261.5"/>
   <text class="fig-s" x="86.0" y="265.5" text-anchor="end">4</text>
   <line class="fig-grid" x1="96.0" y1="193.0" x2="770.0" y2="193.0"/>
   <text class="fig-s" x="86.0" y="197.0" text-anchor="end">8</text>
@@ -48,18 +48,18 @@
   <text class="fig-s" x="764.0" y="130.2" text-anchor="end">25 tok/s</text>
   <line class="fig-iso" x1="96.0" y1="330.0" x2="481.1" y2="56.0"/>
   <text class="fig-s" x="489.1" y="60.0">10 tok/s</text>
-  <line class="fig-drop" x1="204.6" y1="261.5" x2="204.6" y2="330.0"/>
-  <circle class="fig-a-cpu" cx="204.6" cy="261.5" r="4.5"/>
-  <text class="fig-s" x="214.6" y="251.5" text-anchor="start">NUC11 45</text>
-  <line class="fig-drop" x1="572.6" y1="261.5" x2="572.6" y2="330.0"/>
-  <circle class="fig-a-met" cx="572.6" cy="261.5" r="4.5"/>
-  <text class="fig-s" x="562.6" y="251.5" text-anchor="end">M4 Pro CPU 198</text>
-  <line class="fig-drop" x1="606.3" y1="261.5" x2="606.3" y2="330.0"/>
-  <circle class="fig-a-met" cx="606.3" cy="261.5" r="4.5"/>
-  <text class="fig-s" x="616.3" y="251.5" text-anchor="start">Metal 212</text>
-  <line class="fig-drop" x1="678.5" y1="261.5" x2="678.5" y2="330.0"/>
-  <circle class="fig-a-cud" cx="678.5" cy="261.5" r="4.5"/>
-  <text class="fig-s" x="678.5" y="237.5" text-anchor="middle">CUDA 242</text>
+  <line class="fig-drop" x1="204.6" y1="249.9" x2="204.6" y2="330.0"/>
+  <circle class="fig-a-cpu" cx="204.6" cy="249.9" r="4.5"/>
+  <text class="fig-s" x="214.6" y="239.9" text-anchor="start">NUC11 45</text>
+  <line class="fig-drop" x1="572.6" y1="249.9" x2="572.6" y2="330.0"/>
+  <circle class="fig-a-met" cx="572.6" cy="249.9" r="4.5"/>
+  <text class="fig-s" x="562.6" y="239.9" text-anchor="end">M4 Pro CPU 198</text>
+  <line class="fig-drop" x1="606.3" y1="249.9" x2="606.3" y2="330.0"/>
+  <circle class="fig-a-met" cx="606.3" cy="249.9" r="4.5"/>
+  <text class="fig-s" x="616.3" y="239.9" text-anchor="start">Metal 212</text>
+  <line class="fig-drop" x1="678.5" y1="249.9" x2="678.5" y2="330.0"/>
+  <circle class="fig-a-cud" cx="678.5" cy="249.9" r="4.5"/>
+  <text class="fig-s" x="678.5" y="225.9" text-anchor="middle">CUDA 242</text>
   <text class="fig-s" x="770" y="366" text-anchor="end">memory bandwidth (GB/s)</text>
   <text class="fig-s" x="52" y="193.0" text-anchor="middle" transform="rotate(-90 52 193.0)">model file size (GB)</text>
   <text class="fig-s" x="24" y="396">Iso-lines assume every byte read is a weight, read once per token: a ceiling, not a forecast.</text>
