@@ -59,6 +59,7 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `src/figures/` | hand-authored SVGs, included inline so they follow the page theme |
 | `src/appendix/` | conventions, the decision map (82 ADRs), the reference index, measurements, the CUDA-tutorial audit, glossary, limits, where the code lives |
 | `FIGURES.md` | the figure plan: 46 planned figures, their batch order and acceptance test |
+| `starter/` | the reader's engine skeleton: six empty crates, a notes template, builds offline |
 | `minfer.lock` | the pinned minfer commit and the counts the book quotes - the only place the hash lives |
 | `reference/` | the citation inventory, resolved at that commit, plus the citations that must stay broken |
 | `runs/` | behaviour probe records; two of them are compared by hand when the engine moves |

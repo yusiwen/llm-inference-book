@@ -1,0 +1,10 @@
+[package]
+name = "myfer-nums"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The arithmetic: quantized dot products, SIMD dispatch, matmul shapes, vector ops, attention."
+
+[dependencies]
+myfer-file = { path = "../file" }

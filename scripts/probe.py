@@ -86,7 +86,35 @@ def main(root_arg="."):
         if status in ("draft", "written") and STUB_LEFTOVER.search(text):
             hard.append(f"{rel}: status is {status} but the page still carries a stub leftover")
 
-    # 5. the landing page's counts
+    # 5. the reader's starter skeleton is intact: every workspace member exists and has a source file
+    starter = root / "starter"
+    if (starter / "Cargo.toml").exists():
+        manifest = (starter / "Cargo.toml").read_text()
+        members = re.findall(r'^\s*"(crates/[a-z0-9_-]+)",?$', manifest, re.M)
+        if not members:
+            hard.append("starter/Cargo.toml: no workspace members found")
+        for m in members:
+            d = starter / m
+            if not (d / "Cargo.toml").exists():
+                hard.append(f"starter/{m}: no Cargo.toml")
+            if not ((d / "src" / "lib.rs").exists() or (d / "src" / "main.rs").exists()):
+                hard.append(f"starter/{m}: no src/lib.rs or src/main.rs")
+
+    # 6. the build ladder lists every chapter exactly once, at its own step number
+    ladder = (src / "appendix" / "build-ladder.md")
+    if ladder.exists():
+        steps = [int(m.group(1)) for m in re.finditer(r"^\| S(\d+) \|", ladder.read_text(), re.M)]
+        chapters = sorted(int(p.parent.name.split("-")[0]) for p in src.glob("[0-9][0-9]-*/index.md"))
+        want = [0] + chapters
+        if sorted(steps) != sorted(want):
+            missing = sorted(set(want) - set(steps))
+            extra = sorted(set(steps) - set(want))
+            hard.append(f"build-ladder.md: missing step(s) {missing}, unexpected {extra}")
+        dupes = {s0 for s0 in steps if steps.count(s0) > 1}
+        if dupes:
+            hard.append(f"build-ladder.md: step(s) listed twice: {sorted(dupes)}")
+
+    # 7. the landing page's counts
     index = (src / "index.md").read_text()
     n_ch = len(list(src.glob("[0-9][0-9]-*/index.md")))
     n_lessons = sum(

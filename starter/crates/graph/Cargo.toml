@@ -1,0 +1,11 @@
+[package]
+name = "myfer-graph"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The declarative graph: ops, fusion, backend assignment, allocation, the KV cache."
+
+[dependencies]
+myfer-file = { path = "../file" }
+myfer-nums = { path = "../nums" }

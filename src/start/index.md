@@ -37,6 +37,14 @@ You are going to write an inference engine. The reference engine is in Rust, and
 
 **Build step S0 · the workspace.** A cargo workspace with one crate per layer you will add (file, numbers, graph, engine, backends), created empty. Creating them now is a promise about layering; filling them is the book.
 
+This repository ships that skeleton in `starter/`: six empty crates with the dependency arrows already pointing the right way, and a `notes.md` with the four sections this page asks for. Copy it, or type it yourself - the copy is faster and the typing teaches more, and both are acceptable:
+
+```bash
+cp -R starter ~/myfer && cd ~/myfer && cargo build && cargo test
+```
+
+It has no dependencies, so it builds offline in under a second. Everything you add from here is a decision a chapter will ask you to justify.
+
 | Decision | Your choice | Why (one line) |
 |---|---|---|
 | Small model for iteration | | |

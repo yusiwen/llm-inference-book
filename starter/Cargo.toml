@@ -1,0 +1,25 @@
+# The reader's engine skeleton. Copy this directory, do not clone the book.
+#
+# Six crates, six layers, in the order the book fills them. Creating them empty is the promise that
+# the layering survives contact with the chapters; a crate that ends up importing its neighbour in the
+# wrong direction is a design problem you can see on day one instead of on day two hundred.
+#
+# It has no dependencies on purpose: `cargo build` works offline, and every dependency you add is a
+# decision a chapter will ask you to justify.
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/file",
+    "crates/nums",
+    "crates/graph",
+    "crates/engine",
+    "crates/backends",
+    "crates/cli",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"

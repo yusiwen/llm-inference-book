@@ -12,8 +12,9 @@ nix develop --command bash scripts/verify.sh
 Run it before reporting any work as done. It builds, rejects a build warning, scans characters,
 checks that the site fetches nothing remotely, lints the figures, checks display-maths wrappers,
 checks for a page mdBook silently stubbed, checks that the measurements page still carries its
-commands, checks every minfer citation against the committed inventory, and runs `scripts/probe.py`
-(skeleton sections, link resolution, lesson-item pairing, count drift).
+commands, re-derives the book's own counts (`scripts/selfcounts.py`), checks every minfer citation
+against the committed inventory, and runs `scripts/probe.py` (skeleton sections, link resolution,
+lesson-item pairing, the build ladder's coverage, the starter skeleton's shape, count drift).
 
 ## Tracking minfer
 
@@ -67,7 +68,10 @@ Rules that follow:
 4. **Cite at least one source by key** in `## Reading`, and regenerate the reference index with
    `python3 scripts/references.py` (the gate fails on a stale "used in" column).
 5. Re-run the gate; `probe.py` will tell you what the page is missing.
-6. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit.
+6. Add the chapter to `src/appendix/build-ladder.md` (step, produces, needs, what skipping costs) -
+   the probe fails when a chapter and the ladder disagree.
+7. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit;
+   `scripts/selfcounts.py` tells you which ones moved.
 
 ## Do not
 

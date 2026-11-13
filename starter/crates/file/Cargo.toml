@@ -1,0 +1,10 @@
+[package]
+name = "myfer-file"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The bytes: GGUF parsing, tensors, strides, and the quantized block layouts."
+
+[dependencies]
+

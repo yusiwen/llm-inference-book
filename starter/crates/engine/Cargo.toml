@@ -1,0 +1,12 @@
+[package]
+name = "myfer-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The loop and the language layer: tokenizer, templates, sampler, prefill and decode."
+
+[dependencies]
+myfer-file = { path = "../file" }
+myfer-nums = { path = "../nums" }
+myfer-graph = { path = "../graph" }

@@ -1,0 +1,11 @@
+[package]
+name = "myfer-backends"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "The devices: Metal first, then CUDA, behind one registry."
+
+[dependencies]
+myfer-file = { path = "../file" }
+myfer-graph = { path = "../graph" }
