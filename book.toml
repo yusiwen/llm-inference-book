@@ -14,7 +14,7 @@ smart-punctuation = false
 # unreachable or blocked by a content-security-policy. Keep it off.
 mathjax-support = false
 additional-js = ["mathjax/config.js", "mathjax/tex-svg.js"]
-additional-css = ["css/figures.css"]
+additional-css = ["css/figures.css", "css/book.css"]
 no-section-label = false
 
 # GitHub Pages, project site. The custom domain yusiwen.cn is set on the *user* site

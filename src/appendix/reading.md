@@ -1,7 +1,7 @@
 # Where the Code Lives
 
-> **Status**: draft - the pointers are correct at the [pinned baseline](baseline.md); the annotated tour of each directory grows as chapters cite it.
-> **Rule of this book**: every code pointer is a path plus a symbol plus the commit it was read at. Line numbers are never published.
+> - **Status**: draft - the pointers are correct at the [pinned baseline](baseline.md); the annotated tour of each directory grows as chapters cite it.
+> - **Rule of this book**: every code pointer is a path plus a symbol plus the commit it was read at. Line numbers are never published.
 
 ## The reference engine
 

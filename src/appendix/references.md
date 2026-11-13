@@ -1,7 +1,7 @@
 # Reference Index
 
-> **Status**: draft - every entry is real and every arXiv ID was resolved against the arXiv API on 2026-11-12; the "used in" column is generated from the chapters, not typed.
-> **Rule of this book**: this page lists what the book sends you to read, and where each source is used. It is the one page allowed to keep growing, because the field it describes keeps growing.
+> - **Status**: draft - every entry is real and every arXiv ID was resolved against the arXiv API on 2026-11-12; the "used in" column is generated from the chapters, not typed.
+> - **Rule of this book**: this page lists what the book sends you to read, and where each source is used. It is the one page allowed to keep growing, because the field it describes keeps growing.
 
 29 sources on four shelves: **16 papers**, **5 books**, **8 specifications or vendor manuals**, plus the reference implementation's own documentation, which is not a citation but is the largest single body of reading this book assigns.
 

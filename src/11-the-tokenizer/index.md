@@ -1,6 +1,9 @@
 # Chapter 11 · The Tokenizer
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S11**: A tokenizer that loads its vocabulary from the model file and encodes and decodes text exactly as the reference does, including the awkward cases. | **Rule of this book**: This chapter is text to ids and back. What wraps those ids into a prompt (templates, special tokens) is Chapter 12; what turns logits into the next id is Chapter 13.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S11**: A tokenizer that loads its vocabulary from the model file and encodes and decodes text exactly as the reference does, including the awkward cases.
+> - **Rule of this book**: This chapter is text to ids and back. What wraps those ids into a prompt (templates, special tokens) is Chapter 12; what turns logits into the next id is Chapter 13.
 
 ## First, the gist
 

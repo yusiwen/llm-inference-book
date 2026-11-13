@@ -1,6 +1,9 @@
 # Chapter 9 · Vector Ops and the Precision Ledger
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S9**: RMSNorm, RoPE, softmax, SiLU and the elementwise ops your transformer needs, each with a precision note and a reference value. | **Rule of this book**: Attention itself is Chapter 10; this chapter is the pointwise and reduction ops that surround it. Device-specific versions of these same ops appear in Chapters 21 and 24 but are not re-derived there.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S9**: RMSNorm, RoPE, softmax, SiLU and the elementwise ops your transformer needs, each with a precision note and a reference value.
+> - **Rule of this book**: Attention itself is Chapter 10; this chapter is the pointwise and reduction ops that surround it. Device-specific versions of these same ops appear in Chapters 21 and 24 but are not re-derived there.
 
 ## First, the gist
 

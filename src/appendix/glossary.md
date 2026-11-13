@@ -1,7 +1,7 @@
 # Glossary
 
-> **Status**: stub - the entries are written; the cross-references will be added as chapters land.
-> **Rule of this book**: a term appears here once it is used by a chapter that leans on it. One-line entries for coinages with a single use are not entries, they are jargon.
+> - **Status**: stub - the entries are written; the cross-references will be added as chapters land.
+> - **Rule of this book**: a term appears here once it is used by a chapter that leans on it. One-line entries for coinages with a single use are not entries, they are jargon.
 
 | Term | Plain meaning | First used |
 |---|---|---|

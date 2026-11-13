@@ -1,7 +1,7 @@
 # The Build Ladder
 
-> **Status**: written - the table is the ordering contract the chapters were written against; `scripts/probe.py` fails when a chapter and its row disagree.
-> **Rule of this book**: a build step names what exists in *your* tree when it is done. Every chapter owns exactly one, and this page is the only place they are all visible at once.
+> - **Status**: written - the table is the ordering contract the chapters were written against; `scripts/probe.py` fails when a chapter and its row disagree.
+> - **Rule of this book**: a build step names what exists in *your* tree when it is done. Every chapter owns exactly one, and this page is the only place they are all visible at once.
 
 Thirty steps, one per page, in the order they compile. Each row is a promise about your own engine, not about minfer: the reference implementation is read *after* the step is attempted, which is what "the hard way" means.
 

@@ -1,6 +1,9 @@
 # Chapter 16 · Backend Assignment and the Registry
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S16**: A backend registry with stable ids, a capability query per op, and a splitter that cuts the graph into contiguous same-backend runs. | **Rule of this book**: The device implementations themselves are Part 5. This chapter is the seam: how an op ends up on a device, and what an engine must never do at that boundary.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S16**: A backend registry with stable ids, a capability query per op, and a splitter that cuts the graph into contiguous same-backend runs.
+> - **Rule of this book**: The device implementations themselves are Part 5. This chapter is the seam: how an op ends up on a device, and what an engine must never do at that boundary.
 
 ## First, the gist
 

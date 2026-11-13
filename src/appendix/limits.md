@@ -1,7 +1,7 @@
 # Limits: What This Engine Cannot Do
 
-> **Status**: stub - the structure and the pointers are written; the per-row verdicts wait on the chapters that would discover them.
-> **Rule of this book**: this page names the *shapes* of gap and points at the project's own inventories. It does not copy their rows: a copied gap list drifts against its source and nothing says which copy is stale.
+> - **Status**: stub - the structure and the pointers are written; the per-row verdicts wait on the chapters that would discover them.
+> - **Rule of this book**: this page names the *shapes* of gap and points at the project's own inventories. It does not copy their rows: a copied gap list drifts against its source and nothing says which copy is stale.
 
 A book that builds an engine has to say what the finished thing is not, or the reader discovers it on their own time. There are two different lists here, and they should not be confused.
 

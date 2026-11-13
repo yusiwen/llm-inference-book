@@ -1,6 +1,9 @@
 # Chapter 26 · CUDA V: The Optimization Campaign
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU for the measurements; the method is readable anywhere | **Status**: stub | **Build step S26**: A campaign of your own: a cost model, one lever per experiment, a gate that decides land-or-revert, and a written record you can defend a year later. | **Rule of this book**: This chapter is the method and one worked campaign, not a catalogue of every kernel. The techniques themselves appear where they are needed, in Chapters 7, 24 and 25; the measurement discipline they depend on is Chapter 28.
+> - **Compute tier**: ⚠️ needs an NVIDIA GPU for the measurements; the method is readable anywhere
+> - **Status**: stub
+> - **Build step S26**: A campaign of your own: a cost model, one lever per experiment, a gate that decides land-or-revert, and a written record you can defend a year later.
+> - **Rule of this book**: This chapter is the method and one worked campaign, not a catalogue of every kernel. The techniques themselves appear where they are needed, in Chapters 7, 24 and 25; the measurement discipline they depend on is Chapter 28.
 
 ## First, the gist
 

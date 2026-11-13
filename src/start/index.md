@@ -1,6 +1,9 @@
 # Part 0 · Before you start
 
-> **Compute tier**: ✅ any laptop | **Status**: written - the model numbers here are the sizes listed in the two Hugging Face repositories named below (read on 2026-11-13, `reported`), and the arithmetic on them is labelled as such; the toolchain guidance is my judgement from running it on the three machines in the appendix | **Build step S0**: a repository of your own, a model file, a toolchain, and a notes file with four sections that start empty. | **Rule of this book**: this page sets up the work. It teaches no engine internals; the routing map at the end tells you which chapter answers which question.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: written - the model numbers here are the sizes listed in the two Hugging Face repositories named below (read on 2026-11-13, `reported`), and the arithmetic on them is labelled as such; the toolchain guidance is my judgement from running it on the three machines in the appendix
+> - **Build step S0**: a repository of your own, a model file, a toolchain, and a notes file with four sections that start empty.
+> - **Rule of this book**: this page sets up the work. It teaches no engine internals; the routing map at the end tells you which chapter answers which question.
 
 ## First, the gist
 

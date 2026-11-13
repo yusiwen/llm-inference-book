@@ -1,6 +1,9 @@
 # Chapter 25 · CUDA IV: Attention, KV, and CUDA Graphs on Device
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU | **Status**: stub | **Build step S25**: Device-side attention for prefill and a fused decode tail over a device-resident KV cache, plus graph capture and replay for the decode step. | **Rule of this book**: The cache's storage design is Chapter 18 and its semantics Chapter 10. This chapter is the device implementation, and the campaign that optimized it is Chapter 26.
+> - **Compute tier**: ⚠️ needs an NVIDIA GPU
+> - **Status**: stub
+> - **Build step S25**: Device-side attention for prefill and a fused decode tail over a device-resident KV cache, plus graph capture and replay for the decode step.
+> - **Rule of this book**: The cache's storage design is Chapter 18 and its semantics Chapter 10. This chapter is the device implementation, and the campaign that optimized it is Chapter 26.
 
 ## First, the gist
 

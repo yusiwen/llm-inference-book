@@ -1,6 +1,9 @@
 # Chapter 22 · CUDA I: What Kind of Machine a GPU Is
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU with a toolkit (the DGX Spark in this book's notes, or rented time); the toys run anywhere with `nvcc` | **Status**: stub | **Build step S22**: A compiled and run kernel of your own: vector add, then a branch-divergent variant you can explain, with the launch arithmetic written down first. | **Rule of this book**: This chapter is the machine model and the first kernel. The Rust seam is Chapter 23, the kernel families are Chapter 24, attention and graphs are Chapter 25, the campaign is Chapter 26.
+> - **Compute tier**: ⚠️ needs an NVIDIA GPU with a toolkit (the DGX Spark in this book's notes, or rented time); the toys run anywhere with `nvcc`
+> - **Status**: stub
+> - **Build step S22**: A compiled and run kernel of your own: vector add, then a branch-divergent variant you can explain, with the launch arithmetic written down first.
+> - **Rule of this book**: This chapter is the machine model and the first kernel. The Rust seam is Chapter 23, the kernel families are Chapter 24, attention and graphs are Chapter 25, the campaign is Chapter 26.
 
 ## First, the gist
 

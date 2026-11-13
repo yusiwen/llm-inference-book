@@ -1,6 +1,9 @@
 # Chapter 15 · Ops, Nodes, and Fusion
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S15**: An op vocabulary with payloads, node metadata, and one fusion rule that rewrites a three-node pattern into one node. | **Rule of this book**: This chapter defines what an op is and how patterns are folded. Which backend runs a node is Chapter 16; the memory consequences of fusion are Chapter 17.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S15**: An op vocabulary with payloads, node metadata, and one fusion rule that rewrites a three-node pattern into one node.
+> - **Rule of this book**: This chapter defines what an op is and how patterns are folded. Which backend runs a node is Chapter 16; the memory consequences of fusion are Chapter 17.
 
 ## First, the gist
 

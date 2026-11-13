@@ -1,6 +1,9 @@
 # Chapter 23 · CUDA II: The Rust-CUDA Seam
 
-> **Compute tier**: ⚠️ needs an NVIDIA GPU and `nvcc`; the seam itself is compile-time work you can read anywhere | **Status**: stub | **Build step S23**: A safe Rust wrapper over the CUDA runtime: device buffers with ownership, a stream, error states that cannot be ignored, and a bounded wait. | **Rule of this book**: Kernel families are Chapter 24. This chapter never looks inside a kernel: it is about everything around them, which is where a GPU backend usually breaks.
+> - **Compute tier**: ⚠️ needs an NVIDIA GPU and `nvcc`; the seam itself is compile-time work you can read anywhere
+> - **Status**: stub
+> - **Build step S23**: A safe Rust wrapper over the CUDA runtime: device buffers with ownership, a stream, error states that cannot be ignored, and a bounded wait.
+> - **Rule of this book**: Kernel families are Chapter 24. This chapter never looks inside a kernel: it is about everything around them, which is where a GPU backend usually breaks.
 
 ## First, the gist
 

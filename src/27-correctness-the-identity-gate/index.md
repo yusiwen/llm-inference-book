@@ -1,6 +1,9 @@
 # Chapter 27 · Correctness: The Identity Gate
 
-> **Compute tier**: ✅ any laptop (the discipline is the point; the GPU parts need a GPU) | **Status**: stub | **Build step S27**: A gate that decides, mechanically, whether a change to your engine changed its answers: bitwise where the contract demands it, tolerance-classed where it does not. | **Rule of this book**: Measurement is Chapter 28. This chapter is about being right; Chapter 28 is about being fast, and the gate is what stops the second from silently destroying the first.
+> - **Compute tier**: ✅ any laptop (the discipline is the point; the GPU parts need a GPU)
+> - **Status**: stub
+> - **Build step S27**: A gate that decides, mechanically, whether a change to your engine changed its answers: bitwise where the contract demands it, tolerance-classed where it does not.
+> - **Rule of this book**: Measurement is Chapter 28. This chapter is about being right; Chapter 28 is about being fast, and the gate is what stops the second from silently destroying the first.
 
 ## First, the gist
 

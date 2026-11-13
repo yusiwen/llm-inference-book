@@ -1,7 +1,7 @@
 # The minfer Baseline
 
-> **Status**: written - the mechanism is in place and exercised; one baseline is recorded so far.
-> **Rule of this book**: a sentence about what minfer *currently* does is dated by the baseline below. A sentence about what an engine *must* do is not.
+> - **Status**: written - the mechanism is in place and exercised; one baseline is recorded so far.
+> - **Rule of this book**: a sentence about what minfer *currently* does is dated by the baseline below. A sentence about what an engine *must* do is not.
 
 minfer is not finished, and pretending otherwise would make this book wrong within a month. It also moves fast: **1369 commits in the last 90 days** and 96 in the last week, measured at the baseline with
 

@@ -1,6 +1,9 @@
 # Chapter 29 · Serving, and the Speculation Trade
 
-> **Compute tier**: ⚠️ for measurements under load; the design and the cost model need nothing | **Status**: stub | **Build step S29**: An HTTP server with slots, a bounded batch worker, metrics and a graceful drain - and a speculative decoder that pays for itself or is switched off. | **Rule of this book**: The loop is Chapter 20 and the sampler Chapter 13. This chapter is concurrency plus one throughput idea whose cost model decides whether it is worth having.
+> - **Compute tier**: ⚠️ for measurements under load; the design and the cost model need nothing
+> - **Status**: stub
+> - **Build step S29**: An HTTP server with slots, a bounded batch worker, metrics and a graceful drain - and a speculative decoder that pays for itself or is switched off.
+> - **Rule of this book**: The loop is Chapter 20 and the sampler Chapter 13. This chapter is concurrency plus one throughput idea whose cost model decides whether it is worth having.
 
 ## First, the gist
 

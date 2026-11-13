@@ -1,6 +1,9 @@
 # Chapter 1 · One Token at a Time
 
-> **Compute tier**: ✅ any laptop (arithmetic on paper, plus a loop against a placeholder model) | **Status**: written - every number below is arithmetic on the measured bandwidths in [the reference machines](../appendix/machines.md) or on a stated assumption; nothing here was measured on a real model file, because no file has been parsed yet | **Build step S1**: A loop that reads a prompt, calls a placeholder `model.forward(ids) -> logits`, and prints one token per step. No arithmetic in the code yet: the skeleton every later chapter hangs a kernel on. | **Rule of this book**: This chapter measures the shape of the problem and nothing else. The model file is Chapter 2, the arithmetic starts in Chapter 6, the graph that schedules it in Chapter 14.
+> - **Compute tier**: ✅ any laptop (arithmetic on paper, plus a loop against a placeholder model)
+> - **Status**: written - every number below is arithmetic on the measured bandwidths in [the reference machines](../appendix/machines.md) or on a stated assumption; nothing here was measured on a real model file, because no file has been parsed yet
+> - **Build step S1**: A loop that reads a prompt, calls a placeholder `model.forward(ids) -> logits`, and prints one token per step. No arithmetic in the code yet: the skeleton every later chapter hangs a kernel on.
+> - **Rule of this book**: This chapter measures the shape of the problem and nothing else. The model file is Chapter 2, the arithmetic starts in Chapter 6, the graph that schedules it in Chapter 14.
 
 ## First, the gist
 

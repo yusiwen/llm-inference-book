@@ -1,6 +1,9 @@
 # Chapter 21 · Metal: The First Backend
 
-> **Compute tier**: ✅ on any Apple-silicon Mac; ⚠️ elsewhere this is reading only (the seam is the lesson, the shaders are not) | **Status**: stub | **Build step S21**: A first non-CPU backend behind the registry from Chapter 16: device buffers, a command buffer per split, and three shaders that pass the identity gate. | **Rule of this book**: CUDA is Chapters 22-26 and is not a translation of this chapter; the shared lesson (device layer, launch layer, kernels, executor) is stated once here and assumed afterwards.
+> - **Compute tier**: ✅ on any Apple-silicon Mac; ⚠️ elsewhere this is reading only (the seam is the lesson, the shaders are not)
+> - **Status**: stub
+> - **Build step S21**: A first non-CPU backend behind the registry from Chapter 16: device buffers, a command buffer per split, and three shaders that pass the identity gate.
+> - **Rule of this book**: CUDA is Chapters 22-26 and is not a translation of this chapter; the shared lesson (device layer, launch layer, kernels, executor) is stated once here and assumed afterwards.
 
 ## First, the gist
 

@@ -1,6 +1,9 @@
 # Chapter 28 · Speed You Can Defend
 
-> **Compute tier**: ⚠️ for the throughput numbers (a real model and a quiet machine); the method needs nothing | **Status**: stub | **Build step S28**: A benchmark harness with warmup budgets, interleaved A/B runs inside one window, medians, and a written statement of what the number does not cover. | **Rule of this book**: Chapter 1 computed a ceiling; this chapter measures against it. Chapter 26 ran a campaign; this is the measurement discipline that campaign depends on.
+> - **Compute tier**: ⚠️ for the throughput numbers (a real model and a quiet machine); the method needs nothing
+> - **Status**: stub
+> - **Build step S28**: A benchmark harness with warmup budgets, interleaved A/B runs inside one window, medians, and a written statement of what the number does not cover.
+> - **Rule of this book**: Chapter 1 computed a ceiling; this chapter measures against it. Chapter 26 ran a campaign; this is the measurement discipline that campaign depends on.
 
 ## First, the gist
 

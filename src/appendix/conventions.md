@@ -1,7 +1,7 @@
 # Writing and Formatting Rules
 
-> **Status**: written - these are the rules every chapter of this book is checked against.
-> **Rule of this book**: the rules live here, not in the author's head, because a consistent shape is what lets a reader pick up any chapter on its own.
+> - **Status**: written - these are the rules every chapter of this book is checked against.
+> - **Rule of this book**: the rules live here, not in the author's head, because a consistent shape is what lets a reader pick up any chapter on its own.
 
 Two rules are non-negotiable: **everything is written in English**, and **everything is written for someone who is building, not browsing**.
 
@@ -9,7 +9,10 @@ Two rules are non-negotiable: **everything is written in English**, and **everyt
 
 ```text
 # Chapter N · Title
-> Compute tier | Status | Build step SN | Rule of this book   (blockquote)
+> - Compute tier
+> - Status
+> - Build step SN
+> - Rule of this book          (a blockquote holding a four-item list)
 ## First, the gist
 ## What you'll be able to do
 ## Lessons          (- [ ] checklist; one ### Lesson N heading per item once written)
@@ -20,6 +23,17 @@ Two rules are non-negotiable: **everything is written in English**, and **everyt
 ## Reading
 ## Backfill         (the four book questions)
 ```
+
+**The opening block is a four-item list, not a paragraph.** Each item is a bold label and its value, and the list sits inside a blockquote so it reads as apparatus rather than prose:
+
+```text
+> - **Compute tier**: ✅ any laptop
+> - **Status**: written - what the evidence covers, and what it does not
+> - **Build step SN**: what exists in the reader's tree when the page is done
+> - **Rule of this book**: one sentence on what this page is and is not
+```
+
+The list is what makes it scannable; `css/book.css` sets it a little smaller than the body text, so the page's first screen belongs to the title and the gist. An earlier version put all four facts on one line separated by `|`, which read as a single dense sentence - four facts a reader parses once, formatted so that parsing them is work.
 
 **Section names are fixed and their order is fixed.** A chapter that needs a second track labels it inside `## Lessons` or gives it a section *after* the fixed ones. A renamed standard section makes one chapter navigate differently from the other twenty-eight, and it drops that page out of the mechanical check.
 

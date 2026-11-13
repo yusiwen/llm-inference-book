@@ -1,7 +1,7 @@
 # The Reference Machines
 
-> **Status**: draft - two of the three machines are measured, one is waiting for its address; the numbers below are one afternoon of measurements, not a benchmark campaign.
-> **Rule of this book**: a number names its machine, and a machine names its measured bandwidth. A spec sheet is not a measurement, and this page says which is which.
+> - **Status**: draft - two of the three machines are measured, one is waiting for its address; the numbers below are one afternoon of measurements, not a benchmark campaign.
+> - **Rule of this book**: a number names its machine, and a machine names its measured bandwidth. A spec sheet is not a measurement, and this page says which is which.
 
 Every performance claim in this book is either *measured on one of these machines* or *arithmetic on stated assumptions*. The arithmetic needs one number more than people expect: for decode, the ceiling is the model's bytes per token divided by how fast this machine can actually stream memory - not by the bandwidth printed on the box. So the machines come first, with the measurement that produced their number.
 

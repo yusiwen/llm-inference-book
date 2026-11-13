@@ -1,0 +1,38 @@
+/* Layout rules for chapter furniture, separate from the figure palette in figures.css.
+ *
+ * The opening block of every page is four labelled facts - compute tier, status, build step, rule of
+ * the book - and it was originally one long line of `|`-separated text. It is reference material a
+ * reader scans once, not prose, so it is set as a list and a little smaller than the body: the page's
+ * first screen should be the title and the gist, with the metadata legible but not competing.
+ */
+
+main blockquote:first-of-type {
+    font-size: 0.84em;
+    line-height: 1.45;
+    padding: 0.55em 0.85em;
+    margin-block: 0 1.4em;
+}
+
+main blockquote:first-of-type ul {
+    margin: 0;
+    padding-left: 1.05em;
+}
+
+main blockquote:first-of-type li {
+    margin: 0.12em 0;
+}
+
+/* The label carries the structure, so it stays full strength; the value can sit a shade quieter. */
+main blockquote:first-of-type li > strong:first-child {
+    letter-spacing: 0.01em;
+}
+
+/* Note the mdBook 0.5 DOM: the content lives at #content > main > blockquote, so the selector is a
+ * descendant, not a child, and only the first blockquote on the page is the metadata block.
+ *
+ * A hard-wrapped metadata block on a narrow screen should wrap as a sentence, not as chopped lines. */
+@media (max-width: 720px) {
+    main blockquote:first-of-type {
+        font-size: 0.8em;
+    }
+}

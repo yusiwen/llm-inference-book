@@ -9,6 +9,10 @@ to build the same thing. These rules are enforced by `scripts/verify.sh` unless 
 nix develop --command bash scripts/verify.sh
 ```
 
+Each page opens with a four-item list in a blockquote (compute tier, status, build step, rule of the book);
+`css/book.css` sets it smaller than body text, and it is targeted as `main blockquote:first-of-type` because
+mdBook 0.5's content container is `#mdbook-content`, not `#content`.
+
 Run it before reporting any work as done. It builds, rejects a build warning, scans characters,
 checks that the site fetches nothing remotely, lints the figures, checks display-maths wrappers,
 checks for a page mdBook silently stubbed, checks that the measurements page still carries its

@@ -1,6 +1,9 @@
 # Chapter 4 · Quantized Blocks: The Base Formats
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S4**: A dequantizer for Q4_0, Q4_1, Q5_0, Q5_1 and Q8_0 that turns one block into 32 floats, plus a test that reconstructs a known vector. | **Rule of this book**: This chapter covers the legacy block formats only (the `Q4_0` family and `Q8_0`). The K-quants get Chapter 5 because their super-block structure is a different idea, not a bigger version of this one.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S4**: A dequantizer for Q4_0, Q4_1, Q5_0, Q5_1 and Q8_0 that turns one block into 32 floats, plus a test that reconstructs a known vector.
+> - **Rule of this book**: This chapter covers the legacy block formats only (the `Q4_0` family and `Q8_0`). The K-quants get Chapter 5 because their super-block structure is a different idea, not a bigger version of this one.
 
 ## First, the gist
 

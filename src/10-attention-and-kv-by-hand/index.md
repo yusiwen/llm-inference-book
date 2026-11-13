@@ -1,6 +1,9 @@
 # Chapter 10 · Attention and the KV Cache by Hand
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S10**: Causal attention with grouped queries over an explicitly managed KV cache: prefill writes, decode reads, and the results match a naive recompute. | **Rule of this book**: This chapter establishes the semantics: what attention computes and how the cache makes it cheap. The storage subsystem (cells, spans, defragmentation) is Chapter 18, and the device kernels are Chapters 21 and 25.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S10**: Causal attention with grouped queries over an explicitly managed KV cache: prefill writes, decode reads, and the results match a naive recompute.
+> - **Rule of this book**: This chapter establishes the semantics: what attention computes and how the cache makes it cheap. The storage subsystem (cells, spans, defragmentation) is Chapter 18, and the device kernels are Chapters 21 and 25.
 
 ## First, the gist
 

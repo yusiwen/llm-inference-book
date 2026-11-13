@@ -1,6 +1,9 @@
 # Chapter 20 · The Engine Loop
 
-> **Compute tier**: ✅ any laptop | **Status**: stub | **Build step S20**: A generation loop with prefill, decode, graph reuse, incremental multi-turn prefill and cancellation, driven from a command line. | **Rule of this book**: Sampling is Chapter 13 and the graph is Chapter 14. This chapter is the loop that ties them together and the state it keeps between steps. Serving several sessions at once is Chapter 29.
+> - **Compute tier**: ✅ any laptop
+> - **Status**: stub
+> - **Build step S20**: A generation loop with prefill, decode, graph reuse, incremental multi-turn prefill and cancellation, driven from a command line.
+> - **Rule of this book**: Sampling is Chapter 13 and the graph is Chapter 14. This chapter is the loop that ties them together and the state it keeps between steps. Serving several sessions at once is Chapter 29.
 
 ## First, the gist
 
