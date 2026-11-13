@@ -1,0 +1,220 @@
+{
+ "witness": "gguf-py (gguf.quants.dequantize) - the ggml project's reference Python decoder",
+ "invocation": "uv run --with gguf python scripts/dequant-check.py --real facts/gguf-qwen2.5-0.5b-q4_0.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf --real facts/gguf-qwen2.5-0.5b.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --synthetic-from facts/gguf-qwen2.5-0.5b.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/dequant-check.json",
+ "note": "Real-file blocks are the strongest evidence available: the bytes were written by llama.cpp's quantizer, not by the witness. Synthetic blocks (Q4_1, Q5_1) exist because no file this book ships uses those formats; they are decoded by the same witness that produced them, so they can catch a transcription error but not a shared misreading.",
+ "formats": [
+  {
+   "dtype": "Q8_0",
+   "source": "real file",
+   "tensor": "output.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_0.gguf",
+   "blocks": 8,
+   "elements": 256,
+   "fields": [
+    {
+     "name": "d",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "qs",
+     "type": "i8[32]",
+     "bytes": 32
+    }
+   ],
+   "bits_per_weight": 8.5,
+   "max_abs_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "exact_matches": 256,
+   "compared": 256,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q4_0",
+   "source": "real file",
+   "tensor": "token_embd.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_0.gguf",
+   "blocks": 8,
+   "elements": 256,
+   "fields": [
+    {
+     "name": "d",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "qs",
+     "type": "u8[16]",
+     "bytes": 16
+    }
+   ],
+   "bits_per_weight": 4.5,
+   "max_abs_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "exact_matches": 256,
+   "compared": 256,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q5_0",
+   "source": "real file",
+   "tensor": "token_embd.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "blocks": 8,
+   "elements": 256,
+   "fields": [
+    {
+     "name": "d",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "qh",
+     "type": "u8[4]",
+     "bytes": 4
+    },
+    {
+     "name": "qs",
+     "type": "u8[16]",
+     "bytes": 16
+    }
+   ],
+   "bits_per_weight": 5.5,
+   "max_abs_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "exact_matches": 256,
+   "compared": 256,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q4_1",
+   "source": "synthetic (gguf-py quantizer over real weights)",
+   "tensor": "blk.0.attn_norm.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "blocks": 8,
+   "elements": 256,
+   "fields": [
+    {
+     "name": "d",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "m",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "qs",
+     "type": "u8[16]",
+     "bytes": 16
+    }
+   ],
+   "bits_per_weight": 5.0,
+   "max_abs_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "exact_matches": 256,
+   "compared": 256,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q5_1",
+   "source": "synthetic (gguf-py quantizer over real weights)",
+   "tensor": "blk.0.attn_norm.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "blocks": 8,
+   "elements": 256,
+   "fields": [
+    {
+     "name": "d",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "m",
+     "type": "f16",
+     "bytes": 2
+    },
+    {
+     "name": "qh",
+     "type": "u8[4]",
+     "bytes": 4
+    },
+    {
+     "name": "qs",
+     "type": "u8[16]",
+     "bytes": 16
+    }
+   ],
+   "bits_per_weight": 6.0,
+   "max_abs_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "exact_matches": 256,
+   "compared": 256,
+   "agreement": "bit-exact"
+  }
+ ],
+ "error": [
+  {
+   "dtype": "Q4_0",
+   "values": 256,
+   "rms_error": 0.008197431669904328,
+   "relative_rms": 0.07980777400360498,
+   "max_abs_error": 0.02130126953125,
+   "signal_rms": 0.10271470132137808
+  },
+  {
+   "dtype": "Q4_1",
+   "values": 256,
+   "rms_error": 0.007133279761795479,
+   "relative_rms": 0.06944750527460108,
+   "max_abs_error": 0.01641845703125,
+   "signal_rms": 0.10271470132137808
+  },
+  {
+   "dtype": "Q5_0",
+   "values": 256,
+   "rms_error": 0.00426033915583688,
+   "relative_rms": 0.04147740392591857,
+   "max_abs_error": 0.01043701171875,
+   "signal_rms": 0.10271470132137808
+  },
+  {
+   "dtype": "Q5_1",
+   "values": 256,
+   "rms_error": 0.003491407932392063,
+   "relative_rms": 0.03399131660294663,
+   "max_abs_error": 0.0075531005859375,
+   "signal_rms": 0.10271470132137808
+  },
+  {
+   "dtype": "Q8_0",
+   "values": 256,
+   "rms_error": 0.0005267679276873659,
+   "relative_rms": 0.0051284569872738295,
+   "max_abs_error": 0.001293182373046875,
+   "signal_rms": 0.10271470132137808
+  }
+ ],
+ "outlier": {
+  "blocks_scanned": 4096,
+  "worst": {
+   "block": 2477,
+   "step": 0.015869140625,
+   "max_abs": 0.126953125,
+   "mean_others": 0.009726247479838709,
+   "ratio": 13.05263157894737,
+   "step_over_mean": 1.6315789473684212,
+   "rms_others": 0.0
+  },
+  "median_ratio": 3.1,
+  "median_step_over_mean": 0.3875
+ },
+ "verdict": "agree",
+ "artifact": {
+  "path": "/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf",
+  "bytes": 428730208,
+  "sha256": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed"
+ },
+ "artifact_sha256_check": "7671c0c304e6ce5a7fc577bcb12aba01e2c155cc2efd29b2213c95b18edaf6ed"
+}

@@ -180,7 +180,79 @@ def render_block_sizes(f):
     return out
 
 
+
+def render_anatomy(f):
+    """The block table: fields, bytes, and what each format pays per weight."""
+    out = ["| Format | Weights per block | Bytes per block | Bits per weight | Fields, in file order |",
+           "|---|---|---|---|---|"]
+    for fmt in sorted(f["formats"], key=lambda x: x["bits_per_weight"]):
+        fields = ", ".join(f"`{x['name']}` {x['type']} ({x['bytes']} B)" for x in fmt["fields"])
+        per_block = fmt["elements"] // fmt["blocks"]              # weights in one block
+        block_bytes = sum(x["bytes"] for x in fmt["fields"])       # what the block costs on disk
+        out.append(f"| {fmt['dtype']} | {per_block} | {block_bytes} | "
+                   f"{fmt['bits_per_weight']:.2f} | {fields} |")
+    return out
+
+
+def render_agreement(f):
+    """Two decoders, the same bytes: what the witness agreed on."""
+    out = ["| Format | Blocks decoded | Weights compared | Exact matches | Max abs difference | Agreement |",
+           "|---|---|---|---|---|---|"]
+    for fmt in sorted(f["formats"], key=lambda x: x["dtype"]):
+        out.append(f"| {fmt['dtype']} | {fmt['blocks']} | {fmt['elements']:,} | "
+                   f"{fmt['exact_matches']:,} of {fmt['compared']:,} | {fmt['max_abs_diff']:.1e} | "
+                   f"{fmt['agreement']} |")
+    return out
+
+
+def render_error(f):
+    """What a format costs against the same real weights - the arm the chapter's argument rests on."""
+    if not f.get("error"):
+        return ["(no error measurements in this facts file)"]
+    out = ["| Format | Bits per weight | Relative RMS error | Largest single error | Where it lands |",
+           "|---|---|---|---|---|"]
+    base = next((e for e in f["error"] if e["dtype"] == "Q4_0"), None)
+    for e in sorted(f["error"], key=lambda x: -x["relative_rms"]):
+        ratio = f"{e['relative_rms'] / base['relative_rms']:.2f}x of Q4_0" if base else "-"
+        out.append(f"| {e['dtype']} | {_bits_for(f, e['dtype']):.2f} | {e['relative_rms']:.2%} | "
+                   f"{e['max_abs_error']:.5f} | {ratio} |")
+    return out
+
+
+def _bits_for(f, dtype):
+    for fmt in f["formats"]:
+        if fmt["dtype"] == dtype:
+            return fmt["bits_per_weight"]
+    return float("nan")
+
+
+def render_outlier(f):
+    """One real block where a single weight set the step for the other 31."""
+    o = f.get("outlier")
+    if not o:
+        return ["(no outlier scan in this facts file)"]
+    w = o["worst"]
+    return [
+        "```text",
+        f"blocks scanned             {o['blocks_scanned']:,}  (real Q4_0 blocks, from the file)",
+        f"worst block                #{w['block']}",
+        f"  largest weight           {w['max_abs']:.6f}",
+        f"  the block's step         {w['step']:.6f}   (f16 scale; Q4_0 sets it from the largest weight)",
+        f"  mean of the other 31     {w['mean_others']:.6f}",
+        f"  step / mean of others    {w['step_over_mean']:.2f}   (a step wider than the values it rounds)",
+        f"  largest / mean of others {w['ratio']:.1f}x",
+        f"median block               step / mean of others {o['median_step_over_mean']:.2f}, "
+        f"largest / mean {o['median_ratio']:.1f}x",
+        "```",
+    ]
+
+
+
 BLOCKS = {
+    "anatomy": render_anatomy,
+    "agreement": render_agreement,
+    "error": render_error,
+    "outlier": render_outlier,
     "strides": render_strides,
     "block-sizes": render_block_sizes,
     "bits": render_bits,

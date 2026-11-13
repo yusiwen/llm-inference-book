@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 400" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="A Q4_0 block: two bytes of f16 scale followed by sixteen bytes holding 32 packed nibbles, so 32 weights cost 18 bytes or 4.5 bits each; each byte carries weight j in its low nibble and weight j plus 16 in its high nibble, and each weight is scale times the nibble minus eight.">
+  <style>
+    .fig-alt  { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #274357); stroke-width: .9; }
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-scale { fill: #b8703f; }
+    .fig-a-nib   { fill: #4d86b8; }
+    .fig-a-q5    { fill: #3f8f6f; }
+    .fig-a-q8    { fill: #6b7f92; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE Q4_0 BLOCK: 32 WEIGHTS IN 18 BYTES</text>
+  <text class="fig-t" x="30" y="52">the block, byte by byte</text>
+  <rect class="fig-a-scale" x="30" y="60" width="28" height="34" rx="3"/>
+  <text class="fig-m" x="30" y="110">0</text>
+  <text class="fig-m" x="50" y="110">1</text>
+  <text class="fig-s" x="30" y="124">d (f16)</text>
+  <rect class="fig-a-nib" x="64" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="68" y="110">2</text>
+  <rect class="fig-a-nib" x="86" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="90" y="110">3</text>
+  <rect class="fig-a-nib" x="108" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="112" y="110">4</text>
+  <rect class="fig-a-nib" x="130" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="134" y="110">5</text>
+  <rect class="fig-a-nib" x="152" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="156" y="110">6</text>
+  <rect class="fig-a-nib" x="174" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="178" y="110">7</text>
+  <rect class="fig-a-nib" x="196" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="200" y="110">8</text>
+  <rect class="fig-a-nib" x="218" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="222" y="110">9</text>
+  <rect class="fig-a-nib" x="240" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="244" y="110">10</text>
+  <rect class="fig-a-nib" x="262" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="266" y="110">11</text>
+  <rect class="fig-a-nib" x="284" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="288" y="110">12</text>
+  <rect class="fig-a-nib" x="306" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="310" y="110">13</text>
+  <rect class="fig-a-nib" x="328" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="332" y="110">14</text>
+  <rect class="fig-a-nib" x="350" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="354" y="110">15</text>
+  <rect class="fig-a-nib" x="372" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="376" y="110">16</text>
+  <rect class="fig-a-nib" x="394" y="60" width="20" height="34" rx="2"/>
+  <text class="fig-m" x="398" y="110">17</text>
+  <text class="fig-s" x="30" y="142">qs[0..15] - 32 nibbles, two weights per byte</text>
+  <text class="fig-m" x="404" y="110">17</text>
+  <text class="fig-t" x="30" y="175">each byte is two weights</text>
+  <rect class="fig-alt" x="30" y="189" width="196" height="52" rx="4"/>
+  <text class="fig-s" x="40" y="209">byte j = qs[j]</text>
+  <text class="fig-s" x="40" y="229">low nibble -&gt; weight j  (0..15)</text>
+  <text class="fig-s" x="260" y="209">high nibble -&gt; weight j + 16</text>
+  <text class="fig-s" x="260" y="229">so 16 bytes carry 32 weights</text>
+  <text class="fig-t" x="440" y="52">what a kernel computes</text>
+  <text class="fig-s" x="440" y="76">w[j]      = d * (q_low  - 8)</text>
+  <text class="fig-s" x="440" y="96">w[j + 16] = d * (q_high - 8)</text>
+  <text class="fig-m" x="440" y="116"></text>
+  <text class="fig-s" x="440" y="136">q in 0..15  ->  w in -8d .. 7d</text>
+  <text class="fig-m" x="440" y="156"></text>
+  <text class="fig-s" x="440" y="176">(2 + 16) * 8 / 32 = 4.5 bits/weight</text>
+  <text class="fig-s" x="440" y="210">The scale is one f16 for all 32 weights,</text>
+  <text class="fig-s" x="440" y="230">so a single large weight widens the step</text>
+  <text class="fig-s" x="440" y="250">for the other 31 - Lesson 5 measures that.</text>
+  <text class="fig-t" x="30" y="300">the same 32 weights, three formats</text>
+  <rect class="fig-a-scale" x="30" y="314" width="216" height="16" rx="3"/>
+  <text class="fig-s" x="400" y="327">Q4_0: 18 B, 4.50 bits per weight</text>
+  <rect class="fig-a-q5" x="30" y="336" width="264" height="16" rx="3"/>
+  <text class="fig-s" x="452" y="349">Q5_0: 22 B, 5.50 bits per weight</text>
+  <rect class="fig-a-q8" x="30" y="358" width="408" height="16" rx="3"/>
+  <text class="fig-s" x="452" y="371">Q8_0: 34 B, 8.50 bits per weight</text>
+</svg>

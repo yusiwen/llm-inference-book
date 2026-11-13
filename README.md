@@ -29,7 +29,7 @@ survives in the code is the part that was measured, and that habit is what this 
 book describes minfer at the commit recorded in [`minfer.lock`](minfer.lock); its kernels are hand-written, from the AVX2 and NEON dot
 products to the CUDA matmuls, with no machine-learning framework underneath.
 
-**Status: writing.** Part 0 and Chapters 1-3 are written; the other 26 chapters are stubs whose outline, lesson checklists and
+**Status: writing.** Part 0 and Chapters 1-4 are written; the other 25 chapters are stubs whose outline, lesson checklists and
 acceptance criteria exist; the prose is being written one chapter at a time, and each chapter's
 figures ship with it. What is finished is the shape of the book, the
 [reference index](src/appendix/references.md), and the [audit](src/appendix/cuda-docs-audit.md) of the
