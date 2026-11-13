@@ -69,6 +69,7 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `scripts/figcheck.py` | figure lint (structure, theme classes, geometry, captions), copied from the `mdbook-figures` skill |
 | `scripts/minfer-drift.py` | compares the book's citations and counts against minfer at the baseline or at master |
 | `scripts/contract-probes.sh` | records what the engine actually does (flags, graph size, determinism, server surface) |
+| `scripts/membw.c`, `scripts/gpubw.cu`, `scripts/metalbw.swift` | the three bandwidth measurements behind [the reference machines](src/appendix/machines.md) |
 | `mathjax/`, `css/` | vendored renderer and figure styles; the site fetches nothing remotely |
 
 ## Rules that are enforced, not just stated
