@@ -99,7 +99,7 @@ jobs:
             echo
             echo "| Baseline age | Master | Latest tag |"
             echo "|---|---|---|"
-            echo "| **$baseline_age_days days** | $commits_ahead commit(s) ahead | $latest_tag |"
+            echo "| **$baseline_age_days $( [ "$baseline_age_days" -eq 1 ] && echo day || echo days )** | $commits_ahead commit(s) ahead | $latest_tag |"
             if [ "$baseline_age_days" -ge 30 ]; then
               echo
               echo "> **Due for a bump.** The monthly fallback has passed: follow the six steps on"

@@ -213,9 +213,15 @@ def main():
     tags = git(repo, "tag", "--list", "v*", "--sort=-v:refname", check=False).stdout.split()
     latest = tags[0] if tags else "none"
     ahead = git(repo, "rev-list", "--count", f"{sha}..HEAD", check=False).stdout.strip() or "0"
-    print(f"baseline {sha[:7]} dated {bdate}: {age} day(s) old, "
-          f"master is {ahead} commit(s) ahead, latest tag {latest}"
-          + ("  [due: the monthly fallback has passed]" if age >= 30 else ""))
+    days = "day" if age == 1 else "days"
+    if args.head:
+        # In advisory mode the "baseline" is whatever the tip happens to be; saying "0 days old,
+        # 0 commits ahead" reads as if nothing had been checked.
+        print(f"master tip {sha[:7]} dated {bdate}; latest tag {latest}")
+    else:
+        print(f"baseline {sha[:7]} dated {bdate}: {age} {days} old, "
+              f"master is {ahead} commit(s) ahead, latest tag {latest}"
+              + ("  [due: the monthly fallback has passed]" if age >= 30 else ""))
 
     findings, inv = compare(root, repo, ref)
     derived = counts(repo, ref)
