@@ -71,6 +71,7 @@ Without Nix: `brew install mdbook` (0.5.x) and run the same commands.
 | `scripts/contract-probes.sh` | records what the engine actually does (flags, graph size, determinism, server surface) |
 | `scripts/membw.c`, `scripts/gpubw.cu`, `scripts/metalbw.swift` | the three bandwidth measurements behind [the reference machines](src/appendix/machines.md) |
 | `mathjax/`, `css/` | vendored renderer, the figure palette (`figures.css`) and the page furniture (`book.css`); the site fetches nothing remotely |
+| `facts/` | numbers read out of the real model file (`scripts/gguf-inspect.py --json`); every table that quotes bytes is rendered from here, so a number cannot be retyped by hand |
 
 ## Rules that are enforced, not just stated
 

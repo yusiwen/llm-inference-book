@@ -60,10 +60,12 @@ Two properties of that layout are worth naming before the details, because every
 
 The first 24 bytes are the whole header, and they are the cheapest part of the format to get right:
 
+<!-- facts: gguf-qwen2.5-0.5b.header -->
 ```text
-47 47 55 46  03 00 00 00  23 01 00 00 00 00 00 00  1a 00 00 00 00 00 00 00
-^ magic       ^ version    ^ tensor count (u64)     ^ metadata count (u64)
+bytes 0-23   47 47 55 46  03 00 00 00  23 01 00 00 00 00 00 00  1a 00 00 00 00 00 00 00
+decoded      magic "GGUF" | version 3 | tensor count 291 | metadata count 26
 ```
+<!-- /facts -->
 
 - `47 47 55 46` is `GGUF` in ASCII. A file that fails this is not a GGUF file and the only useful response is to say so.
 - `03 00 00 00` is version 3 as a little-endian u32. Version matters because the tensor-info record changed shape between v1 and v2; a v1 file parsed by v3 rules produces plausible nonsense.
@@ -117,20 +119,24 @@ Fourteen keys that decide everything from the shape of the graph to where genera
 
 After the metadata comes one record per tensor. Each record is a name, a dimension count, the dimensions, a type tag, and an offset:
 
+<!-- facts: gguf-qwen2.5-0.5b.tensor-sample -->
 ```text
-output.weight       n_dims=2  dims=[896, 151936]  type=8 (Q8_0)  offset=0
-token_embd.weight   n_dims=2  dims=[896, 151936]  type=6 (Q5_0)  offset=144643072
-blk.0.ffn_down.weight n_dims=2 dims=[4864, 896]   type=14 (Q6_K) offset=238239232
-blk.0.attn_q.weight n_dims=2  dims=[896, 896]     type=6 (Q5_0)  offset=248445184
+output.weight           n_dims=2  dims=[896, 151936]  type=8 (Q8_0)  offset=0
+token_embd.weight       n_dims=2  dims=[896, 151936]  type=6 (Q5_0)  offset=144643072
+blk.0.ffn_down.weight   n_dims=2  dims=[4864, 896]  type=14 (Q6_K)  offset=238239232
+blk.0.attn_q.weight     n_dims=2  dims=[896, 896]  type=6 (Q5_0)  offset=248445184
 ```
+<!-- /facts -->
 
-Three details in those three lines carry the chapter.
+Three details across those lines carry the chapter.
 
 **The offset is relative to the blob, not to the file.** `output.weight` at offset 0 means the first byte of the data section, which is byte 5,947,744 of the file. That single indirection is what lets the same file be memory-mapped at any address: the loader adds one base value to every offset and never re-reads a table.
 
 **The dimensions are stored innermost-first.** The array is `[896, 151936]` and that does not mean 896 rows of 151,936. In GGML's own terms it means `ne[0] = 896, ne[1] = 151936`: the first element is the *contiguous* dimension, so this tensor is 151,936 rows of 896 values each, laid out row-major over the second dimension. Get this backwards and every matrix multiply reads a transposed matrix - which, for a weight matrix that is nearly square, produces output that is wrong in a way that still looks like text.
 
-**The type tag indexes a block table, not a byte size.** `type=8` is Q8_0, which stores 32 weights in 34 bytes; `type=6` is Q5_0, 32 weights in 22 bytes; `type=12` is Q4_K, 256 weights in 144 bytes; `type=14` is Q6_K, 256 in 210. The type numbers are not contiguous and not in any order that a beginner would guess - 4 and 5 are retired formats - so the table is data you copy from the specification, never arithmetic you derive. So a tensor's byte length is `elements / elements_per_block * bytes_per_block`, and it is only computable if you know the block layout. Chapter 4 is that table in full; here the parser needs just enough of it to compute each tensor's range.
+**The type tag indexes a block table, not a byte size.** `type=8` is Q8_0, which stores 32 weights in 34 bytes; `type=6` is Q5_0, 32 weights in 22 bytes; `type=12` is Q4_K, 256 weights in 144 bytes; `type=14` is Q6_K, 256 in 210. The type numbers are not contiguous and not in any order that a beginner would guess - 4 and 5 are retired formats - so the table is data you copy from the specification, never arithmetic you derive.
+
+With that table, a tensor's byte length is `elements / elements_per_block * bytes_per_block`, which is only computable if you know the block layout. Chapter 4 is that table in full; here the parser needs just enough of it to compute each tensor's range.
 
 The blob's start is the one place where the format allows slack. The table ends at byte 5,947,741 in this file; the alignment is 32; the blob therefore starts at the next multiple of 32, which is 5,947,744:
 
@@ -160,17 +166,34 @@ $ python3 scripts/gguf-inspect.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gg
 
 A parse that is wrong by one byte in the metadata section will still print *something* for every one of those lines, and the tiling check is what catches it. Make it an assertion in your loader, not a print in your debug tool: it costs one pass over 291 records and it is the difference between "the file is wrong" and "your engine is reading a shuffled model".
 
+**And a parser needs a witness that is not itself.** The tiling check proves the file is internally consistent; it cannot prove your *interpretation* is right. That is the failure this chapter's own numbers had: a draft called Q5_0 `type=5` in a table, which is what the specification says it is not, and nothing in the repository disagreed, because the wrong number had only ever been typed once. What settled it was a second implementation - `gguf-py`, the reference Python reader that ships with ggml - reading the same file and producing the same 291 tensor records. The book keeps that comparison as evidence (`reference/gguf-crosscheck.json`: 1,463 field-by-field comparisons, all agreeing, plus three synthetic fields `gguf-py` invents from the header, which is itself the kind of difference you have to explain rather than paper over).
+
+Do the same for your parser, and do it before you believe your own dump: llama.cpp's `llama-gguf-dump` or `gguf-py` will disagree with you, and the file settles the dispute. What such a comparison proves is structure - counts, names, dtypes, shapes, offsets. It says nothing about whether your kernel reads the bytes correctly; that is Chapter 27's problem, and it needs a different witness.
+
 **The dtype mix is the chapter's quiet bombshell.** The file is called Q4_K_M. Here is where its bytes actually go:
 
-| dtype | Bytes | Share of blob | Which tensors |
+<!-- facts: gguf-qwen2.5-0.5b.dtype-mix -->
+| dtype | Bytes | Share of blob | Tensors in this file |
 |---|---|---|---|
-| Q5_0 | 266,742,784 | 54.9% | every attention projection, the MLP's gate and up, and the token embedding |
-| Q8_0 | 146,105,344 | 30.1% | `output.weight`, and the `attn_v` of some layers |
-| Q6_K | 42,900,480 | 8.8% | `ffn_down` in most layers |
-| Q4_K | 29,417,472 | 6.1% | `ffn_down` in the rest |
-| F32 | 286,208 | 0.1% | the 121 norms and biases |
+| Q5_0 | 266,742,784 | 54.9% | `attn_k.weight`, `attn_output.weight`, `attn_q.weight`, `attn_v.weight`, `ffn_gate.weight`, `ffn_up.weight`, `token_embd.weight` (133) |
+| Q8_0 | 146,105,344 | 30.1% | `attn_v.weight`, `output.weight` (13) |
+| Q6_K | 42,900,480 | 8.8% | `ffn_down.weight` (12) |
+| Q4_K | 29,417,472 | 6.1% | `ffn_down.weight` (12) |
+| F32 | 286,208 | 0.1% | `attn_k.bias`, `attn_norm.weight`, `attn_q.bias`, `attn_v.bias`, `ffn_norm.weight`, `output_norm.weight` (121) |
+<!-- /facts -->
 
-So the file name is a recipe - "mostly Q4_K, mixed" - and the recipe lands mostly on Q5_0 at this size, because the quantizer chooses per tensor and this model's tensors are small. Every byte-per-token figure in Chapter 1's ceiling was therefore arithmetic on the *file size*, which is the only number that already contains all of this. That is why the book keeps saying file size and never "bits per weight": the second is a summary the file itself contradicts.
+So the file name is a recipe, and the recipe landed mostly on Q5_0 here - not because the model is small, but because whatever produced this file chose per tensor, and the file records the choice rather than the reason. Put the arithmetic on it and the name stops being a summary of anything:
+
+<!-- facts: gguf-qwen2.5-0.5b.bits -->
+```text
+parameters in the file        630,167,424
+blob bytes per parameter      6.16 bits
+whole file per parameter      6.24 bits  (metadata included)
+by dtype, bits per weight     Q5_0 5.50, Q8_0 8.50, Q6_K 6.56, Q4_K 4.50, F32 32.00
+```
+<!-- /facts -->
+
+Six and a fifth bits per parameter, in a file whose name says 4.5 - and, if you divide by the model card's 494 million instead of the 630 million the file stores, 7.9, which is the figure Part 0 quotes. Both divisions are correct; they answer different questions, and the gap between them is the duplicated embedding described in the next paragraph. Every byte-per-token figure in Chapter 1's ceiling was therefore arithmetic on the *file size*, which is the only number that already contains all of this. That is why the book keeps saying file size and never "bits per weight": the second is a summary the file itself contradicts, and it contradicts it by almost 40 per cent.
 
 One more, because it explains the file's own size label. The 291 tensors add up to 630,167,424 parameters, and `general.size_label` says `630M`. But the model card for Qwen2.5-0.5B counts 494,032,768. The difference is exactly 136,134,656 = 896 x 151,936: the file stores the vocabulary matrix twice, once as `token_embd.weight` and once as `output.weight`, at different precisions. A model whose embeddings are tied in training is untied in the file. Neither count is a lie; they are counts of different things, and **the only parameter count that matters is the one belonging to the bytes you are going to read.**
 
@@ -242,18 +265,30 @@ That is the chapter's contract in one sentence: **parse faithfully, assert the l
 
 ## The container, field by field
 
-Every number in this table was read from the file named in the status line above; the offsets are decimal, and the blob-relative figure in the last row is the one your parser must compute.
+The numbers come first because they are not opinions: this table is *rendered from the file* by `scripts/facts.py`, out of `facts/gguf-qwen2.5-0.5b.json`, and the repository's gate fails if the page and the facts file disagree. That is a deliberate consequence of this chapter's most embarrassing failure - an earlier draft of the table below had two tensor type ids wrong, and no checker could see it, because the wrong numbers were only ever typed once. Now they are typed nowhere:
 
-| Field | Where it lives | In this file | What breaks if you misread it |
-|---|---|---|---|
-| magic and version | bytes 0-7 | `GGUF`, v3 | you parse a different format, or a different vintage of this one |
-| tensor count | bytes 8-15 | 291 | you read 291 records where 0 exist, or stop after 26 |
-| metadata count | bytes 16-23 | 26 | you parse the tensor table as metadata, and every offset after it shifts |
-| metadata key-values | bytes 24-5,931,188 (5,931,165 B) | 26 entries, 303,323 strings, including a 4 KB chat template | the whole rest of the file is at the wrong offset - the failure that produces a plausible-looking table of nonsense |
-| tensor infos | bytes 5,931,189-5,947,740 (16,552 B) | 291 records: name, dims, type, offset | the blob offset is wrong by the difference, so every kernel reads misaligned data |
-| alignment padding | bytes 5,947,741-5,947,743 (3 B) | alignment 32, table end 5,947,741 | the blob starts off by up to 31 bytes; SIMD loads get a shifted view |
-| data-blob offset | computed, byte 5,947,744 | `ceil(table_end / alignment) * alignment` | every tensor is defined relative to it, so an error here is an error everywhere |
-| the blob | bytes 5,947,744-491,400,031 (485,452,288 B) | 291 tensors, tiling exactly | wrong weights, silently, with fluent output |
+The judgement is mine, and it comes after the facts:
+
+<!-- facts: gguf-qwen2.5-0.5b.regions -->
+| Region | Bytes | Decimal range |
+|---|---|---|
+| header | 24 | 0-23 |
+| metadata key-values | 5,931,165 | 24-5,931,188 |
+| tensor table | 16,552 | 5,931,189-5,947,740 |
+| alignment padding | 3 | 5,947,741-5,947,743 |
+| data blob | 485,452,288 | 5,947,744-491,400,031 |
+| **the file** | **491,400,032** | **0-491,400,031** |
+<!-- /facts -->
+
+What breaks when each region is misread:
+
+- **magic and version** - you are parsing a different format, or a different vintage of this one. The tensor-info record changed shape between v1 and v2, so a version check is not politeness.
+- **tensor count** - you read 291 records where none exist, or stop after 26. Every count in the header is a loop bound, and a wrong loop bound is a wrong file offset.
+- **metadata count** - you parse the tensor table as metadata. This is the single most damaging error in the chapter, because everything after it shifts and the output is still plausible.
+- **metadata key-values** - a value type you do not handle silently consumes the wrong number of bytes, and the error surfaces somewhere else.
+- **tensor table** - the blob offset is wrong by the difference, so every kernel reads a shifted view of every weight.
+- **alignment padding** - the blob starts off by up to `alignment - 1` bytes; a vectorised load gets a shifted view and the first elements are noise.
+- **data blob** - the only region that is data rather than description, and the only one where a mistake is invisible: the engine runs and lies.
 
 ## Project
 
@@ -294,12 +329,14 @@ The reference loader is `src/gguf.rs` (`load_gguf_model`, `MmapFile`). Open it a
 - You can state the file's data-blob offset from memory *and* how it is computed, and your number is 5,947,744 for this file.
 - Feeding it a truncated file produces an error naming the offset, never a panic and never zeros.
 - Your dump reports a dtype mix that is not the file's name: if your tool says this file is mostly Q4_K, it is not reading the tensor table.
+- Your table also agrees with a second implementation - `gguf-py` or llama.cpp's dumper - on every tensor's name, dtype, shape and offset. Agreement with your own dump tool is not evidence; it is the same code twice.
 
 ## Reading
 
 - code: `src/gguf.rs` (`load_gguf_model`, `MmapFile`), `src/gguf/tests.rs` at the book's [pinned baseline](../appendix/baseline.md)
 - docs: `docs/inference_e2e_walkthrough/02-gguf-load.md`
 - [gguf] The GGUF file-format specification, in the ggml repository - no arXiv ID (specification) - the header, the value types and the tensor-info record; read this before writing the parser, and read it again when the tiling check fails
+- cross-check: `scripts/gguf-crosscheck.py` in this repository, and `gguf-py` in the ggml project - a second reader, so that "my parser agrees with my dump tool" is never the evidence you submit
 - [caqa] Hennessy and Patterson, *Computer Architecture: A Quantitative Approach* (6th edition, 2017) - no arXiv ID (book) - chapter 5, for what a page fault actually charges and why a mapping is cheaper than a copy but not free
 
 ## Backfill

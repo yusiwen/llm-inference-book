@@ -92,4 +92,8 @@ echo "== 11. the book's own skeleton and links =="
 python3 scripts/probe.py .
 
 echo
+echo "== 12. the numbers in the pages still match the artifact =="
+python3 scripts/facts.py --check
+
+echo
 echo "all checks passed"

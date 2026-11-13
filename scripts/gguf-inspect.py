@@ -11,7 +11,7 @@ this script exists for three reasons:
     must tile the data blob exactly, and the last tensor must end at or before the file size.
 
 Usage:
-    python3 scripts/gguf-inspect.py FILE [--tensors] [--meta] [--hex]
+    python3 scripts/gguf-inspect.py FILE [--tensors] [--meta] [--hex] [--json]
 
 Only the container is parsed here: no tensor is decoded, and the block layouts behind those byte lengths are
 Chapter 4's subject. The sizes below are the format's own (elements per block, bytes per block).
@@ -81,6 +81,90 @@ class Reader:
 
 def align_up(n, a):
     return (n + a - 1) // a * a
+
+
+def collect(path):
+    """Everything this script can prove about a file, as plain data.
+
+    `facts.py` consumes this to write facts/<name>.json, and the chapters that quote numbers render
+    their tables from it - so a number in the book is produced here and cannot be retyped by hand.
+    """
+    import hashlib
+    buf = open(path, "rb").read()
+    r = Reader(buf)
+    if r.take(4) != GGUF_MAGIC:
+        raise SystemExit(f"{path}: not a GGUF file (magic is {buf[:4]!r})")
+    version, n_tensors, n_kv = r.u32(), r.u64(), r.u64()
+    meta, alignment = {}, 32
+    strings, string_arrays = 0, {}
+    for _ in range(n_kv):
+        key = r.string()
+        vtype = r.u32()
+        val = r.value(vtype)
+        if isinstance(val, list) and val and isinstance(val[0], str):
+            strings += len(val)
+            string_arrays[key] = len(val)
+        elif isinstance(val, str):
+            strings += 1
+        # A committed facts file must not be 10 MB. The tokenizer's 151,936-string arrays are summarised
+        # by length and a three-item sample: the book quotes their counts, never their contents.
+        if isinstance(val, list) and len(val) > 8:
+            elem = "STRING" if val and isinstance(val[0], str) else "NUMBER"
+            meta[key] = {"type": VALUE_TYPES[vtype][0], "count": len(val), "elem": elem, "sample": val[:3]}
+        else:
+            meta[key] = {"type": VALUE_TYPES[vtype][0], "value": val}
+        if key == "general.alignment":
+            alignment = val
+    kv_end = r.pos
+    tensors = []
+    for _ in range(n_tensors):
+        name = r.string()
+        dims = [r.u64() for _ in range(r.u32())]
+        ttype, off = r.u32(), r.u64()
+        tensors.append((name, dims, ttype, off))
+    infos_end = r.pos
+    blob = align_up(infos_end, alignment)
+
+    rows, dtype_bytes, dtype_kinds, dtype_count = [], {}, {}, {}
+    cursor, tiles, aligned = 0, True, True
+    for name, dims, ttype, off in sorted(tensors, key=lambda t: t[3]):
+        tn, nb, bb = GGML_TYPES.get(ttype, (f"type{ttype}", 1, 1))
+        numel = 1
+        for d in dims:
+            numel *= d
+        length = numel // nb * bb
+        rows.append({"name": name, "dims": dims, "type_id": ttype, "type": tn,
+                     "numel": numel, "bytes": length, "offset": off, "abs": blob + off})
+        dtype_bytes[tn] = dtype_bytes.get(tn, 0) + length
+        dtype_count[tn] = dtype_count.get(tn, 0) + 1
+        dtype_kinds.setdefault(tn, set()).add(name.split(".", 2)[-1] if name.startswith("blk.") else name)
+        if off != cursor:
+            tiles = False
+        if off % alignment or length % alignment:
+            aligned = False
+        cursor = off + length
+    blob_bytes = len(buf) - blob
+    if cursor != blob_bytes:
+        tiles = False
+    return {
+        "artifact": {"path": str(path), "bytes": len(buf),
+                     "sha256": hashlib.sha256(buf).hexdigest()},
+        "header": {"magic": "GGUF", "version": version, "tensor_count": n_tensors,
+                   "metadata_count": n_kv, "first_24_hex": " ".join(f"{b:02x}" for b in buf[:24])},
+        "metadata": {"count": n_kv, "end": kv_end, "bytes": kv_end - 24,
+                     "strings_total": strings, "strings_in_arrays": sum(string_arrays.values()),
+                     "string_arrays": string_arrays, "keys": meta},
+        "tensor_table": {"count": n_tensors, "end": infos_end, "bytes": infos_end - kv_end},
+        "alignment": alignment,
+        "blob": {"offset": blob, "bytes": blob_bytes,
+                 "padding": blob - infos_end},
+        "tensors": rows,
+        "dtype_bytes": dtype_bytes,
+        "dtype_count": dtype_count,
+        "dtype_kinds": {k: sorted(v) for k, v in dtype_kinds.items()},
+        "checks": {"tiles_blob": tiles, "offsets_aligned": aligned,
+                   "size_matches": blob + blob_bytes == len(buf)},
+    }
 
 
 def inspect(path, show_tensors, show_meta, show_hex):
@@ -169,4 +253,8 @@ if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if not args:
         raise SystemExit(__doc__)
-    inspect(args[0], "--tensors" in sys.argv, "--meta" in sys.argv, "--hex" in sys.argv)
+    if "--json" in sys.argv:
+        import json
+        print(json.dumps(collect(args[0]), indent=1))
+    else:
+        inspect(args[0], "--tensors" in sys.argv, "--meta" in sys.argv, "--hex" in sys.argv)

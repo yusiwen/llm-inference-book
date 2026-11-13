@@ -12,7 +12,7 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Chapters | 29 | `ls -d src/[0-9][0-9]-*/ \| wc -l` |
 | Lessons (checklist items under `## Lessons`) | 146 | counted per page by `scripts/probe.py` |
 | Pages under `src/` | 43 | `find src -name '*.md' \| wc -l` |
-| Prose bytes under `src/` | 279541 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
+| Prose bytes under `src/` | 283889 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
 | Status | all 29 chapter pages `stub` | `rg -l 'Status\*\*: stub' src/[0-9][0-9]-*/index.md \| wc -l` |
 | Sources in the reference index | 29 | `python3 scripts/references.py` (prints the count) |
 | minfer citations tracked | 143 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
@@ -52,3 +52,18 @@ Read at the [pinned baseline](baseline.md) (2026-11-11) in `github.com/yusiwen/m
 
 - `docs/TEST-BASELINES.md` and `docs/CUDA_OPTIMIZATION.md` in the reference repository - what the project measures about itself
 - [Chapter 28](../28-speed-you-can-defend/index.md) - the harness every future number on this page must come from
+
+## Reading a model file
+
+Not a measurement of the machine, but of the artifact every chapter about bytes is about: the map of a
+real GGUF, and the same map produced by a second implementation.
+
+```bash
+python3 scripts/gguf-inspect.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --meta --hex
+python3 scripts/facts.py --write ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --name gguf-qwen2.5-0.5b
+uv run --with gguf python scripts/gguf-crosscheck.py \
+    --facts facts/gguf-qwen2.5-0.5b.json --model ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf
+```
+
+Result on the M4 Pro (2026-11-13): 291 tensors, 26 metadata entries, blob at byte 5,947,744, 1,463 of
+1,463 structural fields agreeing with `gguf-py`, and the whole map parsed in 0.16 s.

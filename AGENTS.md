@@ -17,8 +17,27 @@ Run it before reporting any work as done. It builds, rejects a build warning, sc
 checks that the site fetches nothing remotely, lints the figures, checks display-maths wrappers,
 checks for a page mdBook silently stubbed, checks that the measurements page still carries its
 commands, re-derives the book's own counts (`scripts/selfcounts.py`), checks every minfer citation
-against the committed inventory, and runs `scripts/probe.py` (skeleton sections, link resolution,
-lesson-item pairing, the build ladder's coverage, the starter skeleton's shape, count drift).
+against the committed inventory, runs `scripts/probe.py` (skeleton sections, link resolution,
+lesson-item pairing, the build ladder's coverage, the starter skeleton's shape, count drift), and
+renders every `<!-- facts: ... -->` block against `facts/*.json` (`scripts/facts.py --check`).
+
+## Numbers come from artifacts, not from the author
+
+A sentence that quotes a type id, an offset or a byte count is quoting a file, and a wrong number typed
+once is invisible to every checker in this repository - it disagrees with nothing, because nothing else
+in the tree knows the answer. So numbers are generated:
+
+| Piece | Role |
+|---|---|
+| `scripts/gguf-inspect.py --json` | reads a real GGUF and emits every provable fact as JSON |
+| `scripts/facts.py --write FILE --name NAME` | writes `facts/NAME.json` (artifact path, sha256, header, metadata, all tensors, dtype mix) |
+| `scripts/facts.py --render` | fills every `<!-- facts: NAME.block -->` block from the facts file |
+| `scripts/facts.py --check` | gate: page blocks equal the render, every facts file is used, and the artifact's sha256 still matches |
+| `scripts/gguf-crosscheck.py` | a *second* implementation (`gguf-py`) reads the same file; the verdict is committed in `reference/gguf-crosscheck.json` |
+
+Rules: never type a number that a block can render; when a number must stay in prose, it either comes
+from a block or carries its command. A cross-check proves structure only - two parsers agreeing says
+nothing about whether a kernel reads the bytes correctly.
 
 ## Tracking minfer
 
