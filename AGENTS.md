@@ -82,19 +82,38 @@ Rules that follow:
 8. **Do not copy the reference project's documentation.** Link it. Mechanics are re-derived for a
    reader who is building; depth stays in the project.
 
-## Adding a chapter
+## Writing a chapter
 
-1. `src/NN-english-slug/index.md`, following an existing stub exactly.
-2. Add the entry to `src/SUMMARY.md` under its part.
-3. **Figures ship with the chapter**: draw the chapter's P0 figures from `FIGURES.md` in the same
-   sitting, include them where the prose needs them, and mark them drawn in `FIGURES.md`.
-4. **Cite at least one source by key** in `## Reading`, and regenerate the reference index with
-   `python3 scripts/references.py` (the gate fails on a stale "used in" column).
-5. Re-run the gate; `probe.py` will tell you what the page is missing.
-6. Add the chapter to `src/appendix/build-ladder.md` (step, produces, needs, what skipping costs) -
-   the probe fails when a chapter and the ladder disagree.
-7. Update the counts on `src/index.md` and `src/appendix/measurements.md` in the same commit;
-   `scripts/selfcounts.py` tells you which ones moved.
+Two questions decide what a chapter owes before a word of prose: **does it quote an artifact**, and **does it
+make a claim about the world that a second implementation could contradict**? The answers pick the evidence,
+and the gate enforces the evidence.
+
+1. **Skeleton first.** `src/NN-english-slug/index.md` from the stub: five lessons, the build step, the four
+   sections that `scripts/probe.py` requires.
+2. **An artifact means the numbers are generated, not typed.** Add `--json`-style facts from an instrument,
+   commit `facts/<name>.json`, and put every table of counts, offsets or type ids behind
+   `<!-- facts: NAME.block -->` markers that `scripts/facts.py --render` fills. Gate step 12 fails if a page
+   and its facts disagree, if a facts file is unused, or if the artifact's sha256 no longer matches.
+   Never type a number a block can render; a number that stays in prose either comes from a block or carries
+   its command.
+3. **A claim about a format or a behaviour needs a witness.** Use a second implementation
+   (`scripts/gguf-crosscheck.py` against `gguf-py`), commit the verdict under `reference/`, and reconcile
+   every difference in writing rather than normalising it away. Agreement on structure is not agreement on
+   semantics - say which one you got.
+4. **Figures ship with the chapter**: draw its P0 figures from `FIGURES.md` in the same sitting, include them
+   where the prose needs them, mark them drawn.
+5. **Cite at least one source by key** in `## Reading`, then `python3 scripts/references.py` (the gate fails
+   on a stale used-in column).
+6. **Re-run the gate**; `probe.py` names what the page is still missing. A new gate needs a negative test
+   (break the thing, confirm exit 1) before it is trusted.
+7. **Ladder and counts**: add the chapter's row to `src/appendix/build-ladder.md`, and let
+   `scripts/selfcounts.py` tell you which numbers in `src/index.md` and `src/appendix/measurements.md` moved.
+   Both go in the same commit.
+
+**Chapters with no artifact** (the graph, the seam, the backend designs, Chapters 14-19 and 21-26) have a
+different obligation, and it is not a weaker one: every claim is labelled `my judgement` and tied to an ADR
+via `path::symbol`, or to a cited source, or to a run recorded in `runs/`. What they must not do is borrow
+the authority of a measured number they do not have.
 
 ## Do not
 
@@ -106,3 +125,5 @@ Rules that follow:
 - Do not weaken a gate to make a page pass; fix the page, or change the rule here and in
   `src/appendix/conventions.md` together.
 - Do not touch the `minfer` tree from this repository's work.
+- Do not type a number into a page that a facts block could render, and do not put opinion inside a
+  generated block - numbers and judgement live in different places, or the numbers start drifting again.
