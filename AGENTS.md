@@ -35,6 +35,12 @@ in the tree knows the answer. So numbers are generated:
 | `scripts/facts.py --check` | gate: page blocks equal the render, every facts file is used, and the artifact's sha256 still matches |
 | `scripts/gguf-crosscheck.py` | a *second* implementation (`gguf-py`) reads the same file; the verdict is committed in `reference/gguf-crosscheck.json` |
 
+**A mechanism claim is a fact too.** "Layer *i* got Q6_K because `use_more_bits` picks it" is the same
+kind of assertion as a byte count, and it fails the same way: the file was produced by *some* version of the
+reference tool, and that version's rule may not be the one at the baseline. Chapter 5 asserted the current
+rule explains this file's twelve-layer split; the file's own tensor table showed a different twelve. Render
+the split from the artifact (`layer-split`) and let the page say "different set" when it is.
+
 Rules: never type a number that a block can render; when a number must stay in prose, it either comes
 from a block or carries its command. A cross-check proves structure only - two parsers agreeing says
 nothing about whether a kernel reads the bytes correctly.

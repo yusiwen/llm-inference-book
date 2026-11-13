@@ -1,0 +1,411 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 470" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="A Q4_K super-block: 256 weights in eight sub-blocks of 32, each sub-block with its own 6-bit scale and 6-bit minimum packed into a twelve-byte plane whose bits are split across a different byte than where the field appears to live, plus two 16-bit values d and dmin shared by the whole super-block, for 144 bytes or 4.5 bits per weight.">
+  <style>
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-sub { fill: #4d86b8; }
+    .fig-a-min { fill: #b8703f; }
+    .fig-a-d   { fill: #3f8f6f; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE Q4_K SUPER-BLOCK: 256 WEIGHTS, EIGHT SCALE PAIRS, TWELVE PACKED BYTES</text>
+  <text class="fig-t" x="30" y="52">the super-block, as the kernel sees it</text>
+  <text class="fig-m" x="30" y="76">sb0</text>
+  <rect class="fig-a-sub" x="62" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="64" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="64" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="76">32 weights</text>
+  <text class="fig-m" x="30" y="99">sb1</text>
+  <rect class="fig-a-sub" x="62" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="87" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="87" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="99">32 weights</text>
+  <text class="fig-m" x="30" y="122">sb2</text>
+  <rect class="fig-a-sub" x="62" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="110" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="110" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="122">32 weights</text>
+  <text class="fig-m" x="30" y="145">sb3</text>
+  <rect class="fig-a-sub" x="62" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="133" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="133" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="145">32 weights</text>
+  <text class="fig-m" x="30" y="168">sb4</text>
+  <rect class="fig-a-sub" x="62" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="156" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="156" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="168">32 weights</text>
+  <text class="fig-m" x="30" y="191">sb5</text>
+  <rect class="fig-a-sub" x="62" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="179" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="179" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="191">32 weights</text>
+  <text class="fig-m" x="30" y="214">sb6</text>
+  <rect class="fig-a-sub" x="62" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="202" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="202" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="214">32 weights</text>
+  <text class="fig-m" x="30" y="237">sb7</text>
+  <rect class="fig-a-sub" x="62" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="69" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="76" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="83" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="90" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="97" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="104" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="111" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="118" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="125" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="132" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="139" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="146" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="153" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="160" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="167" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="174" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="181" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="188" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="195" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="202" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="209" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="216" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="223" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="230" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="237" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="244" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="251" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="258" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="265" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="272" y="225" width="6" height="16" rx="1.5"/>
+  <rect class="fig-a-sub" x="279" y="225" width="6" height="16" rx="1.5"/>
+  <text class="fig-m" x="294" y="237">32 weights</text>
+  <text class="fig-s" x="30" y="262">each sub-block has its own step d*sc and offset dmin*m,</text>
+  <text class="fig-s" x="30" y="280">so one outlier spoils 32 weights, not 256.</text>
+  <rect class="fig-a-d" x="30" y="300" width="72" height="26" rx="3"/>
+  <text class="fig-m" x="42" y="317">d f16</text>
+  <rect class="fig-a-min" x="108" y="300" width="76" height="26" rx="3"/>
+  <text class="fig-m" x="116" y="317">dmin f16</text>
+  <text class="fig-s" x="196" y="317">- shared by all 256 weights</text>
+  <text class="fig-t" x="400" y="52">the twelve scale bytes, bit by bit</text>
+  <text class="fig-m" x="400" y="70">0</text>
+  <text class="fig-s" x="428" y="70">E</text>
+  <text class="fig-s" x="443" y="70">E</text>
+  <text class="fig-s" x="458" y="70">A</text>
+  <text class="fig-s" x="473" y="70">A</text>
+  <text class="fig-s" x="488" y="70">A</text>
+  <text class="fig-s" x="503" y="70">A</text>
+  <text class="fig-s" x="518" y="70">A</text>
+  <text class="fig-s" x="533" y="70">A</text>
+  <text class="fig-m" x="400" y="87">1</text>
+  <text class="fig-s" x="428" y="87">F</text>
+  <text class="fig-s" x="443" y="87">F</text>
+  <text class="fig-s" x="458" y="87">B</text>
+  <text class="fig-s" x="473" y="87">B</text>
+  <text class="fig-s" x="488" y="87">B</text>
+  <text class="fig-s" x="503" y="87">B</text>
+  <text class="fig-s" x="518" y="87">B</text>
+  <text class="fig-s" x="533" y="87">B</text>
+  <text class="fig-m" x="400" y="104">2</text>
+  <text class="fig-s" x="428" y="104">G</text>
+  <text class="fig-s" x="443" y="104">G</text>
+  <text class="fig-s" x="458" y="104">C</text>
+  <text class="fig-s" x="473" y="104">C</text>
+  <text class="fig-s" x="488" y="104">C</text>
+  <text class="fig-s" x="503" y="104">C</text>
+  <text class="fig-s" x="518" y="104">C</text>
+  <text class="fig-s" x="533" y="104">C</text>
+  <text class="fig-m" x="400" y="121">3</text>
+  <text class="fig-s" x="428" y="121">H</text>
+  <text class="fig-s" x="443" y="121">H</text>
+  <text class="fig-s" x="458" y="121">D</text>
+  <text class="fig-s" x="473" y="121">D</text>
+  <text class="fig-s" x="488" y="121">D</text>
+  <text class="fig-s" x="503" y="121">D</text>
+  <text class="fig-s" x="518" y="121">D</text>
+  <text class="fig-s" x="533" y="121">D</text>
+  <text class="fig-m" x="400" y="138">4</text>
+  <text class="fig-m" x="428" y="138">e</text>
+  <text class="fig-m" x="443" y="138">e</text>
+  <text class="fig-m" x="458" y="138">a</text>
+  <text class="fig-m" x="473" y="138">a</text>
+  <text class="fig-m" x="488" y="138">a</text>
+  <text class="fig-m" x="503" y="138">a</text>
+  <text class="fig-m" x="518" y="138">a</text>
+  <text class="fig-m" x="533" y="138">a</text>
+  <text class="fig-m" x="400" y="155">5</text>
+  <text class="fig-m" x="428" y="155">f</text>
+  <text class="fig-m" x="443" y="155">f</text>
+  <text class="fig-m" x="458" y="155">b</text>
+  <text class="fig-m" x="473" y="155">b</text>
+  <text class="fig-m" x="488" y="155">b</text>
+  <text class="fig-m" x="503" y="155">b</text>
+  <text class="fig-m" x="518" y="155">b</text>
+  <text class="fig-m" x="533" y="155">b</text>
+  <text class="fig-m" x="400" y="172">6</text>
+  <text class="fig-m" x="428" y="172">g</text>
+  <text class="fig-m" x="443" y="172">g</text>
+  <text class="fig-m" x="458" y="172">c</text>
+  <text class="fig-m" x="473" y="172">c</text>
+  <text class="fig-m" x="488" y="172">c</text>
+  <text class="fig-m" x="503" y="172">c</text>
+  <text class="fig-m" x="518" y="172">c</text>
+  <text class="fig-m" x="533" y="172">c</text>
+  <text class="fig-m" x="400" y="189">7</text>
+  <text class="fig-m" x="428" y="189">h</text>
+  <text class="fig-m" x="443" y="189">h</text>
+  <text class="fig-m" x="458" y="189">d</text>
+  <text class="fig-m" x="473" y="189">d</text>
+  <text class="fig-m" x="488" y="189">d</text>
+  <text class="fig-m" x="503" y="189">d</text>
+  <text class="fig-m" x="518" y="189">d</text>
+  <text class="fig-m" x="533" y="189">d</text>
+  <text class="fig-m" x="400" y="206">8</text>
+  <text class="fig-m" x="428" y="206">e</text>
+  <text class="fig-m" x="443" y="206">e</text>
+  <text class="fig-m" x="458" y="206">e</text>
+  <text class="fig-m" x="473" y="206">e</text>
+  <text class="fig-s" x="488" y="206">E</text>
+  <text class="fig-s" x="503" y="206">E</text>
+  <text class="fig-s" x="518" y="206">E</text>
+  <text class="fig-s" x="533" y="206">E</text>
+  <text class="fig-m" x="400" y="223">9</text>
+  <text class="fig-m" x="428" y="223">f</text>
+  <text class="fig-m" x="443" y="223">f</text>
+  <text class="fig-m" x="458" y="223">f</text>
+  <text class="fig-m" x="473" y="223">f</text>
+  <text class="fig-s" x="488" y="223">F</text>
+  <text class="fig-s" x="503" y="223">F</text>
+  <text class="fig-s" x="518" y="223">F</text>
+  <text class="fig-s" x="533" y="223">F</text>
+  <text class="fig-m" x="400" y="240">10</text>
+  <text class="fig-m" x="428" y="240">g</text>
+  <text class="fig-m" x="443" y="240">g</text>
+  <text class="fig-m" x="458" y="240">g</text>
+  <text class="fig-m" x="473" y="240">g</text>
+  <text class="fig-s" x="488" y="240">G</text>
+  <text class="fig-s" x="503" y="240">G</text>
+  <text class="fig-s" x="518" y="240">G</text>
+  <text class="fig-s" x="533" y="240">G</text>
+  <text class="fig-m" x="400" y="257">11</text>
+  <text class="fig-m" x="428" y="257">h</text>
+  <text class="fig-m" x="443" y="257">h</text>
+  <text class="fig-m" x="458" y="257">h</text>
+  <text class="fig-m" x="473" y="257">h</text>
+  <text class="fig-s" x="488" y="257">H</text>
+  <text class="fig-s" x="503" y="257">H</text>
+  <text class="fig-s" x="518" y="257">H</text>
+  <text class="fig-s" x="533" y="257">H</text>
+  <text class="fig-s" x="400" y="272">A-D, a-d: scales and mins 0-3, low six bits</text>
+  <text class="fig-s" x="400" y="290">E-H, e-h: scales and mins 4-7, HIGH two bits, in bytes 0-7</text>
+  <text class="fig-s" x="400" y="308">bytes 8-11: scales 4-7 and mins 4-7, low four bits</text>
+  <text class="fig-s" x="400" y="326">so sub-block 5 lives in bytes 5, 9 and 1 - three places</text>
+  <text class="fig-t" x="30" y="350">the arithmetic</text>
+  <text class="fig-m" x="30" y="370">12 B scales + 2 B d + 2 B dmin + 128 B nibbles = 144 B for 256 weights</text>
+  <text class="fig-m" x="30" y="387">144 * 8 / 256 = 4.50 bits per weight</text>
+  <text class="fig-m" x="30" y="404">payload 4 bits, description 0.5 bits - for sixteen numbers, not eight</text>
+  <text class="fig-s" x="30" y="432">Q4_0 spends the same 0.5 bits on eight f16 scales; the 6-bit packing is what buys the mins.</text>
+</svg>

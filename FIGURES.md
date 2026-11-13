@@ -50,7 +50,7 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 | 3.1 | `03-views-and-stride.svg` | P0 | grid | L3 | One 2-D tensor whose rows are packed with **no** padding (616 B each), and a two-row view sharing those bytes: the view's pointer is the parent plus 616, its stride is 616, and it owns nothing. The figure corrects the plan - GGML pads between tensors, never between rows. |
 | 4.1 | `04-block-anatomy.svg` | P0 | byte map | L1 | A Q4_0 block: one 16-bit scale and 16 packed nibble bytes for 32 weights, which is the 4.5 bits per weight the file pays. |
 | 4.2 | `04-block-error.svg` | P1 | bar | L5 | One outlier weight forces a larger block scale, so the other 31 values are quantized more coarsely: the error a block sees. |
-| 5.1 | `05-superblock.svg` | P0 | byte map | L2 | A 256-weight K-quant super-block: eight sub-blocks, one scale pair, and the 12 bytes of 6-bit scales unpacked before any dot product. |
+| 5.1 | `05-superblock.svg` | P0 | byte map | L2 | A 256-weight K-quant super-block: eight sub-blocks, one shared d/dmin pair, and the 12 bytes holding eight 6-bit scales and eight 6-bit mins - drawn as it is, not as planned: the packing puts sub-block 5's step in three different bytes. |
 
 ### Part 2 · Arithmetic
 
@@ -143,6 +143,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 46 | this file |
-| Drawn | 5 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 6 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

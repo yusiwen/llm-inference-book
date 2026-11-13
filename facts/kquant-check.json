@@ -1,0 +1,94 @@
+{
+ "witness": "gguf-py (gguf.quants.dequantize / quantize)",
+ "packing": {
+  "planes": 4096,
+  "fields_compared": 65536,
+  "scale_exact": 32768,
+  "min_exact": 32768,
+  "distinct_scale_values_seen": 64,
+  "agreement": "bit-exact"
+ },
+ "encoders": {
+  "Q4_K": "decode only (no encoder in gguf-py)",
+  "Q5_K": "decode only (no encoder in gguf-py)",
+  "Q6_K": "decode only (no encoder in gguf-py)"
+ },
+ "invocation": "uv run --with gguf python scripts/kquant-check.py --real facts/gguf-qwen2.5-0.5b.json:/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --real facts/gguf-qwen2.5-0.5b-q4_0.json:/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf",
+ "randomised": [
+  {
+   "dtype": "Q4_K",
+   "blocks": 32,
+   "weights": 8192,
+   "exact": 8192,
+   "max_rel_diff": 0.0,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q5_K",
+   "blocks": 32,
+   "weights": 8192,
+   "exact": 8192,
+   "max_rel_diff": 0.0,
+   "agreement": "bit-exact"
+  },
+  {
+   "dtype": "Q6_K",
+   "blocks": 32,
+   "weights": 8192,
+   "exact": 8192,
+   "max_rel_diff": 0.0,
+   "agreement": "bit-exact"
+  }
+ ],
+ "real": [
+  {
+   "dtype": "Q4_K",
+   "tensor": "blk.11.ffn_down.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "blocks": 256,
+   "weights": 65536,
+   "exact": 65536,
+   "max_rel_diff": 0.0,
+   "agreement": "bit-exact",
+   "levels_spanned_median": 15.0,
+   "levels_spanned_p10": 14.0,
+   "levels_spanned_p90": 15.0,
+   "groups": 2048
+  },
+  {
+   "dtype": "Q6_K",
+   "tensor": "blk.0.ffn_down.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "blocks": 256,
+   "weights": 65536,
+   "exact": 65536,
+   "max_rel_diff": 0.0,
+   "agreement": "bit-exact",
+   "levels_spanned_median": 55.0,
+   "levels_spanned_p10": 46.0,
+   "levels_spanned_p90": 62.0,
+   "groups": 4096
+  },
+  {
+   "dtype": "Q4_0",
+   "tensor": "token_embd.weight",
+   "file": "qwen2.5-0.5b-instruct-q4_0.gguf",
+   "blocks": 256,
+   "weights": 8192,
+   "exact": 0,
+   "max_rel_diff": 0.0,
+   "agreement": "n/a (compared on levels spanned)",
+   "levels_spanned_median": 14.0,
+   "levels_spanned_p10": 12.0,
+   "levels_spanned_p90": 15.0,
+   "groups": 256
+  }
+ ],
+ "note": "Random super-blocks are the adversarial case: real weights never set every bit pattern, so a misread plane can survive a real-file comparison - this book's own Q6_K decoder passed its first real-file reading and still had the second half's scales wrong. The encoder row is the boundary of what this script can prove: gguf-py decodes every K-quant and encodes none of them, so byte identity for a K-quant encoder needs llama-quantize, not Python.",
+ "verdict": "agree",
+ "artifact": {
+  "path": "/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+  "bytes": 491400032,
+  "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+ }
+}

@@ -248,11 +248,118 @@ def render_outlier(f):
 
 
 
+
+def render_k_anatomy(f):
+    """The super-block table: what a K-quant costs and which fields it has."""
+    out = ["| Format | Weights per super-block | Sub-blocks | Bytes per super-block | Bits per weight | Fields, in file order |",
+           "|---|---|---|---|---|---|"]
+    for dt, (elems, size, fields) in K_FORMATS.items():
+        fs = ", ".join(f"`{n}` {t}" for n, t in fields)
+        out.append(f"| {dt} | {elems} | {elems // 32} | {size} | {size * 8 / elems:.4f} | {fs} |")
+    return out
+
+
+def render_k_agreement(f):
+    """Two decoders on adversarial bytes, then on real ones."""
+    out = ["| Bytes | Format | Blocks | Weights compared | Exact matches | Agreement |",
+           "|---|---|---|---|---|---|"]
+    for r in f.get("randomised", []):
+        out.append(f"| random super-block | {r['dtype']} | {r['blocks']} | {r['weights']:,} | "
+                   f"{r['exact']:,} | {r['agreement']} |")
+    for r in f.get("real", []):
+        if r["agreement"].startswith("n/a"):
+            continue
+        out.append(f"| {r['file']} | {r['dtype']} | {r['blocks']} | {r['weights']:,} | "
+                   f"{r['exact']:,} | {r['agreement']} |")
+    return out
+
+
+def render_k_packing(f):
+    """The 6-bit plane, against the reference implementation, on every bit pattern."""
+    p = f["packing"]
+    half = p["fields_compared"] // 2
+    return ["```text",
+            f"planes examined            {p['planes']:,}  (12 random bytes each)",
+            f"scale fields compared      {p['scale_exact']:,} of {p['fields_compared']:,} of them exact",
+            f"min fields compared        {p['min_exact']:,} of {p['fields_compared']:,} of them exact",
+            f"distinct scale values      {p['distinct_scale_values_seen']} of 64 exercised",
+            f"verdict                    {p['agreement']}",
+            "```"]
+
+
+def render_k_levels(f):
+    """How much of its own grid each format's data actually uses - the affine argument, measured."""
+    out = ["| Format | File | Blocks | Grid groups | Levels spanned, median | p10 | p90 | Of |",
+           "|---|---|---|---|---|---|---|---|"]
+    levels = {"Q4_0": 16, "Q4_K": 16, "Q5_K": 32, "Q6_K": 64}
+    for r in f.get("real", []):
+        out.append(f"| {r['dtype']} | `{r['file']}` | {r['blocks']} | {r['groups']:,} | "
+                   f"{r['levels_spanned_median']:.1f} | {r['levels_spanned_p10']:.1f} | "
+                   f"{r['levels_spanned_p90']:.1f} | {levels.get(r['dtype'], 0)} |")
+    return out
+
+
+def render_k_encoders(f):
+    out = ["| Format | Reference Python package |", "|---|---|"]
+    for dt, status in f.get("encoders", {}).items():
+        out.append(f"| {dt} | {status} |")
+    return out
+
+
+
+
+def render_layer_split(f):
+    """Which layers got which type for the two tensors the mixture treats per-layer.
+
+    The file's own tensor table is the only record of the selection policy: the metadata holds a single
+    file-type integer. This renders the split as it is, next to the layers the current rule would pick.
+    """
+    def layers(dtype, cat):
+        return sorted(int(t["name"].split(".")[1]) for t in f["tensors"]
+                      if t["type"] == dtype and cat in t["name"])
+
+    more = layers("Q6_K", "ffn_down")
+    less = layers("Q4_K", "ffn_down")
+    if not more:
+        return ["(no per-layer split in this file)"]
+    n = max(more + less) + 1
+    n8 = n // 8
+    rule = [i for i in range(n) if i < n8 or i >= 7 * n // 8 or (i - n8) % 3 == 2]
+    same = "the same set" if rule == sorted(more) else "a DIFFERENT set"
+    return [
+        "```text",
+        f"layers in the file     {n}",
+        f"ffn_down, Q6_K         {', '.join(map(str, more))}",
+        f"ffn_down, Q4_K         {', '.join(map(str, less))}",
+        f"attn_v,  Q8_0          {', '.join(map(str, layers('Q8_0', 'attn_v')))}",
+        f"attn_v,  Q5_0          {', '.join(map(str, layers('Q5_0', 'attn_v')))}",
+        "",
+        f"the current rule at the baseline (i < n/8, i >= 7n/8, or (i - n/8) % 3 == 2)",
+        f"would pick             {', '.join(map(str, rule))}",
+        f"that is {same}.",
+        "```",
+    ]
+
+
+K_FORMATS = {
+    "Q4_K": (256, 144, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
+                        ("qs", "u8[128]")]),
+    "Q5_K": (256, 176, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
+                        ("qh", "u8[32]"), ("qs", "u8[128]")]),
+    "Q6_K": (256, 210, [("ql", "u8[128]"), ("qh", "u8[64]"), ("scales", "i8[16]"), ("d", "f16")]),
+}
+
 BLOCKS = {
     "anatomy": render_anatomy,
     "agreement": render_agreement,
     "error": render_error,
     "outlier": render_outlier,
+    "layer-split": render_layer_split,
+    "k-anatomy": render_k_anatomy,
+    "k-agreement": render_k_agreement,
+    "k-packing": render_k_packing,
+    "k-levels": render_k_levels,
+    "k-encoders": render_k_encoders,
     "strides": render_strides,
     "block-sizes": render_block_sizes,
     "bits": render_bits,

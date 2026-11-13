@@ -687,6 +687,7 @@
   },
   {
    "pages": [
+    "ch 2",
     "part 0"
    ],
    "path": "src/gguf.rs",
@@ -1035,6 +1036,14 @@
    "path": "src/quantize.rs",
    "resolved": true,
    "symbol": null
+  },
+  {
+   "pages": [
+    "ch 5"
+   ],
+   "path": "src/quantize/mix.rs",
+   "resolved": true,
+   "symbol": "use_more_bits"
   },
   {
    "pages": [
