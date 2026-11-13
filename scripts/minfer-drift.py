@@ -31,6 +31,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import time
 
 # A citation is a backticked minfer path, optionally followed by `::symbol`.
 CITATION = re.compile(r"`((?:src|docs|crates|tests|examples)/[A-Za-z0-9_./+-]+)(?:::(?:r#)?([A-Za-z_][A-Za-z0-9_]*))?`")
@@ -203,6 +204,19 @@ def main():
         return 2
 
     sha = git(repo, "rev-parse", ref).stdout.strip()
+
+    # Baseline age: the one number that says whether the book is behind on purpose or by neglect.
+    # The same figures are printed into the daily issue by .github/workflows/drift.yml.
+    bdate = git(repo, "show", "-s", "--format=%cs", sha).stdout.strip()
+    bepoch = int(git(repo, "show", "-s", "--format=%ct", sha).stdout.strip() or 0)
+    age = int((time.time() - bepoch) // 86400) if bepoch else -1
+    tags = git(repo, "tag", "--list", "v*", "--sort=-v:refname", check=False).stdout.split()
+    latest = tags[0] if tags else "none"
+    ahead = git(repo, "rev-list", "--count", f"{sha}..HEAD", check=False).stdout.strip() or "0"
+    print(f"baseline {sha[:7]} dated {bdate}: {age} day(s) old, "
+          f"master is {ahead} commit(s) ahead, latest tag {latest}"
+          + ("  [due: the monthly fallback has passed]" if age >= 30 else ""))
+
     findings, inv = compare(root, repo, ref)
     derived = counts(repo, ref)
     mode = "HEAD (advisory)" if args.head else f"baseline {sha[:7]}"

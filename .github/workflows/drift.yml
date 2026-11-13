@@ -38,9 +38,33 @@ jobs:
       # distance too, so the minfer clone keeps its history.
       - name: Resolve the baseline
         run: |
+          set -euo pipefail
           sha=$(grep -oE '[0-9a-f]{40}' minfer.lock | head -1)
-          echo "baseline=$sha" >> "$GITHUB_ENV"
           git -C minfer cat-file -e "$sha^{commit}" && echo "baseline present in the clone"
+          # Baseline age is the one number that says whether the book is drifting behind on purpose
+          # or by neglect. Commit dates, not author dates: a rebase rewrites one and not the other.
+          bdate=$(git -C minfer show -s --format=%cs "$sha")
+          bepoch=$(git -C minfer show -s --format=%ct "$sha")
+          age=$(( ( $(date -u +%s) - bepoch ) / 86400 ))
+          latest=$(git -C minfer tag --list 'v*' --sort=-v:refname | head -1 || true)
+          ahead=$(git -C minfer rev-list --count "$sha..HEAD")
+          {
+            echo "baseline=$sha"
+            echo "baseline_date=$bdate"
+            echo "baseline_age_days=$age"
+            echo "latest_tag=${latest:-none}"
+            echo "commits_ahead=$ahead"
+          } >> "$GITHUB_ENV"
+          {
+            echo "### minfer baseline"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| baseline | \`${sha:0:7}\` ($bdate) |"
+            echo "| baseline age | **$age days** |"
+            echo "| master | $ahead commit(s) ahead |"
+            echo "| latest tag | ${latest:-none} |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Static drift against the baseline
         run: |
@@ -70,8 +94,22 @@ jobs:
           number=$(gh issue list --state open --search "in:title \"$title\"" --json number,title \
                      --jq "[.[] | select(.title == \"$title\")][0].number // empty")
           {
-            echo "Baseline: \`$baseline\` (see \`minfer.lock\`)"
+            echo "Baseline: \`$baseline\` (see \`minfer.lock\`, dated $baseline_date)"
             echo "Master: \`$(git -C minfer rev-parse --short HEAD)\` on $(date -u +%Y-%m-%d)"
+            echo
+            echo "| Baseline age | Master | Latest tag |"
+            echo "|---|---|---|"
+            echo "| **$baseline_age_days days** | $commits_ahead commit(s) ahead | $latest_tag |"
+            if [ "$baseline_age_days" -ge 30 ]; then
+              echo
+              echo "> **Due for a bump.** The monthly fallback has passed: follow the six steps on"
+              echo "> [the baseline page](https://yusiwen.cn/llm-inference-book/appendix/baseline.html)."
+            fi
+            if [ "$latest_tag" != "none" ] && [ "$commits_ahead" != "0" ]; then
+              echo
+              echo "> A tagged release exists beyond the baseline ($latest_tag); a tag is a fact to"
+              echo "> prefer over a Tuesday, when a bump is due."
+            fi
             echo
             echo '## Against the baseline'
             echo '```'

@@ -66,6 +66,17 @@ Six steps, in this order, and the whole thing is one commit.
 5. Update `minfer.lock` (commit, describe, date, counts) and the counts on [Measurements](measurements.md).
 6. `python3 scripts/minfer-drift.py --repo <minfer> --ref <new-sha> --write-inventory reference/baseline-citations.json`, append a row to the ledger below, run `bash scripts/verify.sh`, commit as `docs(baseline): move to <tag or sha>`.
 
+## How you are reminded
+
+The daily advisory job prints the baseline's **age in days**, how many commits `master` is ahead, and the latest tag, at the top of the rolling issue - then adds a line when the age passes 30 days, which is the monthly fallback this book promised itself. Nothing acts on that reminder automatically: an age is a prompt to run the six steps above, not evidence that anything is wrong. A baseline can be a month old and still correct, and one that is a day old can already be behind on a renamed kernel.
+
+Locally the same three numbers come out of the tool, so you never have to open GitHub to ask "how far behind am I?":
+
+```bash
+python3 scripts/minfer-drift.py --repo <minfer> --ref <baseline>
+# baseline 88ffa5d dated 2026-11-11: 1 day(s) old, master is 5 commit(s) ahead, latest tag v0.0.9
+```
+
 ## Ledger (append-only)
 
 One row per move. Never edit an old row: the ledger is a log, and a log that gets corrected stops being one.
