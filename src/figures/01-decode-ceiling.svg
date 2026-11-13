@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 420" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="A nomogram: model file size on the vertical axis, memory bandwidth on the horizontal axis, and straight iso-lines for ten, twenty-five, fifty and one hundred tokens per second, with the four measured machine bandwidths marked on the four gigabyte grid line">
+  <style>
+    .fig-card { fill: var(--quote-bg, #13293d); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-grid { stroke: var(--table-border-color, #274357); stroke-width: .7; opacity: .5; fill: none; }
+    .fig-axis { stroke: var(--fg, #cfdae5); stroke-width: 1.1; opacity: .8; fill: none; }
+    .fig-iso  { stroke: var(--fg, #cfdae5); stroke-width: 1; opacity: .55; fill: none; }
+    .fig-drop { stroke: var(--table-border-color, #274357); stroke-width: .9; stroke-dasharray: 3 3; fill: none; }
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .92; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .92; }
+    .fig-a-cpu { fill: #4d86b8; }
+    .fig-a-met { fill: #3f8f6f; }
+    .fig-a-cud { fill: #b8703f; }
+  </style>
+  <text class="fig-cap" x="24" y="22">THE DECODE CEILING, WITHOUT A MACHINE IN IT</text>
+  <text class="fig-s" x="24" y="42">Find your machine's bandwidth and your file's size: the iso-line through that point is the ceiling.</text>
+  <rect class="fig-card" x="78" y="56" width="704" height="290" rx="8"/>
+  <line class="fig-grid" x1="96.0" y1="330.0" x2="96.0" y2="56.0"/>
+  <text class="fig-s" x="96.0" y="348.0" text-anchor="middle">0</text>
+  <line class="fig-grid" x1="216.4" y1="330.0" x2="216.4" y2="56.0"/>
+  <text class="fig-s" x="216.4" y="348.0" text-anchor="middle">50</text>
+  <line class="fig-grid" x1="336.7" y1="330.0" x2="336.7" y2="56.0"/>
+  <text class="fig-s" x="336.7" y="348.0" text-anchor="middle">100</text>
+  <line class="fig-grid" x1="457.1" y1="330.0" x2="457.1" y2="56.0"/>
+  <text class="fig-s" x="457.1" y="348.0" text-anchor="middle">150</text>
+  <line class="fig-grid" x1="577.4" y1="330.0" x2="577.4" y2="56.0"/>
+  <text class="fig-s" x="577.4" y="348.0" text-anchor="middle">200</text>
+  <line class="fig-grid" x1="697.8" y1="330.0" x2="697.8" y2="56.0"/>
+  <text class="fig-s" x="697.8" y="348.0" text-anchor="middle">250</text>
+  <line class="fig-grid" x1="96.0" y1="330.0" x2="770.0" y2="330.0"/>
+  <text class="fig-s" x="86.0" y="334.0" text-anchor="end">0</text>
+  <line class="fig-grid" x1="96.0" y1="261.5" x2="770.0" y2="261.5"/>
+  <text class="fig-s" x="86.0" y="265.5" text-anchor="end">4</text>
+  <line class="fig-grid" x1="96.0" y1="193.0" x2="770.0" y2="193.0"/>
+  <text class="fig-s" x="86.0" y="197.0" text-anchor="end">8</text>
+  <line class="fig-grid" x1="96.0" y1="124.5" x2="770.0" y2="124.5"/>
+  <text class="fig-s" x="86.0" y="128.5" text-anchor="end">12</text>
+  <line class="fig-grid" x1="96.0" y1="56.0" x2="770.0" y2="56.0"/>
+  <text class="fig-s" x="86.0" y="60.0" text-anchor="end">16</text>
+  <line class="fig-axis" x1="96.0" y1="330.0" x2="770.0" y2="330.0"/>
+  <line class="fig-axis" x1="96.0" y1="330.0" x2="96.0" y2="56.0"/>
+  <line class="fig-iso" x1="96.0" y1="330.0" x2="770.0" y2="282.1"/>
+  <text class="fig-s" x="764.0" y="274.1" text-anchor="end">100 tok/s</text>
+  <line class="fig-iso" x1="96.0" y1="330.0" x2="770.0" y2="234.1"/>
+  <text class="fig-s" x="764.0" y="226.1" text-anchor="end">50 tok/s</text>
+  <line class="fig-iso" x1="96.0" y1="330.0" x2="770.0" y2="138.2"/>
+  <text class="fig-s" x="764.0" y="130.2" text-anchor="end">25 tok/s</text>
+  <line class="fig-iso" x1="96.0" y1="330.0" x2="481.1" y2="56.0"/>
+  <text class="fig-s" x="489.1" y="60.0">10 tok/s</text>
+  <line class="fig-drop" x1="204.6" y1="261.5" x2="204.6" y2="330.0"/>
+  <circle class="fig-a-cpu" cx="204.6" cy="261.5" r="4.5"/>
+  <text class="fig-s" x="214.6" y="251.5" text-anchor="start">NUC11 45</text>
+  <line class="fig-drop" x1="572.6" y1="261.5" x2="572.6" y2="330.0"/>
+  <circle class="fig-a-met" cx="572.6" cy="261.5" r="4.5"/>
+  <text class="fig-s" x="562.6" y="251.5" text-anchor="end">M4 Pro CPU 198</text>
+  <line class="fig-drop" x1="606.3" y1="261.5" x2="606.3" y2="330.0"/>
+  <circle class="fig-a-met" cx="606.3" cy="261.5" r="4.5"/>
+  <text class="fig-s" x="616.3" y="251.5" text-anchor="start">Metal 212</text>
+  <line class="fig-drop" x1="678.5" y1="261.5" x2="678.5" y2="330.0"/>
+  <circle class="fig-a-cud" cx="678.5" cy="261.5" r="4.5"/>
+  <text class="fig-s" x="678.5" y="237.5" text-anchor="middle">CUDA 242</text>
+  <text class="fig-s" x="770" y="366" text-anchor="end">memory bandwidth (GB/s)</text>
+  <text class="fig-s" x="52" y="193.0" text-anchor="middle" transform="rotate(-90 52 193.0)">model file size (GB)</text>
+  <text class="fig-s" x="24" y="396">Iso-lines assume every byte read is a weight, read once per token: a ceiling, not a forecast.</text>
+</svg>

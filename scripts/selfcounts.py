@@ -49,7 +49,7 @@ def derive(root):
         "Chapters": len(chapters),
         "Lessons (checklist items under `## Lessons`)": sum(per_chapter.values()),
         "Pages under `src/`": len(pages(src)),
-        "Prose bytes under `src/` (all stubs)": sum(p.stat().st_size for p in pages(src)),
+        "Prose bytes under `src/`": sum(p.stat().st_size for p in pages(src)),
         "Sources in the reference index": sources,
         "minfer citations tracked": citations,
         "Figures planned / drawn": f"{fig_plan} / {fig_drawn}",

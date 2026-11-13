@@ -4,7 +4,7 @@
 
 This is a build book, not a survey. It takes you from a quantized file on disk to a serving engine that answers requests on the CPU, on Apple silicon and on an NVIDIA GPU - and it makes you write each part yourself, in your own tree, with one real engine open beside you as the reference.
 
-> **This build**: a skeleton. All 29 chapters are stubs: the outline, the lesson checklists, the empty ledgers and the acceptance criteria exist; the prose does not, and none of the 46 planned figures is drawn. What *is* finished is the shape of the book, the [reference index](appendix/references.md), and [the audit](appendix/cuda-docs-audit.md) of the documentation this book follows.
+> **This build**: the frame is finished and the prose is starting. Twenty-eight of the twenty-nine chapters are still stubs - the outline, the lesson checklists and the acceptance criteria exist, the prose does not - and 2 of the 46 planned figures are drawn, both of them in Chapter 1. What *is* finished is the shape of the book, [the build ladder](appendix/build-ladder.md), the [reference machines](appendix/machines.md), the [reference index](appendix/references.md) and [the audit](appendix/cuda-docs-audit.md) of the documentation this book follows.
 
 The reference engine is **minfer**, a pure-Rust inference engine with no machine-learning framework underneath it: every kernel is hand-written, from the AVX2 and NEON dot products to the CUDA matmuls. This book describes minfer at the commit recorded on [the baseline page](appendix/baseline.md), and every code pointer in it is a file plus a symbol, not a line number, because line numbers move.
 

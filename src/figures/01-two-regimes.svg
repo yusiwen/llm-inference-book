@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 400" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="One weight matrix used twice: during prefill it meets every row of a prompt at once and is limited by arithmetic, during decode it meets one row per token and is limited by the bytes it has to read">
+  <style>
+    .fig-card { fill: var(--quote-bg, #13293d); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-alt  { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-w    { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #274357); stroke-width: .8; }
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-1  { fill: #4d86b8; }
+    .fig-a-2  { fill: #b8703f; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE PROMPT, TWO REGIMES - THE SAME WEIGHTS, DIFFERENT JOB</text>
+  <rect class="fig-card" x="24" y="38" width="372" height="256" rx="10"/>
+  <text class="fig-t" x="40" y="62">Prefill - the prompt</text>
+  <text class="fig-s" x="40" y="80">N tokens in one pass</text>
+  <rect class="fig-w" x="40" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="40" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="56" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="72" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="88" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="104" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="120" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="136" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="152" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-a-1" x="192" y="94" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="110" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="126" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="142" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="158" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="174" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="190" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="192" y="206" width="96" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="94" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="110" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="126" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="142" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="158" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="174" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="190" width="64" height="16" rx="3"/>
+  <rect class="fig-a-1" x="312" y="206" width="64" height="16" rx="3"/>
+  <text class="fig-s" x="40" y="238">weights</text>
+  <text class="fig-s" x="240.0" y="238" text-anchor="middle">activations</text>
+  <text class="fig-s" x="344.0" y="238" text-anchor="middle">logits</text>
+  <text class="fig-s" x="40" y="254">N rows at once</text>
+  <rect class="fig-alt" x="40" y="266" width="340" height="24" rx="6"/>
+  <text class="fig-s" x="50" y="282">each weight row is used N times</text>
+  <text class="fig-s" x="40" y="316">arithmetic-bound: FLOPs are the cost</text>
+  <text class="fig-cap" x="40" y="338">MANY ROWS -> FLOPs</text>
+  <rect class="fig-card" x="414" y="38" width="372" height="256" rx="10"/>
+  <text class="fig-t" x="430" y="62">Decode - one token per step</text>
+  <text class="fig-s" x="430" y="80">one token, then loop</text>
+  <rect class="fig-w" x="430" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="94" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="110" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="126" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="142" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="158" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="174" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="190" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="430" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="446" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="462" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="478" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="494" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="510" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="526" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-w" x="542" y="206" width="16" height="16" rx="2"/>
+  <rect class="fig-a-2" x="582" y="94" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="110" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="126" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="142" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="158" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="174" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="190" width="96" height="16" rx="3"/>
+  <rect class="fig-w" x="582" y="206" width="96" height="16" rx="3"/>
+  <rect class="fig-a-2" x="702" y="94" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="110" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="126" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="142" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="158" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="174" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="190" width="64" height="16" rx="3"/>
+  <rect class="fig-w" x="702" y="206" width="64" height="16" rx="3"/>
+  <text class="fig-s" x="430" y="238">weights</text>
+  <text class="fig-s" x="630.0" y="238" text-anchor="middle">activations</text>
+  <text class="fig-s" x="734.0" y="238" text-anchor="middle">logits</text>
+  <text class="fig-s" x="430" y="254">1 row per token</text>
+  <rect class="fig-alt" x="430" y="266" width="340" height="24" rx="6"/>
+  <text class="fig-s" x="440" y="282">each weight row is used once</text>
+  <text class="fig-s" x="430" y="316">bandwidth-bound: the file is the cost</text>
+  <text class="fig-cap" x="430" y="338">ONE ROW -> BYTES</text>
+  <text class="fig-s" x="24" y="380">Batching B sequences turns decode back toward the prefill shape: one read of the weights, B tokens out.</text>
+</svg>
