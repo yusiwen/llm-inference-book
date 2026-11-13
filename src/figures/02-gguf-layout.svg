@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 430" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="A GGUF file from byte zero: a 24-byte header, 5.93 MB of metadata key-values, a 16.55 KB tensor table, 3 bytes of alignment padding, then the 485 MB data blob. Two zoom insets decode the header field by field and one tensor-info record, and a third row shows the byte ranges of the two tensors that fill half the blob.">
+  <style>
+    .fig-card { fill: var(--quote-bg, #13293d); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-alt  { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .8; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-lead { stroke: var(--table-border-color, #274357); stroke-width: .9; fill: none; }
+    .fig-a-hdr { fill: #b8703f; }
+    .fig-a-meta { fill: #4d86b8; }
+    .fig-a-tab { fill: #3f8f6f; }
+    .fig-a-blob { fill: #6b7f92; }
+    .fig-a-t1  { fill: #b8703f; }
+    .fig-a-t2  { fill: #3f8f6f; }
+  </style>
+  <text class="fig-cap" x="24" y="22">THE FILE IS A MAP: 24 BYTES OF HEADER, THEN A TABLE THAT DESCRIBES THE REST</text>
+  <text class="fig-m" x="40" y="52">the file, not to scale (491,400,032 bytes)</text>
+  <rect class="fig-a-hdr"  x="40" y="60" width="14"  height="30"/>
+  <rect class="fig-a-meta" x="54" y="60" width="300" height="30"/>
+  <rect class="fig-a-tab"  x="354" y="60" width="44" height="30"/>
+  <rect class="fig-a-blob" x="398" y="60" width="372" height="30"/>
+  <text class="fig-s" x="64" y="80">metadata  5,931,165 B  (26 entries)</text>
+  <text class="fig-s" x="408" y="80">data blob  485,452,288 B  (291 tensors)</text>
+  <line class="fig-lead" x1="47" y1="58" x2="47" y2="44"/>
+  <text class="fig-m" x="40" y="38">header 24 B</text>
+  <line class="fig-lead" x1="376" y1="58" x2="376" y2="44"/>
+  <text class="fig-m" x="300" y="38">table 16,552 B + 3 B pad</text>
+  <text class="fig-t" x="40" y="120">The header, all 24 bytes of it</text>
+  <rect class="fig-alt" x="40" y="132" width="74" height="34" rx="4"/>
+  <text class="fig-s" x="46" y="146">magic</text>
+  <text class="fig-m" x="46" y="160">4 B  47 47 55 46</text>
+  <rect class="fig-alt" x="118" y="132" width="60" height="34" rx="4"/>
+  <text class="fig-s" x="124" y="146">version</text>
+  <text class="fig-m" x="124" y="160">4 B  03 00 00 00</text>
+  <rect class="fig-alt" x="182" y="132" width="96" height="34" rx="4"/>
+  <text class="fig-s" x="188" y="146">tensor count</text>
+  <text class="fig-m" x="188" y="160">8 B  23 01 .. 00</text>
+  <rect class="fig-alt" x="282" y="132" width="108" height="34" rx="4"/>
+  <text class="fig-s" x="288" y="146">metadata count</text>
+  <text class="fig-m" x="288" y="160">8 B  1a 00 .. 00</text>
+  <text class="fig-s" x="404" y="146">= 291 tensors, 26 metadata entries, format version 3.</text>
+  <text class="fig-s" x="404" y="164">Read these four numbers and you know how much follows.</text>
+  <text class="fig-t" x="40" y="200">One tensor-info record, from the table</text>
+  <rect class="fig-alt" x="40" y="212" width="152" height="30" rx="4"/>
+  <text class="fig-s" x="46" y="232">name = output.weight</text>
+  <rect class="fig-alt" x="196" y="212" width="78" height="30" rx="4"/>
+  <text class="fig-s" x="202" y="232">n_dims = 2</text>
+  <rect class="fig-alt" x="278" y="212" width="132" height="30" rx="4"/>
+  <text class="fig-s" x="284" y="232">dims = 896 x 151936</text>
+  <rect class="fig-alt" x="414" y="212" width="106" height="30" rx="4"/>
+  <text class="fig-s" x="420" y="232">type = 8 (Q8_0)</text>
+  <rect class="fig-alt" x="524" y="212" width="84" height="30" rx="4"/>
+  <text class="fig-s" x="530" y="232">offset = 0</text>
+  <text class="fig-s" x="620" y="226">291 of these,</text>
+  <text class="fig-s" x="620" y="242">13 KB, no data</text>
+  <text class="fig-t" x="40" y="276">Inside the blob: the two tensors that are half the file</text>
+  <rect class="fig-alt" x="40" y="290" width="730" height="34" rx="4"/>
+  <rect class="fig-a-t1" x="40" y="290" width="218" height="34" rx="4"/>
+  <rect class="fig-a-t2" x="258" y="290" width="141" height="34" rx="4"/>
+  <text class="fig-s" x="48" y="312">output.weight  144.6 MB</text>
+  <text class="fig-s" x="262" y="312">token_embd  93.6 MB</text>
+  <text class="fig-m" x="40" y="338">blob + 0</text>
+  <text class="fig-m" x="407" y="338">the other 289 tensors: 251 MB</text>
+  <text class="fig-s" x="24" y="392">Both are the vocabulary matrix (896 x 151,936), stored twice: the file holds 630 M parameters,</text>
+  <text class="fig-s" x="24" y="410">while the model card says 494 M. The tensor table is where that gap lives.</text>
+</svg>
