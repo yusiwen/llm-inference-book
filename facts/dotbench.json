@@ -1,0 +1,15 @@
+{
+ "machine": "Apple M4 Pro",
+ "compiler": "clang -O2",
+ "row_len": 896,
+ "rows": 8192,
+ "runs": 7,
+ "reps": 3,
+ "weight_bytes_per_row": 504,
+ "paths": [
+  {"name": "dq", "ns_per_row": 387.6, "gb_per_s": 1.30, "gmac_per_s": 2.31, "median_ms": 3.175, "range_ms": [2.710, 4.906], "speedup_vs_dq": 1.00},
+  {"name": "i32", "ns_per_row": 69.9, "gb_per_s": 7.21, "gmac_per_s": 12.81, "median_ms": 0.573, "range_ms": [0.485, 0.923], "speedup_vs_dq": 5.54},
+  {"name": "i16", "ns_per_row": 43.0, "gb_per_s": 11.73, "gmac_per_s": 20.85, "median_ms": 0.352, "range_ms": [0.311, 0.510], "speedup_vs_dq": 9.02}
+ ],
+ "checksums_agree": true
+}

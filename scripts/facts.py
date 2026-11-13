@@ -341,6 +341,65 @@ def render_layer_split(f):
     ]
 
 
+
+def render_dot_errors(f):
+    """The decomposition: what each stage of the integer dot product costs."""
+    out = ["| Pair | Rows | Activation, Q8_0 rounding | Float path, relative | Integer path, median relative | Integer path, over the norm product | Integer arithmetic alone |",
+           "|---|---|---|---|---|---|---|"]
+    for p in f.get("pairs", []):
+        out.append(f"| {p['pair']} | {p['weights']['rows_used']} | "
+                   f"{p['activation']['q8_relative_rms_error']:.3%} | "
+                   f"{p['float_path_max_rel_error']:.1e} | "
+                   f"{p['integer_path_median_rel_error']:.1e} | "
+                   f"{p['integer_error_over_norm_product_max']:.1e} | "
+                   f"{p['integer_vs_same_activations_max_rel_error']:.1e} |")
+    return out
+
+
+def render_dot_bounds(f):
+    """Is a 16-bit block accumulator legal? The answer is a property of the format, not of the data."""
+    out = ["| Weight format | Weights per block | Largest |q| | Worst-case block partial | Fits in i16 (32,767)? |",
+           "|---|---|---|---|---|"]
+    order = ["Q4_0", "Q5_0", "Q6_K", "Q8_0"]
+    b = f.get("accumulator_bounds", {})
+    for name in order:
+        if name not in b:
+            continue
+        e = b[name]
+        out.append(f"| {name} | {e['weights_per_block']} | {e['max_weight']} | "
+                   f"{e['worst_case_partial']:,} | {'yes' if e['fits_i16'] else 'no'} |")
+    return out
+
+
+def render_dot_speed(f):
+    """Three scalar kernels, the same arithmetic, median of independent runs."""
+    out = ["| Path | ns per row | Weight throughput | Multiply-accumulates | Speed vs dequantize-then-dot | Run range |",
+           "|---|---|---|---|---|---|"]
+    label = {"dq": "dequantize to f32, then f32 fma", "i32": "integers, i32 accumulator",
+             "i16": "integers, i16 block accumulator"}
+    for p in f.get("paths", []):
+        lo, hi = p["range_ms"]
+        out.append(f"| `{p['name']}` - {label.get(p['name'], p['name'])} | {p['ns_per_row']:.1f} | "
+                   f"{p['gb_per_s']:.2f} GB/s | {p['gmac_per_s']:.2f} GMAC/s | "
+                   f"{p['speedup_vs_dq']:.2f}x | {lo:.2f}-{hi:.2f} ms |")
+    return out
+
+
+def render_dot_headroom(f):
+    """The gap between what a scalar kernel reaches and what the machine can deliver."""
+    paths = {p["name"]: p for p in f.get("paths", [])}
+    if "i16" not in paths:
+        return ["(no scalar measurement in this facts file)"]
+    best = paths["i16"]["gb_per_s"]
+    return ["```text",
+            f"rows benchmarked            {f['rows']:,} of {f['row_len']} weights each",
+            f"weight bytes per row       {f['weight_bytes_per_row']:.0f} B (28 blocks x 18 B)",
+            f"best scalar throughput     {best:.2f} GB/s",
+            f"measured memory bandwidth  198 GB/s (Chapter 1, same machine)",
+            f"headroom                   {198 / best:.0f}x short of bandwidth-bound",
+            "```"]
+
+
 K_FORMATS = {
     "Q4_K": (256, 144, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
                         ("qs", "u8[128]")]),
@@ -355,6 +414,10 @@ BLOCKS = {
     "error": render_error,
     "outlier": render_outlier,
     "layer-split": render_layer_split,
+    "dot-errors": render_dot_errors,
+    "dot-bounds": render_dot_bounds,
+    "dot-speed": render_dot_speed,
+    "dot-headroom": render_dot_headroom,
     "k-anatomy": render_k_anatomy,
     "k-agreement": render_k_agreement,
     "k-packing": render_k_packing,
@@ -447,7 +510,11 @@ def check():
         if f.stem not in used:
             findings.append(f"facts/{f.name}: no page uses these facts (stale file?)")
         data = json.loads(f.read_text())
-        art = data["artifact"]
+        art = data.get("artifact")
+        if art is None:
+            # A measurement artifact (a timing run) describes a machine, not a file: there is no bytes hash
+            # to re-derive, and the run range inside it is what a reader should look at instead.
+            continue
         path = pathlib.Path(art["path"])
         if not path.exists():
             continue  # the artifact is not on this machine; the recorded hash cannot be re-derived

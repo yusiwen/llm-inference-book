@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 420" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="Dataflow of a quantized dot product: an f32 activation row is quantized once into Q8_0 blocks with an f16 scale per 32 values, each block is multiplied against a Q4_0 block of 32 nibbles plus its f16 scale using integer arithmetic, the 32 products are summed exactly into an int32, and one float multiply per block applies the products of the two scales before a final float sum.">
+  <style>
+    .fig-box  { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #274357); stroke-width: 1; }
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-line { stroke: var(--quote-border, #4a6577); stroke-width: 1.4; fill: none; }
+    .fig-line-head { fill: var(--quote-border, #4a6577); }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE QUANTIZED DOT PRODUCT: ACTIVATIONS ONCE, WEIGHTS AS THEY LIE</text>
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="fig-line-head" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <rect class="fig-box" x="24" y="44" width="250" height="60" rx="4"/>
+  <text class="fig-t" x="36" y="66">activation row, f32</text>
+  <text class="fig-s" x="36" y="86">896 floats from the previous layer</text>
+  <text class="fig-m" x="36" y="102">one per token, per layer</text>
+  <rect class="fig-box" x="24" y="196" width="250" height="76" rx="4"/>
+  <text class="fig-t" x="36" y="218">Q4_0 weight row</text>
+  <text class="fig-s" x="36" y="238">28 blocks: f16 scale + 16 nibble bytes</text>
+  <text class="fig-m" x="36" y="256">896 weights, 504 B, read as they lie on disk</text>
+  <rect class="fig-box" x="300" y="44" width="200" height="60" rx="4"/>
+  <text class="fig-t" x="312" y="66">quantize to Q8_0</text>
+  <text class="fig-s" x="312" y="86">28 blocks: f16 scale + 32 i8</text>
+  <text class="fig-m" x="312" y="102">0.53% relative RMS, once per row</text>
+  <path class="fig-line" d="M274 74 L298 74" marker-end="url(#ar)"/>
+  <rect class="fig-box" x="300" y="130" width="240" height="104" rx="4"/>
+  <text class="fig-t" x="312" y="152">integer dot, per block</text>
+  <text class="fig-s" x="312" y="172">32 x (4-bit - 8) times (8-bit)</text>
+  <text class="fig-s" x="312" y="190">summed into an int32: exact</text>
+  <text class="fig-m" x="312" y="210">896 multiply-accumulates per row</text>
+  <text class="fig-m" x="312" y="226">no rounding, no intermediate float</text>
+  <path class="fig-line" d="M400 106 L400 128" marker-end="url(#ar)"/>
+  <path class="fig-line" d="M150 196 L150 170 L298 170" marker-end="url(#ar)"/>
+  <rect class="fig-box" x="566" y="130" width="220" height="104" rx="4"/>
+  <text class="fig-t" x="578" y="152">scale, once per block</text>
+  <text class="fig-s" x="578" y="172">f32 = partial x d_w x d_a</text>
+  <text class="fig-s" x="578" y="190">28 float multiplies, not 896</text>
+  <text class="fig-m" x="578" y="210">these 28 f32 values are summed</text>
+  <text class="fig-m" x="578" y="226">in f32: the only float work left</text>
+  <path class="fig-line" d="M542 182 L564 182" marker-end="url(#ar)"/>
+  <text class="fig-t" x="24" y="316">the contract, in three numbers</text>
+  <text class="fig-s" x="24" y="338">weights read as bytes, never dequantized into a buffer</text>
+  <text class="fig-s" x="24" y="357">int32 accumulator: 32 x 8 x 127 = 32,512 worst case, so i16 is legal for Q4_0 and for nothing heavier</text>
+  <text class="fig-s" x="24" y="376">one f32 multiply per block: 28 per 896, and the activations were quantized once for all of them</text>
+  <text class="fig-m" x="24" y="400">measured on this book's file, 512 rows: 7.7e-04 of the norm product, and the integer arithmetic contributes 0</text>
+</svg>

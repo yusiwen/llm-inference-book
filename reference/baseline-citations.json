@@ -1088,6 +1088,14 @@
   },
   {
    "pages": [
+    "ch 6"
+   ],
+   "path": "src/quants/dot_q4_0.rs",
+   "resolved": true,
+   "symbol": "dot_q4_0_q8_0_avx2"
+  },
+  {
+   "pages": [
     "ch 5"
    ],
    "path": "src/quants/kquant.rs",
@@ -1101,6 +1109,14 @@
    "path": "src/quants/neon.rs",
    "resolved": true,
    "symbol": null
+  },
+  {
+   "pages": [
+    "ch 6"
+   ],
+   "path": "src/quants/neon.rs",
+   "resolved": true,
+   "symbol": "dot16"
   },
   {
    "pages": [
