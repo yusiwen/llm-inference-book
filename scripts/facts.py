@@ -131,7 +131,58 @@ def render_bits(f):
     ]
 
 
+BLOCK_LAYOUT = {
+    "F32": (1, 4), "F16": (1, 2), "Q4_0": (32, 18), "Q4_1": (32, 20), "Q5_0": (32, 22),
+    "Q5_1": (32, 24), "Q8_0": (32, 34), "Q8_1": (32, 36), "Q2_K": (256, 84), "Q3_K": (256, 110),
+    "Q4_K": (256, 144), "Q5_K": (256, 176), "Q6_K": (256, 210), "Q8_K": (256, 292),
+}
+
+
+def row_geometry(t):
+    """(blocks per row, bytes per row, rows) for a tensor, or for a 1-D tensor its single row."""
+    be, bb = BLOCK_LAYOUT[t["type"]]
+    ne0 = t["dims"][0]
+    ne1 = t["dims"][1] if len(t["dims"]) > 1 else 1
+    blocks = ne0 // be
+    return blocks, blocks * bb, ne1
+
+
+STRIDE_SAMPLES = ["output.weight", "token_embd.weight", "blk.0.ffn_down.weight",
+                  "blk.0.ffn_gate.weight", "blk.5.attn_v.weight", "blk.0.attn_k.bias"]
+
+
+def render_strides(f):
+    """Shape, stride and byte arithmetic for real tensors - the table Chapter 3 is built on."""
+    by_name = {t["name"]: t for t in f["tensors"]}
+    out = ["| tensor | dtype | ne0 (contiguous) | ne1 | blocks per row | bytes per row | rows | "
+           "bytes = rows x row | the file says |", "|---|---|---|---|---|---|---|---|---|"]
+    for name in STRIDE_SAMPLES:
+        if name not in by_name:
+            continue
+        t = by_name[name]
+        blocks, row, rows = row_geometry(t)
+        ok = "same" if row * rows == t["bytes"] else f"MISMATCH ({row * rows})"
+        out.append(f"| `{name}` | {t['type']} | {t['dims'][0]:,} | {rows:,} | {blocks:,} | "
+                   f"{row:,} | {rows:,} | {row * rows:,} | {t['bytes']:,} ({ok}) |")
+    return out
+
+
+def render_block_sizes(f):
+    """What one block of each dtype in this file costs, and what it implies per weight."""
+    out = ["| dtype | Elements per block | Bytes per block | Bits per weight | Bytes for a 896-wide row |",
+           "|---|---|---|---|---|"]
+    for name in sorted(f["dtype_bytes"], key=lambda n: -f["dtype_bytes"][n]):
+        if name not in BLOCK_LAYOUT:
+            continue
+        be, bb = BLOCK_LAYOUT[name]
+        out.append(f"| {name} | {be:,} | {bb:,} | {bb * 8 / be:.2f} | "
+                   f"{(896 // be) * bb:,} ({(896 // be)} blocks) |")
+    return out
+
+
 BLOCKS = {
+    "strides": render_strides,
+    "block-sizes": render_block_sizes,
     "bits": render_bits,
     "dtype-mix": render_dtype_mix,
     "tensor-sample": render_tensor_sample,

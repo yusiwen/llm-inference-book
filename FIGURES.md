@@ -47,7 +47,7 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 | 1.1 | `01-two-regimes.svg` | P0 | panel | L2 | Prefill multiplies a matrix by many activation rows and is limited by arithmetic; decode multiplies it by one row and is limited by the bytes it must read. |
 | 1.2 | `01-decode-ceiling.svg` | P1 | nomogram | L4 | The decode ceiling as a nomogram: model file size, bytes read per token, and memory bandwidth, with no machine-specific number baked in. |
 | 2.1 | `02-gguf-layout.svg` | P0 | byte map | L3 | A GGUF file from byte zero: header, metadata key-values, tensor table, alignment padding, data blob, and the byte range one tensor occupies. |
-| 3.1 | `03-views-and-stride.svg` | P0 | grid | L3 | One 2-D tensor with aligned row padding, and a view of two rows that shares the parent's memory instead of copying it. |
+| 3.1 | `03-views-and-stride.svg` | P0 | grid | L3 | One 2-D tensor whose rows are packed with **no** padding (616 B each), and a two-row view sharing those bytes: the view's pointer is the parent plus 616, its stride is 616, and it owns nothing. The figure corrects the plan - GGML pads between tensors, never between rows. |
 | 4.1 | `04-block-anatomy.svg` | P0 | byte map | L1 | A Q4_0 block: one 16-bit scale and 16 packed nibble bytes for 32 weights, which is the 4.5 bits per weight the file pays. |
 | 4.2 | `04-block-error.svg` | P1 | bar | L5 | One outlier weight forces a larger block scale, so the other 31 values are quantized more coarsely: the error a block sees. |
 | 5.1 | `05-superblock.svg` | P0 | byte map | L2 | A 256-weight K-quant super-block: eight sub-blocks, one scale pair, and the 12 bytes of 6-bit scales unpacked before any dot product. |
@@ -143,6 +143,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 46 | this file |
-| Drawn | 3 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 4 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

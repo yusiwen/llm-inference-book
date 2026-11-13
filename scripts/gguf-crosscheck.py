@@ -88,6 +88,20 @@ def main():
     compare("data blob bytes", facts["blob"]["bytes"],
             model.stat().st_size - int(reader.data_offset))
 
+    # The block table: elements and bytes per block, for every dtype this file uses. It is the table that
+    # makes a tensor's byte length computable, and the one a reader is most likely to mistype (Q6_K is 210,
+    # not 208; Q4_K is 144, not 128). Compare it against the reference implementation's constants.
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from facts import BLOCK_LAYOUT  # noqa: E402
+
+    for name in sorted({t["type"] for t in facts["tensors"]}):
+        enum = getattr(gguf.GGMLQuantizationType, name, None)
+        if enum is None:
+            notes.append(f"{name}: absent from gguf-py's GGMLQuantizationType enum, so not compared")
+            continue
+        theirs = tuple(int(x) for x in gguf.GGML_QUANT_SIZES[enum])
+        compare(f"block layout {name} (elements, bytes)", BLOCK_LAYOUT.get(name), theirs)
+
     ours = {t["name"]: t for t in facts["tensors"]}
     theirs = {t.name: t for t in reader.tensors}
     compare("tensor names", sorted(ours), sorted(theirs))

@@ -9,8 +9,8 @@
   "implementation": "gguf-py (the ggml project's reference Python reader)",
   "invocation": "uv run --with gguf python scripts/gguf-crosscheck.py --facts gguf-qwen2.5-0.5b.json --model qwen2.5-0.5b-instruct-q4_k_m.gguf"
  },
- "compared": 1463,
- "agreements": 1463,
+ "compared": 1468,
+ "agreements": 1468,
  "disagreements": [],
  "notes": [
   "gguf-py reports 29 fields against the file's 26: the difference is ['GGUF.kv_count', 'GGUF.tensor_count', 'GGUF.version'], which it synthesises from the header. Subtracting them is the comparison, not a fudge."
