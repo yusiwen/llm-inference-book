@@ -75,10 +75,15 @@ RMSNorm, the residual adds, SiLU and RoPE together come to about **0.14 ms per t
 
 Root-mean-square normalisation divides a vector by the root of the mean of its squares, then scales it elementwise:
 
-```text
-rms   = sqrt( mean(x[i]^2) )          over i = 0..n-1
-y[i]  = x[i] / rms * w[i]             where w is the learned gain
-```
+<div class="math-display">
+$$
+\operatorname{rms}(x)=\sqrt{\frac{1}{n}\sum_{i=0}^{n-1}x_i^2}
+\qquad
+y_i=\frac{x_i}{\operatorname{rms}(x)}\,w_i
+$$
+</div>
+
+*where $w$ is the learned gain and $n$ is the vector's width - 896 for this model's hidden state.*
 
 There is no mean subtraction, and that is the whole difference from LayerNorm: the vector is not re-centred, only rescaled to unit RMS. It costs one pass for the sum of squares and one pass to scale - which is why an engine fuses the gain multiply into the scaling pass instead of materialising `x/rms` and multiplying afterwards.
 
@@ -116,18 +121,29 @@ Both f32 variants are inside the ledger's 1e-6 bound, so for an 896-wide vector 
 
 ### Lesson 2 · RoPE: pairs, rotations and positions as data rather than structure
 
-Rotary position embedding rotates the query and key vectors by an angle proportional to their position. Nothing is stored per position: the position *is* the angle. For a head dimension `hd`, pair `d` (of `hd/2`) rotates by
+Rotary position embedding rotates the query and key vectors by an angle proportional to their position. Nothing is stored per position: the position *is* the angle. For a head dimension $h_d$, pair index $d < h_d/2$, and position $p$, the angle is
 
-```text
-theta(d, pos) = pos / base^(2d/hd)          base from the file's rope.freq_base
-q'[i0] = q[i0] * cos(theta) - q[i1] * sin(theta)
-q'[i1] = q[i0] * sin(theta) + q[i1] * cos(theta)
-```
+<div class="math-display">
+$$
+\theta_{d,p}=\frac{p}{\text{base}^{\,2d/h_d}}
+$$
+</div>
 
-Every part of that is unambiguous except **which two coordinates are `i0` and `i1`**, and that is where implementations disagree:
+where the base is read from the file's `rope.freq_base` metadata, and the pair $(i_0, i_1)$ rotates by
 
-- **adjacent pairs**: `(2d, 2d+1)` - neighbours rotate together. This is the GPT-J convention.
-- **half split**: `(d, d + hd/2)` - the vector is treated as two halves folded onto each other. This is what llama.cpp does, and what the Hugging Face Llama and NeoX implementations do.
+<div class="math-display">
+$$
+\begin{aligned}
+q'_{i_0} &= q_{i_0}\cos\theta_{d,p}-q_{i_1}\sin\theta_{d,p}\\
+q'_{i_1} &= q_{i_0}\sin\theta_{d,p}+q_{i_1}\cos\theta_{d,p}
+\end{aligned}
+$$
+</div>
+
+Every part of that is unambiguous except **which two coordinates are $i_0$ and $i_1$**, and that is where implementations disagree:
+
+- **adjacent pairs**: $(2d,\,2d+1)$ - neighbours rotate together. This is the GPT-J convention.
+- **half split**: $(d,\ d+h_d/2)$ - the vector is treated as two halves folded onto each other. This is what llama.cpp does, and what the Hugging Face Llama and NeoX implementations do.
 
 Same equation, same frequencies, different grouping. The model's file does not record the choice; the architecture name in the metadata implies it, which is why a converter that maps a checkpoint to GGUF has to know it and a kernel that reads the GGUF has to agree.
 
@@ -148,21 +164,24 @@ Seven per cent on every score in every head in every layer is not a garbled answ
 
 Softmax turns a row of scores into a distribution:
 
-```text
-m     = max(x)
-y[i]  = exp(x[i] - m) / sum(exp(x[j] - m))
-```
+<div class="math-display">
+$$
+m=\max_j x_j,
+\qquad
+y_i=\frac{\exp(x_i-m)}{\sum_j \exp(x_j-m)}
+$$
+</div>
 
-The subtraction of the row maximum is the whole reason this is two passes rather than one, and it is a **correctness** measure rather than a numerical nicety. Without it, `exp(x)` overflows at some logit and the row becomes `inf / inf`:
+The subtraction of the row maximum is the whole reason this is two passes rather than one, and it is a **correctness** measure rather than a numerical nicety. Without it, $\exp(x_i)$ overflows at some logit and the row becomes $\infty/\infty$:
 
 | Scores kept in | First logit at which the naive path is NaN | Why that number |
 |---|---|---|
 | f32 | `88.72` | just under the logit where `exp` leaves `FLT_MAX` |
-| f16 | `11.09` | `exp(11.09) = 65,504`, f16's largest finite value |
+| f16 | `11.09` | $\exp(11.09)=65{,}504$, f16's largest finite value |
 
-Eleven is not a large logit. Attention scores are `q·k / sqrt(hd)` and reach the twenties at a few thousand tokens, so **a f16 softmax without the max subtraction is a real bug that shows up on real prompts**, and its symptom is a NaN inside a layer rather than an error message.
+Eleven is not a large logit. Attention scores are $q\cdot k/\sqrt{h_d}$ and reach the twenties at a few thousand tokens, so **a f16 softmax without the max subtraction is a real bug that shows up on real prompts**, and its symptom is a NaN inside a layer rather than an error message.
 
-With the subtraction the largest exponent is `exp(0) = 1`, so the largest term is exactly 1 and the sum is at most `n`. That is why the reference engine's `vec_soft_max_f32` takes `max` as a *parameter*: the caller has the maximum already (or is streaming it, for online softmax) and the kernel does not re-scan the row.
+With the subtraction the largest exponent is $\exp(0)=1$, so the largest term is exactly 1 and the sum is at most $n$. That is why the reference engine's `vec_soft_max_f32` takes `max` as a *parameter*: the caller has the maximum already (or is streaming it, for online softmax) and the kernel does not re-scan the row.
 
 **The sum's dtype.** Summing 4,096 positive terms of similar size in f32 loses about `1.3e-06` relative to f64 - inside the ledger's 1e-5 bound, so f32 is enough here, unlike the norm's sum of squares where the f64 choice is about reproducibility rather than accuracy. The reference engine sums in f64 anyway, for that same reason: the result stops depending on the vector width.
 
@@ -190,15 +209,21 @@ That also names the fix, and it is measured: a degree-5 polynomial with the `2^k
 
 SiLU is the activation in a Llama-style feed-forward block:
 
-```text
-silu(x) = x * sigmoid(x) = x / (1 + exp(-x))
-```
+<div class="math-display">
+$$
+\operatorname{silu}(x)=x\cdot\sigma(x)=\frac{x}{1+e^{-x}}
+$$
+</div>
 
 The block is gated: the feed-forward network computes two projections of the same input, applies SiLU to one and multiplies them elementwise, then projects back -
 
-```text
-h = silu(W_gate * x) * (W_up * x)          then    y = W_down * h
-```
+<div class="math-display">
+$$
+h=\operatorname{silu}(W_{\text{gate}}x)\odot(W_{\text{up}}x),
+\qquad
+y=W_{\text{down}}h
+$$
+</div>
 
 - which is why the intermediate is called SwiGLU: SiLU as the gate, GLU as the shape. The multiply is elementwise over the 4,864-wide intermediate, and it costs what an elementwise op costs: `add(896)` measures **0.05 ns per element**, so a SwiGLU multiply over 4,864 elements is about 250 ns. SiLU itself is 1.04 ns per element because of the `exp` - the same transcendental that dominates softmax.
 

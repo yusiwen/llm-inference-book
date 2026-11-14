@@ -125,6 +125,33 @@ different obligation, and it is not a weaker one: every claim is labelled `my ju
 via `path::symbol`, or to a cited source, or to a run recorded in `runs/`. What they must not do is borrow
 the authority of a measured number they do not have.
 
+## Formulas, figures and monospace
+
+Three carriers, and the choice between them is a rule rather than a taste. A block that looks like a
+picture, in characters, is the one defect class the build cannot see: the page compiles, the site
+deploys, and the reader is handed an ASCII sketch that should have been drawn.
+
+- **MathJax for anything that looks like typeset mathematics.** `$$` for a display formula, `$` inline,
+  and **every display block wrapped in `<div class="math-display">`** (gate step 5 counts the wrappers
+  against the `$$` markers). No formula numbering: `tags: "none"` in `mathjax/config.js`, because TeX
+  numbering cannot be referenced across mdBook pages without breaking.
+- **SVG for anything that looks like a sketch** - a bit layout, a byte plan, a pipeline, a dataflow.
+  Never characters in a monospace block; see `FIGURES.md` for the drawing conventions.
+- **Monospace (`text` / `rust` / `bash`) for exactly three things**: program output and terminal
+  sessions, source code, and a numeric derivation whose point is that the reader can check the digits.
+  A single-row derivation with an `=` chain belongs in math, with `\text{}` for the units; several
+  aligned rows of numbers belong in a table, so the columns are structure rather than spaces.
+- Inline code spans stay for identifiers (`f32`, `rope.freq_base`, `vec_soft_max_f32`), not for
+  mathematics: `q·k/sqrt(hd)` in a code span renders as a line of symbols the reader has to parse,
+  where `$q\cdot k/\sqrt{h_d}$` renders as a product over a root.
+- **A formula that MathJax cannot parse does not fail the build.** Gate step 13 (`scripts/texlint.py`)
+  catches unbalanced braces, `\left` without `\right`, unclosed environments, unknown control
+  sequences and stray `$`; the rendered page still has to be looked at (below).
+
+Math is typeset client-side, so `mdbook build` proves nothing about it. **Before publishing a page that
+contains formulas, load the built page and look at it** - the same obligation as the figures, and the
+reason the `|q|` table in Chapter 6 shipped broken while every gate stayed green.
+
 ## Do not
 
 - Do not hand-edit `book/` (generated) or add a remote asset (the site must work offline).

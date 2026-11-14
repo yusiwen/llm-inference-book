@@ -96,4 +96,11 @@ echo "== 12. the numbers in the pages still match the artifact =="
 python3 scripts/facts.py --check
 
 echo
+echo "== 13. the TeX in the pages parses =="
+# A formula MathJax cannot parse does not fail `mdbook build`: the page deploys green and the reader
+# gets a red error box. Same silent-failure class as a markdown table with the wrong cell count, and
+# the same answer - catch it before the browser is asked to.
+python3 scripts/texlint.py
+
+echo
 echo "all checks passed"

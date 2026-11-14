@@ -36,3 +36,35 @@ main blockquote:first-of-type li > strong:first-child {
         font-size: 0.8em;
     }
 }
+
+/* MathJax, configured in mathjax/config.js with tex-svg output, so the glyphs are vector outlines in
+ * the page and no web font is fetched. Two adjustments only:
+ *
+ * 1. Display math gets the same vertical rhythm as a fenced code block, so an equation does not look
+ *    like a floating accident between two paragraphs. The container is an mjx-container element, not
+ *    a div, and MathJax marks display formulas with display="true".
+ * 2. A wide equation scrolls inside its own box instead of making the whole page scroll sideways -
+ *    the same rule the theme already applies to code blocks.
+ */
+mjx-container[jax="SVG"] {
+    color: inherit;
+}
+
+/* Every display formula is wrapped in <div class="math-display"> (checked by verify.sh step 5). The
+ * wrapper gets the vertical rhythm of a fenced block and scrolls a wide equation on its own, rather
+ * than letting it make the page scroll sideways. */
+.math-display {
+    margin: 1.1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Inline math sits inside a line of text: match the surrounding size and never let a fraction push
+ * the line height around. */
+mjx-container[jax="SVG"]:not([display="true"]) {
+    font-size: 1.02em;
+}
+
+mjx-container[jax="SVG"]:not([display="true"]) > svg {
+    vertical-align: -0.28ex;
+}

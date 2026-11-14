@@ -79,7 +79,11 @@ The failure this rule exists for: a stub's numbers are not facts either. A lesso
 - **A figure is SVG produced at build time**, with its source as text in the page (`src/figures/NN-slug.svg`, included inside `<figure class="book-figure">`). A client-side diagram library renders blank wherever scripts are blocked and is lost from print.
 - **No LaTeX inside a figure** - the SVG cannot see MathJax. Write `V(s)` as plain text.
 - **Maths is vendored**: MathJax lives in `mathjax/`, loaded through `additional-js`. The built-in injects a CDN copy, which leaves every page showing raw dollar signs when the CDN is blocked - and the build stays green while it happens.
-- **Every display equation is wrapped** in a block element. Markdown parses the inside of a display block as ordinary text, so a subscript pair can be read as emphasis and that one equation silently does not render.
+- **Every display equation is wrapped** in `<div class="math-display">`. Markdown parses the inside of a display block as ordinary text, so a subscript pair can be read as emphasis and that one equation silently does not render.
+- **Three carriers, chosen by what the content would look like if printed.** Typeset mathematics goes to MathJax: `$$` display, `$` inline, no equation numbering, `\text{}` for units so `ms` is upright and `x` is not. A sketch - a bit layout, a byte plan, a pipeline, a dataflow - goes to an SVG; never characters in a monospace block, because a sketch drawn in `+` and `|` reads as code and dies at a narrow window width. A monospace block carries exactly three things: program output and terminal sessions, source code, and a numeric derivation whose point is that the reader can check the digits. A single `=` chain is maths with real numbers in it; several aligned rows of numbers are a table, so the columns are structure rather than spaces.
+- **Inline code spans are for identifiers, not for mathematics.** `f32`, `rope.freq_base` and `vec_soft_max_f32` are names the reader will type; `q·k/sqrt(hd)` is an expression, and as a code span it ships a line of symbols instead of a product over a root.
+- **A formula that does not parse fails the reader, not the build.** `scripts/texlint.py` (gate step 13) checks braces, `\left`/`\right`, environments, control sequences and stray `$`; the rest needs a rendered page, which is why every page carrying maths is loaded once before it is published.
+
 
 ## Reading and citations
 
