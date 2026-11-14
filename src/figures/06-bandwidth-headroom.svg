@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 344" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="Three scalar kernels against the machine: dequantize-then-dot reaches 1.30 gigabytes per second, the i32 integer path 7.21, the i16 path 11.73, and the machine streams at 198. The best kernel is seventeen times short of the bandwidth ceiling, so the gap is arithmetic and the next lever is SIMD.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-f64 { fill: #4d86b8; }
+    .fig-a-int { fill: #b8703f; }
+    .fig-a-f32 { fill: #3f8f6f; }
+    .fig-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .fig-dash { stroke: var(--quote-border, #6b7f92); stroke-width: 1; stroke-dasharray: 4 3; opacity: .6; }
+  </style>
+  <text class="fig-cap" x="24" y="22">WHERE THE SCALAR KERNELS SIT AGAINST THE MACHINE</text>
+  <line class="fig-rule" x1="278" y1="44" x2="721" y2="44"/>
+  <line class="fig-rule" x1="278" y1="39" x2="278" y2="49"/>
+  <line class="fig-rule" x1="721" y1="39" x2="721" y2="49"/>
+  <text class="fig-t" x="500" y="34" text-anchor="middle">17x short of the bandwidth ceiling</text>
+  <text class="fig-m" x="24" y="75">dequantize then dot (f32)</text>
+  <rect class="fig-a-f64" x="250" y="62" width="3.1" height="17" rx="2"/>
+  <text class="fig-m" x="261" y="75">1.30 GB/s</text>
+  <text class="fig-m" x="24" y="109">integers, i32 accumulator</text>
+  <rect class="fig-a-f64" x="250" y="96" width="17.2" height="17" rx="2"/>
+  <text class="fig-m" x="275" y="109">7.21 GB/s</text>
+  <text class="fig-m" x="24" y="143">integers, i16 accumulator</text>
+  <rect class="fig-a-int" x="250" y="130" width="27.9" height="17" rx="2"/>
+  <text class="fig-m" x="286" y="143">11.73 GB/s</text>
+  <text class="fig-m" x="24" y="177">this machine, streaming</text>
+  <rect class="fig-a-f32" x="250" y="164" width="471.4" height="17" rx="2"/>
+  <text class="fig-m" x="713" y="177" text-anchor="end">198 GB/s</text>
+  <line class="fig-dash" x1="250" y1="62" x2="250" y2="206"/>
+  <text class="fig-m" x="250" y="222" text-anchor="middle">0</text>
+  <line class="fig-dash" x1="369" y1="62" x2="369" y2="206"/>
+  <text class="fig-m" x="369" y="222" text-anchor="middle">50</text>
+  <line class="fig-dash" x1="488" y1="62" x2="488" y2="206"/>
+  <text class="fig-m" x="488" y="222" text-anchor="middle">100</text>
+  <line class="fig-dash" x1="607" y1="62" x2="607" y2="206"/>
+  <text class="fig-m" x="607" y="222" text-anchor="middle">150</text>
+  <line class="fig-dash" x1="726" y1="62" x2="726" y2="206"/>
+  <text class="fig-m" x="726" y="222" text-anchor="middle">200</text>
+  <text class="fig-m" x="500" y="238" text-anchor="middle">gigabytes per second</text>
+  <text class="fig-m" x="24" y="268">The three kernels read the same bytes and do the same 896 multiply-accumulates per row: the integer paths are 5.5x and 9.0x</text>
+  <text class="fig-m" x="24" y="284">faster than dequantizing first, and still an order of magnitude under what the memory system could deliver.</text>
+  <text class="fig-m" x="24" y="306">That gap is why Chapter 7 exists: one core doing one multiply per instruction cannot go through it, and SIMD is the first lever.</text>
+</svg>

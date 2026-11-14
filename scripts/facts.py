@@ -395,13 +395,18 @@ def render_dot_headroom(f):
     if "i16" not in paths:
         return ["(no scalar measurement in this facts file)"]
     best = paths["i16"]["gb_per_s"]
-    return ["```text",
-            f"rows benchmarked            {f['rows']:,} of {f['row_len']} weights each",
-            f"weight bytes per row       {f['weight_bytes_per_row']:.0f} B (28 blocks x 18 B)",
-            f"best scalar throughput     {best:.2f} GB/s",
-            f"measured memory bandwidth  198 GB/s (Chapter 1, same machine)",
-            f"headroom                   {198 / best:.0f}x short of bandwidth-bound",
-            "```"]
+    dq = paths.get("dq", {}).get("gb_per_s", 0.0)
+    # A table, not an aligned monospace block: the columns are structure, and the four numbers below are
+    # the ones Figure 6.3 draws as bars. The figure shows the shape; this keeps the values citable and
+    # carries the provenance line under it.
+    return ["| Quantity | Value | Where it comes from |",
+            "|---|---|---|",
+            f"| Rows benchmarked | {f['rows']:,} rows of {f['row_len']} weights | this artifact |",
+            f"| Weight bytes per row | {f['weight_bytes_per_row']:.0f} B (28 blocks x 18 B) | the format, not a measurement |",
+            f"| Best scalar throughput | {best:.2f} GB/s | the `i16` kernel below |",
+            f"| Dequantize-then-dot throughput | {dq:.2f} GB/s | the `dq` kernel below |",
+            "| Measured memory bandwidth | 198 GB/s | Chapter 1, same machine |",
+            f"| Headroom | {198 / best:.0f}x short of bandwidth-bound | the two rows above |"]
 
 
 
@@ -646,6 +651,119 @@ K_FORMATS = {
     "Q6_K": (256, 210, [("ql", "u8[128]"), ("qh", "u8[64]"), ("scales", "i8[16]"), ("d", "f16")]),
 }
 
+
+# ---------------------------------------------------------------------------------------------------
+# Provenance: where a table's numbers came from.
+#
+# The review that started this asked one question about every measured table: who produced it, and how
+# would a reader get the source. A facts block alone answers neither - it shows the numbers and hides the
+# instrument. So every page that renders a facts block also renders one line naming the script, the
+# command, the machine, the number of runs and the statistic, and a gate step fails when that line is
+# missing. Nothing here retypes a number: the command and the machine are read out of the artifact that
+# already carries them, and only the script path and the statistic are declared, once, below.
+
+INSTRUMENTS = {
+    # facts stem -> (script, what it measures, statistic)
+    "gguf-qwen2.5-0.5b": ("scripts/gguf-inspect.py",
+                          "parses the file: header, every metadata key, every tensor record, and the byte "
+                          "range each tensor occupies",
+                          "read once from the file; the counts are structure, not samples"),
+    "gguf-qwen2.5-0.5b-q4_0": ("scripts/gguf-inspect.py",
+                               "parses the same model at Q4_0",
+                               "read once from the file"),
+    "dequant-check": ("scripts/dequant-check.py",
+                      "decodes each block format back to f32 and compares it against a second decoder "
+                      "(gguf-py) on the same bytes",
+                      "max relative error per format; the bit-exact counts are exhaustive over the "
+                      "blocks sampled"),
+    "kquant-check": ("scripts/kquant-check.py",
+                     "decodes K-quant super-blocks from adversarial random bytes, from real weights, and "
+                     "from the format's own packing",
+                     "bit-exact comparisons, exhaustive over the blocks sampled"),
+    "dotcheck": ("scripts/dotcheck.py",
+                 "decomposes the quantized dot product's error into activation, integer and scale parts, "
+                 "and bounds each format's accumulator",
+                 "max relative error against f64; the bounds are arithmetic, the worst partial is "
+                 "measured"),
+    "dotbench": ("scripts/dotbench.c",
+                 "times three scalar kernels on 8,192 real rows of the book's file",
+                 "median of the runs, with the full range beside it"),
+    "dotsimd": ("scripts/dotsimd.c",
+                "times four SIMD kernels and the scalar reference, one source file compiled for ARM "
+                "and for x86",
+                "median of the runs per machine"),
+    "threadbench": ("scripts/threadbench.c",
+                    "sweeps thread count, batch size, spawn-per-call against a pool, and two write "
+                    "layouts on one matrix",
+                    "median of the runs per machine, with the range where the runs disagree"),
+    "vecops": ("scripts/vecops.c",
+               "computes each vector op the way an engine writes it, reports the error against an f64 "
+               "oracle, and times the op",
+               "median of three runs for timing; the errors are deterministic and identical across runs"),
+    "vecops-witness": ("scripts/vecops-check.py",
+                       "recomputes every op in numpy f64 from the C program's own fixture bytes",
+                       "max relative difference, one pass"),
+}
+
+
+def render_provenance(f, name=None):
+    """One italic line: which program, which command, which machine, how many runs, which statistic."""
+    script, what, statistic = INSTRUMENTS.get(name, ("(unknown)", "", ""))
+    explicit = f.get("provenance") if isinstance(f.get("provenance"), dict) else {}
+
+    command = explicit.get("command") or f.get("invocation") or ""
+    if isinstance(command, list):
+        command = "; ".join(command)
+    machine = explicit.get("machine") or f.get("machine") or ""
+    machines = f.get("machines")
+    if not machine and isinstance(machines, dict):
+        machine = " and ".join(machines.keys())
+    if not machine and isinstance(machines, list):
+        names = [m.get("machine") for m in machines if isinstance(m, dict) and m.get("machine")]
+        machine = " and ".join(dict.fromkeys(names))
+    compiler = explicit.get("compiler") or f.get("compiler") or ""
+    if machine and compiler:
+        machine = f"{machine}, {compiler}"
+    runs = explicit.get("runs") or f.get("runs") or f.get("reps")
+    statistic = explicit.get("statistic") or statistic
+    artifact = explicit.get("artifact")
+    if not artifact:
+        art = f.get("artifact")
+        artifact = art.get("path") if isinstance(art, dict) else (art if isinstance(art, str) else "")
+    # Some artifacts name the instrument instead of a file ("vecops"), and some name the model file the
+    # numbers were read from. Neither is where the numbers live: they live in facts/<name>.json, so use
+    # that whenever the recorded value is not a path.
+    note = ""
+    if artifact.endswith(".gguf"):
+        note = f" Read from `{pathlib.Path(artifact).name}`; its sha256 is recorded in `facts/{name}.json`."
+        artifact = ""
+    elif not artifact or "/" not in artifact:
+        artifact = f"facts/{name}.json"
+
+    bits = [f"`{script}`"]
+    if what:
+        bits.append(what)
+    if machine:
+        bits.append(f"on **{machine}**")
+    if runs:
+        bits.append(f"{runs} runs")
+    if statistic:
+        bits.append(statistic)
+    line = "; ".join(bits) + "."
+    # Strip the local home directory: the command is meant to be reproducible, not to publish a path that
+    # only exists on one machine.
+    command = command.replace(str(pathlib.Path.home()), "~")
+    if command and len(command) <= 90:
+        line += f" Command: `{command}`."
+    elif command:
+        # A long command turns the prose into a wall of flags. The appendix page carries the full one,
+        # anchored by the facts file's own name.
+        line += f" Command: see [the provenance index](../appendix/provenance.md#{name})."
+    if artifact:
+        line += f" Raw numbers: `{artifact}`."
+    line += note
+    return [f"*{line}*"]
+
 BLOCKS = {
     "anatomy": render_anatomy,
     "agreement": render_agreement,
@@ -682,6 +800,7 @@ BLOCKS = {
     "regions": render_regions,
     "header": render_header,
     "model-meta": render_model_meta,
+    "provenance": render_provenance,
 }
 
 
@@ -696,7 +815,9 @@ def rewrite(text, name, block):
     """Replace every body for (name, block) in text; return (new_text, count)."""
     renderer = BLOCKS[block]
     f = load(name)
-    body = "\n".join(renderer(f))
+    # A renderer may need to know which artifact it is rendering (provenance names the script), so the
+    # ones that accept it are called with the name and the rest keep the single-argument signature.
+    body = "\n".join(renderer(f, name) if renderer is render_provenance else renderer(f))
     # The body may be empty (a freshly added marker), so the pattern must not require a line between
     # the marker and the end tag - an earlier version did, and every new marker was reported as
     # "no <!-- /facts -->" instead of being filled in.
@@ -734,10 +855,12 @@ def check():
     used, seen = set(), 0
     for p in pages():
         text = p.read_text()
+        names_here = set()
         for m in MARKER.finditer(text):
             name, block = m.group("name"), m.group("block")
             seen += 1
             used.add(name)
+            names_here.add(name)
             if block not in BLOCKS:
                 findings.append(f"{p.relative_to(ROOT)}: unknown block type '{block}'")
                 continue
@@ -758,6 +881,13 @@ def check():
                 findings.append(f"{p.relative_to(ROOT)}: block {name}.{block} differs from the facts file "
                                 f"(first differing line {first + 1}):\n      page:  {got.split(chr(10))[first][:100]}\n"
                                 f"      facts: {want.split(chr(10))[first][:100]}")
+        # Every facts file a page quotes owes that page a provenance line. Without this rule the line is
+        # written once, in the chapter the author was paying attention to, and the other eight pages keep
+        # showing measured numbers with no origin - which is exactly what a review found.
+        for name in sorted(names_here):
+            if f"<!-- facts: {name}.provenance -->" not in text:
+                findings.append(f"{p.relative_to(ROOT)}: quotes facts/{name}.json but never says where the "
+                                f"numbers came from - add `<!-- facts: {name}.provenance -->`")
     # A markdown table whose header row has a different number of cells than its delimiter row is not
     # repaired by the parser: GFM refuses to recognise the table at all and ships the whole block as a
     # paragraph of pipe characters. That is how Chapter 6's accumulator table reached a reader while every

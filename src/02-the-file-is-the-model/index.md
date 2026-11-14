@@ -67,6 +67,10 @@ decoded      magic "GGUF" | version 3 | tensor count 291 | metadata count 26
 ```
 <!-- /facts -->
 
+<!-- facts: gguf-qwen2.5-0.5b.provenance -->
+*`scripts/gguf-inspect.py`; parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies; read once from the file; the counts are structure, not samples. Read from `qwen2.5-0.5b-instruct-q4_k_m.gguf`; its sha256 is recorded in `facts/gguf-qwen2.5-0.5b.json`.*
+<!-- /facts -->
+
 - `47 47 55 46` is `GGUF` in ASCII. A file that fails this is not a GGUF file and the only useful response is to say so.
 - `03 00 00 00` is version 3 as a little-endian u32. Version matters because the tensor-info record changed shape between v1 and v2; a v1 file parsed by v3 rules produces plausible nonsense.
 - `23 01 00 00 00 00 00 00` is 291: the number of tensor-info records that follow the metadata.

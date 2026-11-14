@@ -59,6 +59,10 @@ Why does the extra description help? Because one scale has to cover every weight
 | Q4_0 | `qwen2.5-0.5b-instruct-q4_0.gguf` | 256 | 256 | 14.0 | 12.0 | 15.0 | 16 |
 <!-- /facts -->
 
+<!-- facts: kquant-check.provenance -->
+*`scripts/kquant-check.py`; decodes K-quant super-blocks from adversarial random bytes, from real weights, and from the format's own packing; bit-exact comparisons, exhaustive over the blocks sampled. Command: see [the provenance index](../appendix/provenance.md#kquant-check). Read from `qwen2.5-0.5b-instruct-q4_k_m.gguf`; its sha256 is recorded in `facts/kquant-check.json`.*
+<!-- /facts -->
+
 Read the two Q4 lines against each other, because they are the two designs under comparison. Q4_0's median block **reaches 14 of its 16 levels**; Q4_K's median sub-block reaches **15 of 16**, and its tenth percentile is 14 where Q4_0's is 12. The gain is real but modest - and that is the honest finding: the affine minimum buys about a level of range use, which is the same mechanism Chapter 4 measured on the legacy pair: Q4_1 is 13 per cent better than Q4_0 at the same bit width (7.98 per cent to 6.94 per cent), purely because it carries the minimum.
 
 Where the super-block earns its place is not the median block at all - it is the tail. Chapter 4 found a real block where one weight was 13 times the mean of the other 31, and the step chosen for it was 1.63 times wider than the other 31 values. In a super-block that damage is capped at 32 weights, and the neighbouring 224 keep their own grids. The eight scales are eight chances to fit, and the design exists for the blocks that need the ninth.
@@ -209,6 +213,10 @@ Two integers. From those a reader is supposed to infer what the file contains. H
 | Q6_K | 42,900,480 | 8.8% | `ffn_down.weight` (12) |
 | Q4_K | 29,417,472 | 6.1% | `ffn_down.weight` (12) |
 | F32 | 286,208 | 0.1% | `attn_k.bias`, `attn_norm.weight`, `attn_q.bias`, `attn_v.bias`, `ffn_norm.weight`, `output_norm.weight` (121) |
+<!-- /facts -->
+
+<!-- facts: gguf-qwen2.5-0.5b.provenance -->
+*`scripts/gguf-inspect.py`; parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies; read once from the file; the counts are structure, not samples. Read from `qwen2.5-0.5b-instruct-q4_k_m.gguf`; its sha256 is recorded in `facts/gguf-qwen2.5-0.5b.json`.*
 <!-- /facts -->
 
 The file is called **q4_K_M** and **6.1 per cent of its bytes are Q4_K**. Four types, five ways of being wrong if you assume the name. The arithmetic that explains every row:

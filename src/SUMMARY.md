@@ -64,6 +64,7 @@
 - [The Decision Map](appendix/adr-map.md)
 - [The Reference Index](appendix/references.md)
 - [Measurements](appendix/measurements.md)
+- [How Every Number Was Produced](appendix/provenance.md)
 - [Audit: the CUDA tutorial against this commit](appendix/cuda-docs-audit.md)
 - [Glossary](appendix/glossary.md)
 - [Limits: what this engine cannot do](appendix/limits.md)

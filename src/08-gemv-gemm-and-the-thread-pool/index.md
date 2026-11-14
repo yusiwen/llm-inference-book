@@ -18,6 +18,10 @@ Two of those three claims survived measurement. The third did not:
 | Intel i7-11700B (x86_64) | 132 | 45.1 GB/s | 2.92 | 1.78 | 1.64 | 1.34x at 2 tokens |
 <!-- /facts -->
 
+<!-- facts: threadbench.provenance -->
+*`scripts/threadbench.c`; sweeps thread count, batch size, spawn-per-call against a pool, and two write layouts on one matrix; on **Apple M4 Pro (arm64) and 11th Gen Intel(R) Core(TM) i7-11700B @ 3.20GHz (x86_64)**; median of the runs per machine, with the range where the runs disagree. Command: see [the provenance index](../appendix/provenance.md#threadbench). Raw numbers: `facts/threadbench.json`.*
+<!-- /facts -->
+
 Read the last three columns together. **A token carries 1.78 MAC per byte** - that number is a property of the format (32 weights in 18 bytes), not of the model or the machine. The **ridge** is where the machine's arithmetic ceiling meets its bandwidth ceiling: 1.99 MAC per byte on the M4 Pro, 2.92 on the i7-11700B. So on the Mac a *second* token's arithmetic is already past what the bandwidth can absorb - the crossover is at 1.12 tokens - and the largest measured gain from batching 32 tokens into one pass is **1.29x**. On the NUC the ridge sits at 1.64 tokens, so batching 2 tokens buys 1.34x, which is the whole win, banked immediately.
 
 That is not the "several times the throughput" the plan predicted, and the reason is not the shape. It is the kernel: this one reaches 88 per cent of the machine's streaming bandwidth but only about 30 per cent of its arithmetic peak, which pushes the ridge down to a single token. A kernel with three times the arithmetic efficiency would move the ridge to three tokens and make batching pay. **Which is the useful lesson: whether GEMM beats GEMV is a property of your kernel's efficiency ratio, and you cannot read it off the shape.**

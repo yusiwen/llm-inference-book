@@ -22,6 +22,10 @@ Four kernels, two machines, one data set:
 | Intel i7-11700B (x86_64) | `avx512-vnni` | 58.1 | 8.67 GB/s | 4.57x | 1.2e-07 | avx512f+vnni+bw+vl |
 <!-- /facts -->
 
+<!-- facts: dotsimd.provenance -->
+*`scripts/dotsimd.c`; times four SIMD kernels and the scalar reference, one source file compiled for ARM and for x86; on **Apple M4 Pro (arm64) and Intel i7-11700B (x86_64)**; median of the runs per machine. Command: see [the provenance index](../appendix/provenance.md#dotsimd). Raw numbers: `facts/dotsimd.json`.*
+<!-- /facts -->
+
 Three things in that table are worth more than the headline speedups.
 
 **The vector width was not the biggest lever.** The first version of the ARM kernel measured 48.1 ns per row; the final one measures 25.9. Nothing about the multiply changed between them - the difference was that the f16 *scale* was being decoded by a branchy software routine instead of one hardware conversion instruction. Lesson 3 takes that apart, because it is the most common way a hand-written kernel ends up slower than the scalar code it replaced.

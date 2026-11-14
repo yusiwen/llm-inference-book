@@ -7349,5 +7349,8 @@
   ]
  },
  "invocation": "clang -O2 -o vecops scripts/vecops.c -lm ; ./vecops qwen2.5-0.5b-instruct-q4_k_m.gguf --json facts/vecops.json",
- "note": "The fixtures are real bytes: an embedding row (token_embd, Q5_0, row 0) as the vector, blk.0.attn_norm.weight (f32) as the gain, and that row dotted with the first 4096 rows of the same matrix as the logits. Timing is the median of three runs of this program, with the range beside it; the error numbers are deterministic and identical across runs (checked)."
+ "note": "The fixtures are real bytes: an embedding row (token_embd, Q5_0, row 0) as the vector, blk.0.attn_norm.weight (f32) as the gain, and that row dotted with the first 4096 rows of the same matrix as the logits. Timing is the median of three runs of this program, with the range beside it; the error numbers are deterministic and identical across runs (checked).",
+ "machine": "Apple M4 Pro",
+ "compiler": "clang -O2",
+ "runs": 3
 }

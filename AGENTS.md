@@ -112,6 +112,13 @@ and the gate enforces the evidence.
    semantics - say which one you got.
 4. **Figures ship with the chapter**: draw its P0 figures from `FIGURES.md` in the same sitting, include them
    where the prose needs them, mark them drawn.
+4b. **A measured table names its instrument, on the page.** Every facts file a page quotes owes that page a
+   `<!-- facts: NAME.provenance -->` line - script, machine, runs, statistic, raw artifact - and gate step 12
+   fails without it. The line is generated from the artifact's own `invocation`, `machine` and `runs`; the
+   only hand-written part is the ONE row in `facts.py::INSTRUMENTS` that says which script and which
+   statistic, so a new instrument costs one line and cannot be forgotten. The full command lives on
+   `src/appendix/provenance.md`, rendered by `scripts/provenance.py` (gate step 15) - a reader who wants to
+   reproduce a number starts there, and a long command never turns a chapter into a wall of flags.
 5. **Cite at least one source by key** in `## Reading`, then `python3 scripts/references.py` (the gate fails
    on a stale used-in column).
 6. **Re-run the gate**; `probe.py` names what the page is still missing. A new gate needs a negative test

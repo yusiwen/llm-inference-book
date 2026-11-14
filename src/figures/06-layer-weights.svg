@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 404" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="One transformer layer of the book's model weighs 14.9 million weights: the three feed-forward matrices hold 13.07 million of them, 88 per cent, and the four attention matrices 1.83 million. Every weight is read once per generated token, so the feed-forward matrices carry most of the bytes a decode step must move.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-f64 { fill: #4d86b8; }
+    .fig-a-int { fill: #b8703f; }
+    .fig-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE LAYER, 14.9M WEIGHTS, EACH READ ONCE PER TOKEN</text>
+  <rect class="fig-a-f64" x="24" y="40" width="93.5" height="26" rx="2"/>
+  <rect class="fig-a-int" x="117.5" y="40" width="668.5" height="26" rx="2"/>
+  <rect class="fig-a-f64" x="24" y="80" width="11" height="11" rx="2"/>
+  <text class="fig-m" x="42" y="90">attention: 1.83M weights (12 per cent), in 4 matrices</text>
+  <rect class="fig-a-int" x="392" y="80" width="11" height="11" rx="2"/>
+  <text class="fig-m" x="410" y="90">feed-forward: 13.07M (88 per cent), in 3</text>
+  <text class="fig-s" x="24" y="116">the same layer, tensor by tensor. bar length is weights; the four attention matrices are the short ones.</text>
+  <text class="fig-m" x="24" y="144">ffn_gate</text>
+  <text class="fig-m" x="128" y="144" fill-opacity=".7">896 x 4864</text>
+  <rect class="fig-a-int" x="226" y="134" width="452.0" height="13" rx="2"/>
+  <text class="fig-m" x="686.0" y="145">4.358M</text>
+  <text class="fig-m" x="24" y="168">ffn_up</text>
+  <text class="fig-m" x="128" y="168" fill-opacity=".7">896 x 4864</text>
+  <rect class="fig-a-int" x="226" y="158" width="452.0" height="13" rx="2"/>
+  <text class="fig-m" x="686.0" y="169">4.358M</text>
+  <text class="fig-m" x="24" y="192">ffn_down</text>
+  <text class="fig-m" x="128" y="192" fill-opacity=".7">4864 x 896</text>
+  <rect class="fig-a-int" x="226" y="182" width="452.0" height="13" rx="2"/>
+  <text class="fig-m" x="686.0" y="193">4.358M</text>
+  <text class="fig-m" x="24" y="216">attn_q</text>
+  <text class="fig-m" x="128" y="216" fill-opacity=".7">896 x 896</text>
+  <rect class="fig-a-f64" x="226" y="206" width="83.3" height="13" rx="2"/>
+  <text class="fig-m" x="317.3" y="217">0.803M</text>
+  <text class="fig-m" x="24" y="240">attn_out</text>
+  <text class="fig-m" x="128" y="240" fill-opacity=".7">896 x 896</text>
+  <rect class="fig-a-f64" x="226" y="230" width="83.3" height="13" rx="2"/>
+  <text class="fig-m" x="317.3" y="241">0.803M</text>
+  <text class="fig-m" x="24" y="264">attn_k</text>
+  <text class="fig-m" x="128" y="264" fill-opacity=".7">896 x 128</text>
+  <rect class="fig-a-f64" x="226" y="254" width="11.9" height="13" rx="2"/>
+  <text class="fig-m" x="245.9" y="265">0.115M</text>
+  <text class="fig-m" x="24" y="288">attn_v</text>
+  <text class="fig-m" x="128" y="288" fill-opacity=".7">896 x 128</text>
+  <rect class="fig-a-f64" x="226" y="278" width="11.9" height="13" rx="2"/>
+  <text class="fig-m" x="245.9" y="289">0.115M</text>
+  <line class="fig-rule" x1="24" y1="310" x2="786" y2="310"/>
+  <text class="fig-s" x="24" y="330">per layer 14.9M, and 24 of these plus the output matrix (896 x 151,936) is the whole model.</text>
+  <text class="fig-m" x="24" y="352">One multiply-accumulate per weight means a decoded token reads the feed-forward matrices three times over, so</text>
+  <text class="fig-m" x="24" y="368">about one MAC per byte of weights is the whole economic argument for storing them in four bits.</text>
+</svg>

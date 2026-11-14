@@ -65,6 +65,10 @@ The book's own file gives the arithmetic a check. This model ships at several fo
 | F32 | 286,208 | 0.1% | `attn_k.bias`, `attn_norm.weight`, `attn_q.bias`, `attn_v.bias`, `ffn_norm.weight`, `output_norm.weight` (121) |
 <!-- /facts -->
 
+<!-- facts: gguf-qwen2.5-0.5b-q4_0.provenance -->
+*`scripts/gguf-inspect.py`; parses the same model at Q4_0; read once from the file. Read from `qwen2.5-0.5b-instruct-q4_0.gguf`; its sha256 is recorded in `facts/gguf-qwen2.5-0.5b-q4_0.json`.*
+<!-- /facts -->
+
 Look at that table before moving on. The file is called **q4_0**, and it is **5.37 bits per weight** in the blob, because 34 per cent of it is one Q8_0 tensor: the output matrix (`output.weight`, 896 x 151,936, the largest tensor in any of these files), which quantizers keep at higher precision because it is the last multiplication before the logits. That is Chapter 2's mixed-recipe lesson arriving from the other direction: **the format name describes the payload, not the file.**
 
 ### Lesson 2 · Q4_0 and Q4_1: nibbles, offsets, and a scale that is a half float
@@ -108,6 +112,10 @@ Here is the whole family, generated from the block table that the decoders use:
 | Q5_0 | 32 | 22 | 5.50 | `d` f16 (2 B), `qh` u8[4] (4 B), `qs` u8[16] (16 B) |
 | Q5_1 | 32 | 24 | 6.00 | `d` f16 (2 B), `m` f16 (2 B), `qh` u8[4] (4 B), `qs` u8[16] (16 B) |
 | Q8_0 | 32 | 34 | 8.50 | `d` f16 (2 B), `qs` i8[32] (32 B) |
+<!-- /facts -->
+
+<!-- facts: dequant-check.provenance -->
+*`scripts/dequant-check.py`; decodes each block format back to f32 and compares it against a second decoder (gguf-py) on the same bytes; max relative error per format; the bit-exact counts are exhaustive over the blocks sampled. Command: see [the provenance index](../appendix/provenance.md#dequant-check). Read from `qwen2.5-0.5b-instruct-q4_0.gguf`; its sha256 is recorded in `facts/dequant-check.json`.*
 <!-- /facts -->
 
 Every element count and byte count in that table was checked twice: by this book's reader against the specification, and against `gguf-py`'s constants. That is Chapter 3's rule carried forward - the table is data, so it is checked rather than trusted.

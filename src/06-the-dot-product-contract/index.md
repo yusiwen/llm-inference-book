@@ -19,6 +19,10 @@ The claim "it is faster" is measurable even without a single SIMD instruction, a
 | `i16` - integers, i16 block accumulator | 43.0 | 11.73 GB/s | 20.85 GMAC/s | 9.02x | 0.31-0.51 ms |
 <!-- /facts -->
 
+<!-- facts: dotbench.provenance -->
+*`scripts/dotbench.c`; times three scalar kernels on 8,192 real rows of the book's file; on **Apple M4 Pro, clang -O2**; 7 runs; median of the runs, with the full range beside it. Command: see [the provenance index](../appendix/provenance.md#dotbench). Raw numbers: `facts/dotbench.json`.*
+<!-- /facts -->
+
 Two kernels, the same 896 multiply-accumulates per row, the same bytes read, the same answer (the checksums agree exactly). The integer one is **5.5 times faster** in plain C, and the 16-bit variant - which is legal only for certain formats, as Lesson 3 shows - is **9 times** faster. Nothing was vectorised. The work itself changed shape.
 
 ## What you'll be able to do
@@ -40,19 +44,11 @@ Two kernels, the same 896 multiply-accumulates per row, the same bytes read, the
 
 Count the dot products in one token of the book's 0.5B model, because the arithmetic explains every design decision that follows. For a hidden size of 896 and a feed-forward width of 4,864, each layer does:
 
-```text
-attn_q   896 x 896        0.80M weights
-attn_k   896 x 128        0.11M          (2 KV heads of head_dim 64: this model shares keys and values)
-attn_v   896 x 128        0.11M
-attn_out 896 x 896        0.80M
-ffn_gate 896 x 4864       4.36M
-ffn_up   896 x 4864       4.36M
-ffn_down 4864 x 896       4.36M
-                        -------
-per layer                14.9M weights, each used exactly once per token
-```
+<figure class="book-figure">{{#include ../figures/06-layer-weights.svg}}</figure>
 
-24 layers, plus the output matrix (896 x 151,936). Which is why a decode step reads essentially the entire model and performs one multiply-accumulate per weight: **the arithmetic intensity of token generation is about one MAC per byte of weights**. That ratio is the whole economic argument for quantizing weights (four times fewer bytes to read) and the whole reason Chapter 1's bandwidth arithmetic looked the way it did.
+*Figure 6.1 - one layer's weights, and where they go. The four attention matrices are 1.83M weights (12 per cent); the three feed-forward matrices are 13.07M (88 per cent), and `attn_k` and `attn_v` are narrow because this model shares keys and values across query heads (2 KV heads of head_dim 64, which Chapter 10 needs).*
+
+Twenty-four layers of that, plus the output matrix (896 x 151,936). Which is why a decode step reads essentially the entire model and performs one multiply-accumulate per weight: **the arithmetic intensity of token generation is about one MAC per byte of weights**. That ratio is the whole economic argument for quantizing weights (four times fewer bytes to read) and the whole reason Chapter 1's bandwidth arithmetic looked the way it did.
 
 Two consequences to keep in your head:
 
@@ -83,6 +79,10 @@ for block in act.chunks_mut(32) {
 | Q8_0 x Q8_0 | 512 | 0.000% | 1.6e-06 | 0.0e+00 | 0.0e+00 | 0.0e+00 |
 <!-- /facts -->
 
+<!-- facts: dotcheck.provenance -->
+*`scripts/dotcheck.py`; decomposes the quantized dot product's error into activation, integer and scale parts, and bounds each format's accumulator; max relative error against f64; the bounds are arithmetic, the worst partial is measured. Command: see [the provenance index](../appendix/provenance.md#dotcheck). Read from `qwen2.5-0.5b-instruct-q4_0.gguf`; its sha256 is recorded in `facts/dotcheck.json`.*
+<!-- /facts -->
+
 Read the first column: the activation's own rounding is **0.534 per cent** relative RMS. That is the price of 8 bits, and it is the same order as the 4-bit weights' 7.98 per cent from Chapter 4 - smaller because 8 bits is 16 times finer than 4, not twice.
 
 The fourth column is the one that matters for the contract: the error the integer path actually delivers, measured against the norm product (the scale-free form, because a relative error on a dot product that happens to be near zero is meaningless - 512 rows include some of those, and the raw relative figure reaches 21 per cent on the worst one while the norm-product figure stays at **7.7e-04**).
@@ -95,7 +95,7 @@ The fourth column is the one that matters for the contract: the error the intege
 
 <figure class="book-figure">{{#include ../figures/06-quantized-dot.svg}}</figure>
 
-*Figure 6.1 - the contract as dataflow: the activation row quantized once, per-block integer dot products accumulated exactly, and one f32 multiply per block to restore the scale.*
+*Figure 6.2 - the contract as dataflow: the activation row quantized once, per-block integer dot products accumulated exactly, and one f32 multiply per block to restore the scale.*
 
 Here is the whole kernel, scalar version, with the parts named:
 
@@ -169,22 +169,31 @@ Every number in the rest of this book - every tok/s, every "the kernel got 2.4x 
 
 **It must be measured, so you know what it costs.** The oracle is not only a correctness device; it is the calibration point for "how much did SIMD buy". Scalar, on this machine:
 
+<figure class="book-figure">{{#include ../figures/06-bandwidth-headroom.svg}}</figure>
+
+*Figure 6.3 - 8,192 rows of 896 Q4_0 weights, 504 bytes each, against the machine's measured streaming bandwidth. The best scalar kernel manages 11.73 GB/s where the memory system delivers 198, so the kernel is 17x short of bandwidth-bound - and the dequantize-then-dot path is 152x short, which is the same sentence said about the wrong implementation.*
+
 <!-- facts: dotbench.dot-headroom -->
-```text
-rows benchmarked            8,192 of 896 weights each
-weight bytes per row       504 B (28 blocks x 18 B)
-best scalar throughput     11.73 GB/s
-measured memory bandwidth  198 GB/s (Chapter 1, same machine)
-headroom                   17x short of bandwidth-bound
-```
+| Quantity | Value | Where it comes from |
+|---|---|---|
+| Rows benchmarked | 8,192 rows of 896 weights | this artifact |
+| Weight bytes per row | 504 B (28 blocks x 18 B) | the format, not a measurement |
+| Best scalar throughput | 11.73 GB/s | the `i16` kernel below |
+| Dequantize-then-dot throughput | 1.30 GB/s | the `dq` kernel below |
+| Measured memory bandwidth | 198 GB/s | Chapter 1, same machine |
+| Headroom | 17x short of bandwidth-bound | the two rows above |
 <!-- /facts -->
 
 Which turns into an honest prediction before Chapter 7 writes a single intrinsic. If your engine ran this scalar kernel over every weight of a token:
 
-```text
-0.5B model, 422.8 MB of weights per token:   422.8e6 / 11.73e9 = 36.0 ms -> 27.7 tok/s
-7B model,  4.68 GB of weights per token:       4.68e9 / 11.73e9 = 399 ms -> 2.5 tok/s
-```
+<div class="math-display">
+$$
+\begin{aligned}
+\text{0.5B model, } 422.8\ \text{MB per token}: &\quad \frac{422.8\times10^{6}}{11.73\times10^{9}}\ \text{s} = 36.0\ \text{ms} \;\Rightarrow\; 27.7\ \text{tokens/s} \\[4pt]
+\text{7B model, } 4.68\ \text{GB per token}: &\quad \frac{4.68\times10^{9}}{11.73\times10^{9}}\ \text{s} = 399\ \text{ms} \;\Rightarrow\; 2.5\ \text{tokens/s}
+\end{aligned}
+$$
+</div>
 
 Those are the numbers a scalar engine gets, and they are the reason the next two chapters exist: **9x** from using the lanes (Chapter 7) and roughly **8x** more from using the cores (Chapter 8) is the difference between 2.5 tok/s and 150 tok/s. Nothing in that chain changes the answer to within 7.7e-04 of the norm product - which is the contract this chapter spent its words on.
 

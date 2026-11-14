@@ -1,10 +1,10 @@
 # Figure plan
 
-> **Status**: planning only - **0 of 46 figures drawn**. This file is repository material, not book content: it is the drawing order and the acceptance test, and it never appears in the built site.
+> **Status**: in progress - **12 of 48 figures drawn**. This file is repository material, not book content: it is the drawing order and the acceptance test, and it never appears in the built site.
 > **Rule**: a figure must be cheaper to author than the paragraph it replaces, and must carry a claim the prose cannot make as quickly. A diagram nobody remembers is a table.
 > **Ship rule**: a chapter's P0 figures are written *with* the chapter, in the same sitting, and are part of what "the chapter is drafted" means - a stub may have none, a `draft` may not owe a P0. P1 figures are added when the chapter is revised, or dropped.
 
-46 figures across the 30 pages that have figures: **31 core (P0)** and **15 supporting (P1)**. P1 figures are drawn only after every P0 exists; a P1 that never gets drawn costs nothing, because its lesson is written to stand without it.
+48 figures across the 30 pages that have figures: **33 core (P0)** and **15 supporting (P1)**. P1 figures are drawn only after every P0 exists; a P1 that never gets drawn costs nothing, because its lesson is written to stand without it.
 
 ## How a figure is built here (and why)
 
@@ -56,7 +56,9 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 
 | Fig | File | Pri | Shape | Lesson | What it teaches (the aria-label draft) |
 |---|---|---|---|---|---|
-| 6.1 | `06-quantized-dot.svg` | P0 | flow | L3 | The dot-product contract as dataflow: f32 activations quantized to Q8_0 once, an integer dot against the weight row, and the scale corrections that restore f32. |
+| 6.1 | `06-layer-weights.svg` | P0 | bar | L1 | One layer's 14.9M weights split by tensor: the three feed-forward matrices are 88 per cent of them, and attention's four are the short bars. |
+| 6.2 | `06-quantized-dot.svg` | P0 | flow | L3 | The dot-product contract as dataflow: f32 activations quantized to Q8_0 once, an integer dot against the weight row, and the scale corrections that restore f32. |
+| 6.3 | `06-bandwidth-headroom.svg` | P0 | bar | L5 | The three scalar kernels against the machine's measured streaming bandwidth, with the 17x gap drawn as a bracket. |
 | 7.1 | `07-lanes.svg` | P0 | lanes | L2 | Eight AVX2 lanes and four NEON SDOT lanes doing the same quantized dot, with the nibble unpack and horizontal fold that differ between them. |
 | 8.1 | `08-gemv-vs-gemm.svg` | P0 | matrix | L1 | One activation row against a weight matrix (decode, no reuse) versus N rows against the same weights (prefill, each weight read serving N tokens). |
 | 9.1 | `09-precision-ledger.svg` | P1 | flow | L5 | Where each op widens and narrows: f16 or bf16 weights entering f32 accumulation, and the ops whose output must stay f32 for the identity gate. |
@@ -143,6 +145,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 46 | this file |
-| Drawn | 10 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 12 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

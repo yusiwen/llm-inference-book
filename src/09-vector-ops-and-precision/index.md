@@ -24,6 +24,10 @@ The ledger, filled in from measurements on the book's own weights:
 Witness: vecops-witness.json (numpy f64 on the same bytes) - the widest disagreement across all five ops is 2.5e-07.
 <!-- /facts -->
 
+<!-- facts: vecops.provenance -->
+*`scripts/vecops.c`; computes each vector op the way an engine writes it, reports the error against an f64 oracle, and times the op; on **Apple M4 Pro, clang -O2**; 3 runs; median of three runs for timing; the errors are deterministic and identical across runs. Command: see [the provenance index](../appendix/provenance.md#vecops). Raw numbers: `facts/vecops.json`.*
+<!-- /facts -->
+
 Every f32 path lands within about **1e-6** of a double-precision oracle, which is what f32 arithmetic costs and not a defect to fix. So the interesting part of this chapter is not the ops that lose a bit; it is the three that do something else entirely:
 
 <!-- facts: vecops.failures -->
@@ -103,6 +107,10 @@ There is no mean subtraction, and that is the whole difference from LayerNorm: t
 | `qwen2.rope.freq_base` | FLOAT32 | 1000000.0 |
 | `qwen2.attention.layer_norm_rms_epsilon` | FLOAT32 | 9.999999974752427e-07 |
 | `general.file_type` | UINT32 | 15 |
+<!-- /facts -->
+
+<!-- facts: gguf-qwen2.5-0.5b.provenance -->
+*`scripts/gguf-inspect.py`; parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies; read once from the file; the counts are structure, not samples. Read from `qwen2.5-0.5b-instruct-q4_k_m.gguf`; its sha256 is recorded in `facts/gguf-qwen2.5-0.5b.json`.*
 <!-- /facts -->
 
 `qwen2.attention.layer_norm_rms_epsilon` reads `9.999999974752427e-07`, which is the f32 nearest to 1e-6 - the value is not exactly representable, which is the first place a "just use 1e-6 in f64" implementation can diverge from one that reads the file. It is added to the *mean square* before the square root, so what it protects against is a division by zero for a vector of zeros, not an overflow.
@@ -268,6 +276,10 @@ That is the shape of a real precision policy, and the reference engine states it
 | RoPE, half-split, positions 1..3 | 5.3e-08 | the C kernel's own inv_freq expression, in f64 |
 
 Verdict: **agree within 1e-6**.
+<!-- /facts -->
+
+<!-- facts: vecops-witness.provenance -->
+*`scripts/vecops-check.py`; recomputes every op in numpy f64 from the C program's own fixture bytes; max relative difference, one pass. Command: see [the provenance index](../appendix/provenance.md#vecops-witness). Raw numbers: `facts/vecops-witness.json`.*
 <!-- /facts -->
 
 Read the RoPE row carefully, because it shows the limit of this method: the witness re-implements the **half-split pairing**, because that is what the C kernel claims to do. Two implementations that agree about a wrong pairing agree perfectly. That is why the pairing itself is tested against a golden vector from a known engine - or, in the reader's case, against the reference implementation's own output - and never against a second implementation of your own.

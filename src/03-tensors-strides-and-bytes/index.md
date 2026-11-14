@@ -103,6 +103,10 @@ Then the geometry of real tensors, derived from their shapes and those block siz
 | `blk.0.attn_k.bias` | F32 | 128 | 1 | 128 | 512 | 1 | 512 | 512 (same) |
 <!-- /facts -->
 
+<!-- facts: gguf-qwen2.5-0.5b.provenance -->
+*`scripts/gguf-inspect.py`; parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies; read once from the file; the counts are structure, not samples. Read from `qwen2.5-0.5b-instruct-q4_k_m.gguf`; its sha256 is recorded in `facts/gguf-qwen2.5-0.5b.json`.*
+<!-- /facts -->
+
 Read the last two columns of that table, because they are a check and not decoration: for every tensor, `rows x bytes per row` equals what the file says the tensor occupies. The arithmetic closes exactly, which means the shape, the dtype and the byte count are three views of one fact. When your loader disagrees with any of the three, it is wrong about the other two as well.
 
 **What about alignment between rows?** The most common guess is that GGML pads each row up to a multiple of 16 or 32 bytes so that vector loads are always aligned. It does not. Rows are packed back to back, and the evidence is in the same table: a Q5_0 row is 616 bytes, a Q6_K row is 3,990 bytes. Take 616 modulo 16 and you get 8 - so row 1 begins 8 bytes past a 16-byte boundary, row 2 lands exactly on one, and the pattern alternates down the tensor. Across every two-dimensional tensor in this file, the row length modulo 16 takes exactly three values: **0, 6 and 8**.
