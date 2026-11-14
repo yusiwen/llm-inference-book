@@ -100,7 +100,16 @@ echo "== 13. the TeX in the pages parses =="
 # A formula MathJax cannot parse does not fail `mdbook build`: the page deploys green and the reader
 # gets a red error box. Same silent-failure class as a markdown table with the wrong cell count, and
 # the same answer - catch it before the browser is asked to.
+# scripts/texlint.py is a verbatim copy of the one in the `mdbook-study-handbook` skill. Fix the skill's
+# copy first and re-copy it here, or the two drift apart - which is the exact failure this book is about.
 python3 scripts/texlint.py
+
+echo
+echo "== 14. monospace holds code and output, not pictures (ratchet) =="
+# The backlog below is what the book admits to today: four sketches to draw as SVG, four ledgers to turn
+# into facts tables, and two reviewed keepers (a tool's own output, a pseudocode list). The number may
+# only go down - converting a block means lowering the allowance in the same commit.
+python3 scripts/sketch-probe.py --allow 10
 
 echo
 echo "all checks passed"

@@ -358,7 +358,11 @@ def render_dot_errors(f):
 
 def render_dot_bounds(f):
     """Is a 16-bit block accumulator legal? The answer is a property of the format, not of the data."""
-    out = ["| Weight format | Weights per block | Largest |q| | Worst-case block partial | Fits in i16 (32,767)? |",
+    # The header cell once read `Largest |q|`. Two unescaped pipes made the header 7 cells against a
+    # 5-cell delimiter row, so GFM refused the table and shipped the whole block as a paragraph - the
+    # defect a reader found before any check did. Name it in words; a cell is not a maths block.
+    out = ["| Weight format | Weights per block | Largest absolute activation | Worst-case block partial "
+           "| Fits in i16 (32,767)? |",
            "|---|---|---|---|---|"]
     order = ["Q4_0", "Q5_0", "Q6_K", "Q8_0"]
     b = f.get("accumulator_bounds", {})
@@ -754,13 +758,42 @@ def check():
                 findings.append(f"{p.relative_to(ROOT)}: block {name}.{block} differs from the facts file "
                                 f"(first differing line {first + 1}):\n      page:  {got.split(chr(10))[first][:100]}\n"
                                 f"      facts: {want.split(chr(10))[first][:100]}")
-    # A markdown table row containing "||" is a cell boundary that ate a code span: mdBook splits on every
-    # pipe, so `||w||*||a||` inside a table silently destroys the table. Caught by eye once; caught here now.
+    # A markdown table whose header row has a different number of cells than its delimiter row is not
+    # repaired by the parser: GFM refuses to recognise the table at all and ships the whole block as a
+    # paragraph of pipe characters. That is how Chapter 6's accumulator table reached a reader while every
+    # check stayed green - the header cell `Largest |q|` had an unescaped pipe pair, so 7 cells against 5
+    # delimiters. The `||` check below only ever saw doubled pipes; this one counts the cells.
     for page in sorted((ROOT / "src").rglob("*.md")):
-        for n, line in enumerate(page.read_text().split("\n"), 1):
+        lines = page.read_text().split("\n")
+        in_fence = False
+        for n, line in enumerate(lines):
+            if line.lstrip().startswith(("```", "~~~")):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             if line.lstrip().startswith("|") and "||" in line:
-                findings.append(f"{page.relative_to(ROOT)}:{n}: a table row contains \"||\" - the markdown "
+                findings.append(f"{page.relative_to(ROOT)}:{n + 1}: a table row contains \"||\" - the markdown "
                                 f"parser will split the cell; spell the norm product as words")
+            if not line.lstrip().startswith("|") or n + 1 >= len(lines):
+                continue
+            delimiter = lines[n + 1]
+            if not re.match(r"^\s*\|[-: |]+\|\s*$", delimiter):
+                continue
+            cells = len(re.findall(r"(?<!\\)\|", line)) - 1
+            delim_cells = len(re.findall(r"\|", delimiter)) - 1
+            if cells != delim_cells:
+                findings.append(f"{page.relative_to(ROOT)}:{n + 1}: table header has {cells} cell(s) against "
+                                f"{delim_cells} delimiter(s) - an unescaped `|` inside a cell; GFM will ship "
+                                f"the whole table as a paragraph")
+                continue
+            for k in range(n + 2, len(lines)):
+                if not lines[k].lstrip().startswith("|"):
+                    break
+                got = len(re.findall(r"(?<!\\)\|", lines[k])) - 1
+                if got != delim_cells:
+                    findings.append(f"{page.relative_to(ROOT)}:{k + 1}: table row has {got} cell(s) against "
+                                    f"{delim_cells} in the header - the table will not parse")
     for f in sorted(FACTS.glob("*.json")):
         if f.stem not in used:
             findings.append(f"facts/{f.name}: no page uses these facts (stale file?)")

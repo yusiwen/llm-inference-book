@@ -147,6 +147,14 @@ deploys, and the reader is handed an ASCII sketch that should have been drawn.
 - **A formula that MathJax cannot parse does not fail the build.** Gate step 13 (`scripts/texlint.py`)
   catches unbalanced braces, `\left` without `\right`, unclosed environments, unknown control
   sequences and stray `$`; the rendered page still has to be looked at (below).
+- **A table that the parser rejects does not fail the build either.** GFM refuses a table whose header
+  row has a different cell count than its delimiter row, and ships the whole block as a paragraph of
+  pipe characters - which is how a header cell reading `Largest |q|` reached a reader with every check
+  green. Gate step 12 counts the cells now; `||` inside a row is the same defect with two pipes.
+- **A sketch is counted, not trusted.** `scripts/sketch-probe.py` (gate step 14) lists the monospace
+  blocks that are pictures or hand-aligned ledgers, and `--allow` is a ratchet: the backlog may only go
+  down. Four sketches are waiting to be drawn as SVG and four ledgers to become facts tables; the
+  allowance in `scripts/verify.sh` is the number, and it is lowered in the commit that converts one.
 
 Math is typeset client-side, so `mdbook build` proves nothing about it. **Before publishing a page that
 contains formulas, load the built page and look at it** - the same obligation as the figures, and the
@@ -155,6 +163,9 @@ reason the `|q|` table in Chapter 6 shipped broken while every gate stayed green
 ## Do not
 
 - Do not hand-edit `book/` (generated) or add a remote asset (the site must work offline).
+- Do not draw a diagram in characters. A sketch of bytes, fields or dataflow goes into an SVG, a formula
+  into a maths block, and a multi-row ledger into a facts table; `scripts/sketch-probe.py` counts what is
+  left, and its allowance only goes down.
 - Do not add a figure outside `FIGURES.md` without adding its row there first, and do not introduce
   a cite key without a row in `src/appendix/references.md`.
 - Do not cite an arXiv ID from memory, and do not mark an unchecked one "to verify": resolve it or

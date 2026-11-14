@@ -127,7 +127,7 @@ Three properties of that code are the contract, and the third is the one people 
 **The accumulator width is a property of the format, not of your data.** A block's partial sum is bounded by construction: 32 weights of magnitude at most 8 (Q4_0), times activations of at most 127:
 
 <!-- facts: dotcheck.dot-bounds -->
-| Weight format | Weights per block | Largest |q| | Worst-case block partial | Fits in i16 (32,767)? |
+| Weight format | Weights per block | Largest absolute activation | Worst-case block partial | Fits in i16 (32,767)? |
 |---|---|---|---|---|
 | Q4_0 | 32 | 8 | 32,512 | yes |
 | Q5_0 | 32 | 16 | 65,024 | no |
