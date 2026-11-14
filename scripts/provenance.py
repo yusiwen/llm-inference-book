@@ -17,6 +17,7 @@ field the chapter's one-line provenance reads.
 import argparse
 import json
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -29,8 +30,13 @@ START = "<!-- provenance-index -->"
 END = "<!-- /provenance-index -->"
 
 
+HOME_RE = re.compile(r"(?:/Users/|/home/)[^/\s:;]+/")
+
+
 def home_free(text):
-    return text.replace(str(pathlib.Path.home()), "~")
+    """Strip a home directory by shape, not by this machine's home: CI runs as /home/runner and the
+    rendered page has to come out identical there, or the staleness check fails on a clean tree."""
+    return HOME_RE.sub("~/", text)
 
 
 def field(d, *names):

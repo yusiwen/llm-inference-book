@@ -750,9 +750,11 @@ def render_provenance(f, name=None):
     if statistic:
         bits.append(statistic)
     line = "; ".join(bits) + "."
-    # Strip the local home directory: the command is meant to be reproducible, not to publish a path that
-    # only exists on one machine.
-    command = command.replace(str(pathlib.Path.home()), "~")
+    # Strip the home directory: the command is meant to be reproducible, not to publish a path that only
+    # exists on one machine. Match the shape of a home path rather than this machine's own home - with
+    # Path.home() the rendered page differed between the author's laptop and CI, and the gate that compares
+    # them caught it (which is the whole reason the page is generated rather than typed).
+    command = re.sub(r"(?:/Users/|/home/)[^/\s:;]+/", "~/", command)
     if command and len(command) <= 90:
         line += f" Command: `{command}`."
     elif command:
