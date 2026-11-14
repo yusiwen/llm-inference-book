@@ -704,6 +704,10 @@ INSTRUMENTS = {
                "computes each vector op the way an engine writes it, reports the error against an f64 "
                "oracle, and times the op",
                "median of three runs for timing; the errors are deterministic and identical across runs"),
+    "attn": ("scripts/attn.c",
+             "runs one layer of real attention on the model's own weights: scores, one decode step at four "
+             "prefix lengths, the softmax alone, and rebuilding the cache against reading it",
+             "median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position"),
     "vecops-witness": ("scripts/vecops-check.py",
                        "recomputes every op in numpy f64 from the C program's own fixture bytes",
                        "max relative difference, one pass"),
@@ -770,6 +774,89 @@ def render_provenance(f, name=None):
     line += note
     return [f"*{line}*"]
 
+def render_attention_scores(f):
+    """How large the scores actually are, on the model's own weights."""
+    sc = f["scores"]
+    return ["| Quantity | Value |", "|---|---|",
+            f"| (head, cached position) pairs | {sc['n']:,} - 14 heads over a {f.get('geometry', {}).get('n_layer', 24)}-layer "
+            f"model's first layer, 1,024 positions |",
+            f"| Mean absolute score | {sc['abs_mean']:.3f} |",
+            f"| Root mean square | {sc['abs_rms']:.3f} |",
+            f"| Largest absolute score | {sc['abs_max']:.2f} |",
+            f"| Pairs above the f16 exp bound (11.09) | {sc['over_f16_exp']} |",
+            f"| Pairs above the f32 exp bound (88.72) | {sc['over_f32_exp']} |"]
+
+
+def render_decode_step(f):
+    """One decode step against the prefix length: linear in the prefix, quadratic over a whole run."""
+    ds = f["decode_step"]
+    sm = f.get("softmax_only_s") or 0.0
+    rows = ["| Cached prefix | One decode step | Per 100 tokens of prefix | Softmax share of the step |",
+            "|---|---|---|---|",
+            "| tokens | microseconds | nanoseconds | per cent |"]
+    keys = sorted(ds, key=lambda k: int(k))
+    prev = None
+    for k in keys:
+        us = ds[k] * 1e6
+        per100 = us / (int(k) / 100.0)
+        share = 100.0 * sm / ds[k] if ds[k] else 0.0
+        ratio = "" if prev is None else f" ({us / prev:.1f}x the previous row)"
+        rows.append(f"| {int(k):,} | {us:.1f}{ratio} | {per100:.0f} | {share:.0f} |")
+        prev = us
+    return rows
+
+
+def render_cache_size(f):
+    """The cache-size table the chapter promises: formulas, values, and what they were measured from."""
+    g, c = f["geometry"], f["cache"]
+    per_tok_layer = c["per_token_per_layer_f16"]
+    weights = 491400032
+    per_step_4k = c["all_layers_4k"]
+    return ["| Quantity | Formula | Value for this model | Measured or derived |", "|---|---|---|---|",
+            f"| Bytes per token per layer | 2 x n_kv x head_dim x 2 (f16) | {per_tok_layer:.0f} B | "
+            f"derived from {g['n_kv']} KV heads x {g['head_dim']} dims |",
+            f"| Bytes per token, all layers | previous x n_layer | {per_tok_layer * g['n_layer']:.0f} B "
+            f"({per_tok_layer * g['n_layer'] / 1024:.1f} KiB) | {g['n_layer']} layers |",
+            f"| Bytes per 4k context | previous x 4096 | {c['all_layers_4k'] / 2**20:.1f} MiB | "
+            f"the buffer the instrument allocates |",
+            f"| Bytes per 8k context | previous x 2 | {c['all_layers_8k'] / 2**20:.1f} MiB | doubling, "
+            f"not measured |",
+            f"| Share of the weights at 8k | cache / {weights / 2**20:.0f} MiB file | "
+            f"{c['share_of_weights_at_8k'] * 100:.1f} per cent | both are facts about this file |",
+            f"| Attention reads per decode step at 4k | the whole cache, every layer | "
+            f"{per_step_4k / 2**20:.1f} MiB | the step measured below |"]
+
+
+def render_rebuild(f):
+    """Rebuilding K and V against reading them: the cache's whole justification, timed."""
+    r = f["rebuild"]
+    step = f["decode_step"][max(f["decode_step"], key=lambda k: int(k))]
+    rec, rd = r["recompute_kv_s"], r["read_kv_s"]
+    return ["| Operation | Time | Bytes | What it replaces |", "|---|---|---|---|",
+            f"| Recompute K and V for 1,024 positions | {rec * 1e3:.1f} ms | {2 * 1024 * 128 * 4 / 2**20:.2f} MiB written | "
+            f"what an engine without a cache does on every token |",
+            f"| Read the same K and V | {rd * 1e6:.0f} us | {2 * 1024 * 128 * 4 / 2**20:.2f} MiB read | "
+            f"{rec / rd:,.0f}x cheaper than recomputing |",
+            f"| Attend over the cached prefix | {step * 1e6:.0f} us | the same bytes | "
+            f"{rec / step:,.0f}x cheaper than recomputing |"]
+
+
+def render_mask_effect(f):
+    """What each mask bug costs, in the output, on real weights."""
+    m = f["mask_effect"]
+    return ["| Mask | Largest output change | Relative | Caught by a 1e-2 tolerance test? |",
+            "|---|---|---|---|",
+            f"| Off by one (`j &lt; i` instead of `j &lt;= i`) | {m['off_by_one_max_abs']:.6f} | "
+            f"{m['off_by_one_relative'] * 100:.2f} per cent | no |",
+            f"| Missing entirely (no causal mask) | {m['unmasked_max_abs']:.6f} | "
+            f"{m['unmasked_relative'] * 100:.2f} per cent | yes |",
+            "",
+            f"The query's own position carries **{m['self_weight'] * 100:.2f} per cent** of the attention mass "
+            f"at a 512-token prefix, which is the size of what the off-by-one throws away: the largest output "
+            f"element is {m['max_abs_out']:.3f}, and dropping a position that holds a quarter of a per cent of "
+            f"the weight moves it in the fourth decimal place."]
+
+
 BLOCKS = {
     "anatomy": render_anatomy,
     "agreement": render_agreement,
@@ -807,6 +894,11 @@ BLOCKS = {
     "header": render_header,
     "model-meta": render_model_meta,
     "provenance": render_provenance,
+    "attention-scores": render_attention_scores,
+    "decode-step": render_decode_step,
+    "cache-size": render_cache_size,
+    "rebuild": render_rebuild,
+    "mask-effect": render_mask_effect,
 }
 
 

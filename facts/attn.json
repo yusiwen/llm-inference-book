@@ -1,0 +1,56 @@
+{
+ "geometry": {
+  "n_embd": 896,
+  "n_head": 14,
+  "n_kv": 2,
+  "head_dim": 64,
+  "n_layer": 24
+ },
+ "scores": {
+  "n": 14336,
+  "abs_mean": 0.4369,
+  "abs_rms": 0.6565,
+  "abs_max": 4.6688,
+  "over_f16_exp": 0,
+  "over_f32_exp": 0
+ },
+ "decode_step": {
+  "128": 2.6333e-05,
+  "256": 5.3e-05,
+  "512": 0.000105667,
+  "1024": 0.000211667
+ },
+ "softmax_only_s": 2.3667e-05,
+ "mask_effect": {
+  "max_abs_out": 0.088061,
+  "off_by_one_max_abs": 0.000406,
+  "off_by_one_relative": 0.004612,
+  "unmasked_max_abs": 0.01956,
+  "unmasked_relative": 0.222118,
+  "self_weight": 0.002401
+ },
+ "cache": {
+  "per_token_per_layer_f16": 512,
+  "all_layers_4k": 50331648,
+  "all_layers_8k": 100663296,
+  "share_of_weights_at_8k": 0.2048
+ },
+ "rebuild": {
+  "recompute_kv_s": 0.105109,
+  "read_kv_s": 6.3667e-05,
+  "runs": 5,
+  "reps": 3
+ },
+ "mask": {
+  "prefix": 1024,
+  "masked_pairs": 524800,
+  "full_pairs": 1048576,
+  "ratio": 0.500488
+ },
+ "artifact": "attn",
+ "machine": "arm64, Darwin 27.2.0",
+ "compiler": "clang -O2",
+ "runs": 5,
+ "invocation": "clang -O2 -o attn scripts/attn.c -lm ; ./attn qwen2.5-0.5b-instruct-q4_k_m.gguf attn.conf --json facts/attn.json",
+ "note": "Weight matrices, activations and the KV cache are all f32 and the dots accumulate in double, on purpose: the chapter is about the shape of attention, not about a kernel. The prefix is 1,024 tokens - a real embedding row per position, normalised as the residual stream would be - and the score scan covers every (head, position) pair."
+}

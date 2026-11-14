@@ -10,6 +10,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 <!-- provenance-index -->
 | Artifact | Instrument | What it measures | Machine | Runs | Statistic |
 |---|---|---|---|---|---|
+| `attn` | `scripts/attn.c` | runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it | arm64, Darwin 27.2.0 | 5 | median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position |
 | `dequant-check` | `scripts/dequant-check.py` | decodes each block format back to f32 and compares it against a second decoder (gguf-py) on the same bytes | not machine-dependent | - | max relative error per format; the bit-exact counts are exhaustive over the blocks sampled |
 | `dotbench` | `scripts/dotbench.c` | times three scalar kernels on 8,192 real rows of the book's file | Apple M4 Pro | 7 | median of the runs, with the full range beside it |
 | `dotcheck` | `scripts/dotcheck.py` | decomposes the quantized dot product's error into activation, integer and scale parts, and bounds each format's accumulator | not machine-dependent | - | max relative error against f64; the bounds are arithmetic, the worst partial is measured |
@@ -22,6 +23,18 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `vecops` | `scripts/vecops.c` | computes each vector op the way an engine writes it, reports the error against an f64 oracle, and times the op | Apple M4 Pro | 3 | median of three runs for timing; the errors are deterministic and identical across runs |
 
 The command behind each row, in full:
+
+### attn
+
+`scripts/attn.c` - runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it.
+
+- **Machine**: arm64, Darwin 27.2.0
+- **Runs**: 5; median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position
+- **Raw numbers**: `facts/attn.json`
+
+```bash
+clang -O2 -o attn scripts/attn.c -lm ; ./attn qwen2.5-0.5b-instruct-q4_k_m.gguf attn.conf --json facts/attn.json
+```
 
 ### dequant-check
 

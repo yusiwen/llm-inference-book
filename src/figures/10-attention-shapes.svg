@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 440" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="One decode step of one head at a 1,024-token prefix: the query multiplies the cached keys into 1,024 scores, each score is scaled by one over the square root of 64, the causal mask keeps only the 524,800 pairs at or below the diagonal out of 1,048,576, softmax turns the kept scores into probabilities, and those weight the cached values into one output row of 64.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-q  { fill: #4d86b8; fill-opacity: .45; }
+    .fig-a-kv { fill: #b8703f; fill-opacity: .45; }
+    .fig-a-p  { fill: #3f8f6f; fill-opacity: .45; }
+    .fig-a-keep { fill: #8f7ad1; fill-opacity: .55; }
+    .fig-a-mask { fill: #6b7f92; fill-opacity: .30; }
+    .fig-lbl { fill: var(--fg, #dce6f0); font-size: 10px; }
+    .fig-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE HEAD, ONE DECODE STEP AT A 1,024-TOKEN PREFIX</text>
+  <rect class="fig-a-q" x="24" y="42" width="84" height="28" rx="2"/>
+  <text class="fig-lbl" x="66" y="60" text-anchor="middle">q  1 x 64</text>
+  <text class="fig-m" x="116" y="60">x</text>
+  <rect class="fig-a-kv" x="132" y="42" width="96" height="28" rx="2"/>
+  <text class="fig-lbl" x="180" y="60" text-anchor="middle">K  1024 x 64</text>
+  <text class="fig-m" x="236" y="60">/ 8</text>
+  <rect class="fig-a-p" x="262" y="42" width="104" height="28" rx="2"/>
+  <text class="fig-lbl" x="314" y="60" text-anchor="middle">1,024 scores</text>
+  <text class="fig-m" x="378" y="52">one per cached position: a 64-term dot,</text>
+  <text class="fig-m" x="378" y="67">divided by the square root of 64</text>
+  <text class="fig-m" x="132" y="86">K and V are the cache: written once, read by every query after</text>
+  <text class="fig-s" x="24" y="120">the mask, drawn for a 16-token prefix: a query at row i may read key j only when j &lt;= i</text>
+  <rect class="fig-a-keep" x="24" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="35" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="46" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="57" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="68" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="79" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="132" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="132" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="143" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="46" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="57" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="68" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="79" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="143" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="143" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="154" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="154" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="57" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="68" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="79" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="154" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="154" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="165" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="165" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="165" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="68" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="79" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="165" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="165" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="176" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="176" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="176" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="176" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="79" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="176" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="176" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="90" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="187" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="187" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="198" width="10" height="10"/>
+  <rect class="fig-a-mask" x="101" y="198" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="198" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="198" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="198" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="198" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="101" y="209" width="10" height="10"/>
+  <rect class="fig-a-mask" x="112" y="209" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="209" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="209" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="209" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="101" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="112" y="220" width="10" height="10"/>
+  <rect class="fig-a-mask" x="123" y="220" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="220" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="220" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="101" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="112" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="123" y="231" width="10" height="10"/>
+  <rect class="fig-a-mask" x="134" y="231" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="231" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="101" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="112" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="123" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="134" y="242" width="10" height="10"/>
+  <rect class="fig-a-mask" x="145" y="242" width="10" height="10"/>
+  <rect class="fig-a-keep" x="24" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="35" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="46" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="57" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="68" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="79" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="90" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="101" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="112" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="123" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="134" y="253" width="10" height="10"/>
+  <rect class="fig-a-keep" x="145" y="253" width="10" height="10"/>
+  <text class="fig-m" x="170" y="154">queries grow downwards, keys to the right</text>
+  <text class="fig-m" x="170" y="172">violet: kept - 524,800 pairs of 1,048,576</text>
+  <text class="fig-t" x="170" y="194">50.05 per cent of the work</text>
+  <text class="fig-m" x="170" y="214">The other half is above the diagonal and is never</text>
+  <text class="fig-m" x="170" y="229">computed. A kernel that computes it and then multiplies</text>
+  <text class="fig-m" x="170" y="244">by zero has spent twice the arithmetic on nothing.</text>
+  <rect class="fig-a-p" x="24" y="292" width="104" height="28" rx="2"/>
+  <text class="fig-lbl" x="76" y="310" text-anchor="middle">probabilities</text>
+  <text class="fig-m" x="136" y="310">x</text>
+  <rect class="fig-a-kv" x="152" y="292" width="96" height="28" rx="2"/>
+  <text class="fig-lbl" x="200" y="310" text-anchor="middle">V  1024 x 64</text>
+  <text class="fig-m" x="256" y="310">=</text>
+  <rect class="fig-a-q" x="272" y="292" width="84" height="28" rx="2"/>
+  <text class="fig-lbl" x="314" y="310" text-anchor="middle">out  1 x 64</text>
+  <text class="fig-m" x="372" y="302">1,024 probabilities weight 1,024 value rows</text>
+  <text class="fig-m" x="372" y="317">into one 64-number output</text>
+  <line class="fig-rule" x1="24" y1="340" x2="786" y2="340"/>
+  <text class="fig-s" x="24" y="362">Every number above is either a shape (1,024 x 64) or arithmetic on shapes. None of it depends on where the tokens</text>
+  <text class="fig-s" x="24" y="378">are in the sequence: a position is a value the kernel is given - the mask compares indices, and the rotation in</text>
+  <text class="fig-s" x="24" y="394">Chapter 9 used it - so one kernel serves prefill, decode, and a cache that starts at any offset.</text>
+  <text class="fig-m" x="24" y="414">What the picture leaves out, and the last lesson covers: those two matrices are the cache, and the cache is the only</text>
+  <text class="fig-m" x="24" y="428">part of a decode step that grows with the conversation.</text>
+</svg>
