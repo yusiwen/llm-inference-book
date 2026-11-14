@@ -121,14 +121,17 @@ def render_bits(f):
     for name, n in rows:
         numel = sum(t["numel"] for t in f["tensors"] if t["type"] == name)
         per_dtype.append(f"{name} {n * 8 / numel:.2f}")
-    return [
-        "```text",
-        f"parameters in the file        {params:,}",
-        f"blob bytes per parameter      {blob_bits:.2f} bits",
-        f"whole file per parameter      {file_bits:.2f} bits  (metadata included)",
-        f"by dtype, bits per weight     {', '.join(per_dtype)}",
-        "```",
-    ]
+    # A table, not a hand-aligned column: the fields are columns and the per-dtype rows are a list, so a
+    # reader reads down one column instead of counting spaces to find which number belongs to which word.
+    out = ["| Quantity | Value | Note |", "|---|---|---|",
+           f"| Parameters in the file | {params:,} | every tensor's element count, summed |",
+           f"| Blob bytes per parameter | {blob_bits:.2f} bits | the tensor data only |",
+           f"| Whole file per parameter | {file_bits:.2f} bits | metadata included |",
+           "", "| Weight dtype | Bits per weight | Bytes in the file |", "|---|---|---|"]
+    for name, n in rows:
+        numel = sum(t["numel"] for t in f["tensors"] if t["type"] == name)
+        out.append(f"| {name} | {n * 8 / numel:.2f} | {n:,} |")
+    return out
 
 
 BLOCK_LAYOUT = {
@@ -277,14 +280,16 @@ def render_k_agreement(f):
 def render_k_packing(f):
     """The 6-bit plane, against the reference implementation, on every bit pattern."""
     p = f["packing"]
-    half = p["fields_compared"] // 2
-    return ["```text",
-            f"planes examined            {p['planes']:,}  (12 random bytes each)",
-            f"scale fields compared      {p['scale_exact']:,} of {p['fields_compared']:,} of them exact",
-            f"min fields compared        {p['min_exact']:,} of {p['fields_compared']:,} of them exact",
-            f"distinct scale values      {p['distinct_scale_values_seen']} of 64 exercised",
-            f"verdict                    {p['agreement']}",
-            "```"]
+    return ["| Check | Result | What it rules out |", "|---|---|---|",
+            f"| Planes examined | {p['planes']:,}, 12 random bytes each | a real file only exercises the values "
+            f"its own quantizer happened to choose |",
+            f"| Scale fields | {p['scale_exact']:,} of {p['fields_compared']:,} exact | a shift or mask "
+            f"error in the low six bits |",
+            f"| Min fields | {p['min_exact']:,} of {p['fields_compared']:,} exact | the same error in the "
+            f"high two bits, which live in a different byte |",
+            f"| Distinct scale values | {p['distinct_scale_values_seen']} of 64 exercised | a test that "
+            f"never sets the top of the field |",
+            f"| Verdict | {p['agreement']} | - |"]
 
 
 def render_k_levels(f):
@@ -325,19 +330,18 @@ def render_layer_split(f):
     n = max(more + less) + 1
     n8 = n // 8
     rule = [i for i in range(n) if i < n8 or i >= 7 * n // 8 or (i - n8) % 3 == 2]
-    same = "the same set" if rule == sorted(more) else "a DIFFERENT set"
+    same = "the same set" if rule == sorted(more) else "a **different** set"
     return [
-        "```text",
-        f"layers in the file     {n}",
-        f"ffn_down, Q6_K         {', '.join(map(str, more))}",
-        f"ffn_down, Q4_K         {', '.join(map(str, less))}",
-        f"attn_v,  Q8_0          {', '.join(map(str, layers('Q8_0', 'attn_v')))}",
-        f"attn_v,  Q5_0          {', '.join(map(str, layers('Q5_0', 'attn_v')))}",
+        "| Tensor | Weight dtype | Layers | Layer indices |", "|---|---|---|---|",
+        f"| `ffn_down` | Q6_K | {len(more)} | {', '.join(map(str, more))} |",
+        f"| `ffn_down` | Q4_K | {len(less)} | {', '.join(map(str, less))} |",
+        f"| `attn_v` | Q8_0 | {len(layers('Q8_0', 'attn_v'))} | "
+        f"{', '.join(map(str, layers('Q8_0', 'attn_v')))} |",
+        f"| `attn_v` | Q5_0 | {len(layers('Q5_0', 'attn_v'))} | "
+        f"{', '.join(map(str, layers('Q5_0', 'attn_v')))} |",
         "",
-        f"the current rule at the baseline (i < n/8, i >= 7n/8, or (i - n/8) % 3 == 2)",
-        f"would pick             {', '.join(map(str, rule))}",
-        f"that is {same}.",
-        "```",
+        f"**{n} layers in the file.** The rule the engine implements at the book's baseline - `i < n/8`, "
+        f"`i >= 7n/8`, or `(i - n/8) % 3 == 2` - would pick {', '.join(map(str, rule))}: {same}.",
     ]
 
 

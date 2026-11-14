@@ -40,16 +40,16 @@ Both files hold the same 630,167,424 parameters, and the second reconstructs the
 
 A block format has to store a scale next to the weights, and that scale is pure overhead: 16 bits that describe 32 values rather than being one of them. So block size is a trade you can compute before you ever look at a model.
 
-```text
-payload per weight           4 bits   (a nibble, 16 levels)
-scale, f16                   16 bits per block
-overhead per weight          16 / block_size bits
+A nibble carries 4 bits per weight and the block pays 16 bits for its scale, so the cost of that scale is `16 / block_size` bits per weight:
 
-block 32   ->  4 + 0.50 = 4.50 bits per weight
-block 16   ->  4 + 1.00 = 5.00
-block 64   ->  4 + 0.25 = 4.25
-block 256  ->  4 + 0.06 = 4.06
-```
+| Block size | Scale overhead per weight | Bits per weight | Where the format is used |
+|---|---|---|---|
+| 16 | 16 / 16 = 1.00 | 5.00 | nothing in this book's file |
+| 32 | 16 / 32 = 0.50 | 4.50 | Q4_0, Q5_0, Q8_0 |
+| 64 | 16 / 64 = 0.25 | 4.25 | not in the GGUF base formats |
+| 256 | 16 / 256 = 0.06 | 4.06 | the K-quants, where the scale is 6 bits, not 16 |
+
+The last row is the exception that proves the rule: a 256-weight super-block cannot afford a 16-bit scale per sub-block, which is why the K-quants spend 6 bits on a scale and share one 16-bit multiplier across all 256 weights. Chapters 4 and 5 measure both.
 
 Read down that column and the obvious move is "use a huge block": the file would be smaller and the kernel would do less work per byte. The reason nobody does it is the other half of the trade, which is *error*: one scale has to fit every weight in its block, so the block's value range is the block's problem. A block of 256 weights containing one large value sets a step size that ruins the other 255; a block of 32 confines that damage.
 

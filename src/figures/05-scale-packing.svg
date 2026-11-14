@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 486" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="The twelve bytes that hold eight 6-bit scales and eight 6-bit minimums for a Q4_K super-block. Bytes 0 to 3 carry the low six bits of scales 0 to 3 and the high two bits of scales 4 to 7; bytes 4 to 7 do the same for the minimums; bytes 8 to 11 hold the low four bits of each, a minimum in the top half and a scale in the bottom half. Sub-block 5 therefore has its scale split across bytes 1 and 9, and its minimum across bytes 5 and 9.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-bit { stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-scale { fill: #4d86b8; fill-opacity: .55; }
+    .fig-a-min   { fill: #b8703f; fill-opacity: .55; }
+    /* the accent that marks sub-block 5: a semantic class, so it survives a theme change */
+    /* sub-block 5's cells: a mid-tone that clears 3:1 against the dark card (4.42) and the light one
+     * (3.31), and that no field colour already uses */
+    .fig-a-sub { stroke: #8f7ad1; stroke-width: 2; }
+    .fig-lbl { fill: var(--fg, #dce6f0); font-size: 10px; }
+  </style>
+  <text class="fig-cap" x="24" y="22">THE TWELVE BYTES, BIT BY BIT</text>
+  <text class="fig-s" x="24" y="40">one Q4_K super-block: eight 6-bit scales and eight 6-bit minimums, packed where they fit rather than where they belong</text>
+  <text class="fig-m" x="89" y="62" text-anchor="middle">7</text>
+  <text class="fig-m" x="119" y="62" text-anchor="middle">6</text>
+  <text class="fig-m" x="149" y="62" text-anchor="middle">5</text>
+  <text class="fig-m" x="179" y="62" text-anchor="middle">4</text>
+  <text class="fig-m" x="209" y="62" text-anchor="middle">3</text>
+  <text class="fig-m" x="239" y="62" text-anchor="middle">2</text>
+  <text class="fig-m" x="269" y="62" text-anchor="middle">1</text>
+  <text class="fig-m" x="299" y="62" text-anchor="middle">0</text>
+  <text class="fig-lbl" x="24" y="88">0</text>
+  <rect class="fig-a-scale fig-bit" x="74" y="72" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="87" text-anchor="middle">E</text>
+  <rect class="fig-a-scale fig-bit" x="134" y="72" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="87" text-anchor="middle">A</text>
+  <text class="fig-m" x="328" y="87">high 2 bits of scale 4  |  low 6 bits of scale 0</text>
+  <text class="fig-lbl" x="24" y="114">1</text>
+  <rect class="fig-a-scale fig-a-sub fig-bit" x="74" y="98" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="113" text-anchor="middle">F</text>
+  <rect class="fig-a-scale fig-bit" x="134" y="98" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="113" text-anchor="middle">B</text>
+  <text class="fig-m" x="328" y="113">high 2 bits of scale 5  |  low 6 bits of scale 1</text>
+  <text class="fig-lbl" x="24" y="140">2</text>
+  <rect class="fig-a-scale fig-bit" x="74" y="124" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="139" text-anchor="middle">G</text>
+  <rect class="fig-a-scale fig-bit" x="134" y="124" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="139" text-anchor="middle">C</text>
+  <text class="fig-m" x="328" y="139">high 2 bits of scale 6  |  low 6 bits of scale 2</text>
+  <text class="fig-lbl" x="24" y="166">3</text>
+  <rect class="fig-a-scale fig-bit" x="74" y="150" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="165" text-anchor="middle">H</text>
+  <rect class="fig-a-scale fig-bit" x="134" y="150" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="165" text-anchor="middle">D</text>
+  <text class="fig-m" x="328" y="165">high 2 bits of scale 7  |  low 6 bits of scale 3</text>
+  <text class="fig-lbl" x="24" y="192">4</text>
+  <rect class="fig-a-min fig-bit" x="74" y="176" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="191" text-anchor="middle">e</text>
+  <rect class="fig-a-min fig-bit" x="134" y="176" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="191" text-anchor="middle">a</text>
+  <text class="fig-m" x="328" y="191">high 2 bits of min 4  |  low 6 bits of min 0</text>
+  <text class="fig-lbl" x="24" y="218">5</text>
+  <rect class="fig-a-min fig-a-sub fig-bit" x="74" y="202" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="217" text-anchor="middle">f</text>
+  <rect class="fig-a-min fig-bit" x="134" y="202" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="217" text-anchor="middle">b</text>
+  <text class="fig-m" x="328" y="217">high 2 bits of min 5  |  low 6 bits of min 1</text>
+  <text class="fig-lbl" x="24" y="244">6</text>
+  <rect class="fig-a-min fig-bit" x="74" y="228" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="243" text-anchor="middle">g</text>
+  <rect class="fig-a-min fig-bit" x="134" y="228" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="243" text-anchor="middle">c</text>
+  <text class="fig-m" x="328" y="243">high 2 bits of min 6  |  low 6 bits of min 2</text>
+  <text class="fig-lbl" x="24" y="270">7</text>
+  <rect class="fig-a-min fig-bit" x="74" y="254" width="60" height="22" rx="1"/>
+  <text class="fig-lbl" x="104" y="269" text-anchor="middle">h</text>
+  <rect class="fig-a-min fig-bit" x="134" y="254" width="180" height="22" rx="1"/>
+  <text class="fig-lbl" x="224" y="269" text-anchor="middle">d</text>
+  <text class="fig-m" x="328" y="269">high 2 bits of min 7  |  low 6 bits of min 3</text>
+  <text class="fig-lbl" x="24" y="296">8</text>
+  <rect class="fig-a-min fig-bit" x="74" y="280" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="134" y="295" text-anchor="middle">e</text>
+  <rect class="fig-a-scale fig-bit" x="194" y="280" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="254" y="295" text-anchor="middle">E</text>
+  <text class="fig-m" x="328" y="295">low 4 bits of min 4  |  low 4 bits of scale 4</text>
+  <text class="fig-lbl" x="24" y="322">9</text>
+  <rect class="fig-a-min fig-a-sub fig-bit" x="74" y="306" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="134" y="321" text-anchor="middle">f</text>
+  <rect class="fig-a-scale fig-a-sub fig-bit" x="194" y="306" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="254" y="321" text-anchor="middle">F</text>
+  <text class="fig-m" x="328" y="321">low 4 bits of min 5  |  low 4 bits of scale 5</text>
+  <text class="fig-lbl" x="24" y="348">10</text>
+  <rect class="fig-a-min fig-bit" x="74" y="332" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="134" y="347" text-anchor="middle">g</text>
+  <rect class="fig-a-scale fig-bit" x="194" y="332" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="254" y="347" text-anchor="middle">G</text>
+  <text class="fig-m" x="328" y="347">low 4 bits of min 6  |  low 4 bits of scale 6</text>
+  <text class="fig-lbl" x="24" y="374">11</text>
+  <rect class="fig-a-min fig-bit" x="74" y="358" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="134" y="373" text-anchor="middle">h</text>
+  <rect class="fig-a-scale fig-bit" x="194" y="358" width="120" height="22" rx="1"/>
+  <text class="fig-lbl" x="254" y="373" text-anchor="middle">H</text>
+  <text class="fig-m" x="328" y="373">low 4 bits of min 7  |  low 4 bits of scale 7</text>
+  <line style="stroke:var(--quote-border,#4a6577);stroke-width:1" x1="24" y1="386" x2="786" y2="386"/>
+  <text class="fig-s" x="24" y="408">sub-block 5, outlined in violet, is the one that catches people: its scale is the high two bits of byte 1 plus the low four of byte 9,</text>
+  <text class="fig-s" x="24" y="424">and its minimum is the high two bits of byte 5 plus the low four of byte 9 again. Write the unpacker from intuition and sub-blocks 0-3 decode</text>
+  <text class="fig-s" x="24" y="440">correctly while 4-7 are wrong, which is exactly what a spot-check on one real file does not catch.</text>
+</svg>

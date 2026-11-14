@@ -77,20 +77,9 @@ Where the super-block earns its place is not the median block at all - it is the
 
 Twelve bytes, sixteen fields:
 
-```text
-byte  0   EEAAAAAA      A = scale 0, low 6 bits      E = scale 4, high 2 bits
-byte  1   FFBBBBBB      B = scale 1                F = scale 5
-byte  2   GGCCCCCC      C = scale 2                G = scale 6
-byte  3   HHDDDDDD      D = scale 3                H = scale 7
-byte  4   eeaaaaaa      a = min 0, low 6 bits      e = min 4, high 2 bits
-byte  5   ffbbbbbb      b = min 1                  f = min 5
-byte  6   ggcccccc      c = min 2                  g = min 6
-byte  7   hhdddddd      d = min 3                  h = min 7
-byte  8   eeeeEEEE      scale 4 and min 4, low 4 bits each
-byte  9   ffffFFFF      scale 5 and min 5
-byte 10   ggggGGGG      scale 6 and min 6
-byte 11   hhhhHHHH      scale 7 and min 7
-```
+<figure class="book-figure">{{#include ../figures/05-scale-packing.svg}}</figure>
+
+*Figure 5.2 - the same twelve bytes at bit granularity. Scales are blue, minimums are orange, and the violet outline is sub-block 5, whose two numbers are split across three bytes. This is the figure to hold in your head while writing the unpacker: bytes 0-3 are not "the scales", they are the low six bits of four scales and the high two bits of four others.*
 
 Sub-block 5's two numbers live in three different bytes: the low four bits of its scale at byte 9, the high two bits of its scale at byte 1, the low four bits of its min at byte 9 again, and the high two bits of its min at byte 5. If you write the unpacking from intuition you will get sub-blocks 0-3 right and 4-7 wrong, which is exactly the failure mode a real file hides: half the block decodes correctly, so the first spot-check passes.
 
@@ -111,13 +100,13 @@ fn scale_min(j: usize, q: &[u8; 12]) -> (u8, u8) {
 **Verified against the reference, on every bit pattern.** The packing is pure integer work, so there is no rounding to hide behind and the comparison can be exact. The test does not read a real file at all: it feeds 4,096 random twelve-byte planes to both implementations and compares all eight `(scale, min)` pairs on each:
 
 <!-- facts: kquant-check.k-packing -->
-```text
-planes examined            4,096  (12 random bytes each)
-scale fields compared      32,768 of 65,536 of them exact
-min fields compared        32,768 of 65,536 of them exact
-distinct scale values      64 of 64 exercised
-verdict                    bit-exact
-```
+| Check | Result | What it rules out |
+|---|---|---|
+| Planes examined | 4,096, 12 random bytes each | a real file only exercises the values its own quantizer happened to choose |
+| Scale fields | 32,768 of 65,536 exact | a shift or mask error in the low six bits |
+| Min fields | 32,768 of 65,536 exact | the same error in the high two bits, which live in a different byte |
+| Distinct scale values | 64 of 64 exercised | a test that never sets the top of the field |
+| Verdict | bit-exact | - |
 <!-- /facts -->
 
 32,768 scales and 32,768 minimums, all exact, with every one of the 64 possible scale values exercised. Random planes are the right instrument here for a reason worth stating plainly: a real file's scales only take the values that quantizer chose, so a real-file comparison can pass with two bits of the field never exercised at all.
@@ -228,17 +217,14 @@ The file is called **q4_K_M** and **6.1 per cent of its bytes are Q4_K**. Four t
 Now compare that split with the rule the engine implements, which is llama.cpp's `use_more_bits`:
 
 <!-- facts: gguf-qwen2.5-0.5b.layer-split -->
-```text
-layers in the file     24
-ffn_down, Q6_K         0, 1, 3, 6, 7, 8, 9, 10, 13, 16, 19, 21
-ffn_down, Q4_K         2, 4, 5, 11, 12, 14, 15, 17, 18, 20, 22, 23
-attn_v,  Q8_0          0, 1, 3, 6, 7, 8, 9, 10, 13, 16, 19, 21
-attn_v,  Q5_0          2, 4, 5, 11, 12, 14, 15, 17, 18, 20, 22, 23
+| Tensor | Weight dtype | Layers | Layer indices |
+|---|---|---|---|
+| `ffn_down` | Q6_K | 12 | 0, 1, 3, 6, 7, 8, 9, 10, 13, 16, 19, 21 |
+| `ffn_down` | Q4_K | 12 | 2, 4, 5, 11, 12, 14, 15, 17, 18, 20, 22, 23 |
+| `attn_v` | Q8_0 | 12 | 0, 1, 3, 6, 7, 8, 9, 10, 13, 16, 19, 21 |
+| `attn_v` | Q5_0 | 12 | 2, 4, 5, 11, 12, 14, 15, 17, 18, 20, 22, 23 |
 
-the current rule at the baseline (i < n/8, i >= 7n/8, or (i - n/8) % 3 == 2)
-would pick             0, 1, 2, 5, 8, 11, 14, 17, 20, 21, 22, 23
-that is a DIFFERENT set.
-```
+**24 layers in the file.** The rule the engine implements at the book's baseline - `i < n/8`, `i >= 7n/8`, or `(i - n/8) % 3 == 2` - would pick 0, 1, 2, 5, 8, 11, 14, 17, 20, 21, 22, 23: a **different** set.
 <!-- /facts -->
 
 The two sets are **different**. Every layer in the file's Q6_K set is a "needs more bits" layer by some rule, but not the rule at this book's baseline - which means this file was produced by a llama.cpp that chose differently, and the twelve-layer split it actually used is not recoverable from anything except its tensor table.

@@ -189,12 +189,19 @@ Do the same for your parser, and do it before you believe your own dump: llama.c
 So the file name is a recipe, and the recipe landed mostly on Q5_0 here - not because the model is small, but because whatever produced this file chose per tensor, and the file records the choice rather than the reason. Put the arithmetic on it and the name stops being a summary of anything:
 
 <!-- facts: gguf-qwen2.5-0.5b.bits -->
-```text
-parameters in the file        630,167,424
-blob bytes per parameter      6.16 bits
-whole file per parameter      6.24 bits  (metadata included)
-by dtype, bits per weight     Q5_0 5.50, Q8_0 8.50, Q6_K 6.56, Q4_K 4.50, F32 32.00
-```
+| Quantity | Value | Note |
+|---|---|---|
+| Parameters in the file | 630,167,424 | every tensor's element count, summed |
+| Blob bytes per parameter | 6.16 bits | the tensor data only |
+| Whole file per parameter | 6.24 bits | metadata included |
+
+| Weight dtype | Bits per weight | Bytes in the file |
+|---|---|---|
+| Q5_0 | 5.50 | 266,742,784 |
+| Q8_0 | 8.50 | 146,105,344 |
+| Q6_K | 6.56 | 42,900,480 |
+| Q4_K | 4.50 | 29,417,472 |
+| F32 | 32.00 | 286,208 |
 <!-- /facts -->
 
 Six and a fifth bits per parameter, in a file whose name says 4.5 - and, if you divide by the model card's 494 million instead of the 630 million the file stores, 7.9, which is the figure Part 0 quotes. Both divisions are correct; they answer different questions, and the gap between them is the duplicated embedding described in the next paragraph. Every byte-per-token figure in Chapter 1's ceiling was therefore arithmetic on the *file size*, which is the only number that already contains all of this. That is why the book keeps saying file size and never "bits per weight": the second is a summary the file itself contradicts, and it contradicts it by almost 40 per cent.

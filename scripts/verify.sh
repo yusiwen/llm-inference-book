@@ -106,10 +106,10 @@ python3 scripts/texlint.py
 
 echo
 echo "== 14. monospace holds code and output, not pictures (ratchet) =="
-# The backlog below is what the book admits to today: two sketches to draw as SVG (Chapter 4's bit layout,
-# Chapter 5's packed byte), four ledgers to turn into facts tables, and two reviewed keepers (a tool's own
-# output, a pseudocode list). The number may only go down - converting a block lowers it in the same commit.
-python3 scripts/sketch-probe.py --allow 8
+# The allowance is two reviewed keepers: a tool's own parse dump (Chapter 2) and a list of pseudocode steps
+# (Chapter 8). Everything else in the book is a figure, a maths block, a table or code. The number may only
+# go down; a new candidate has to be drawn or turned into a table, not counted here.
+python3 scripts/sketch-probe.py --allow 2
 
 echo
 echo "== 15. the provenance index matches the artifacts =="

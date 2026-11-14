@@ -61,10 +61,11 @@ Three ideas cover almost every kernel in this book, and none of them is about wh
 
 **Masks are unpacking.** Q4_0's nibbles are not a type; they are four bits that mean "this weight plus eight". The unpack is two operations on a vector of bytes:
 
-```text
-b      = byte j                  (16 bytes: two weights each)
-low    = (b & 0x0F) - 8          weights j      (j = 0..15)
-high   = (b >> 4)   - 8          weights j + 16
+```rust
+// the scalar form of the two vector operations below
+let b    = bytes[j];              // one byte: two weights, j = 0..15
+let low  = (b & 0x0F) - 8;        // weight j
+let high = (b >> 4)   - 8;        // weight j + 16
 ```
 
 On a scalar core that is 32 shifts and 32 subtracts. On a vector core it is one AND and one shift for sixteen bytes at a time - and this is the part every implementation does the same way.

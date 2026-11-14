@@ -1,10 +1,10 @@
 # Figure plan
 
-> **Status**: in progress - **12 of 48 figures drawn**. This file is repository material, not book content: it is the drawing order and the acceptance test, and it never appears in the built site.
+> **Status**: in progress - **13 of 49 figures drawn**. This file is repository material, not book content: it is the drawing order and the acceptance test, and it never appears in the built site.
 > **Rule**: a figure must be cheaper to author than the paragraph it replaces, and must carry a claim the prose cannot make as quickly. A diagram nobody remembers is a table.
 > **Ship rule**: a chapter's P0 figures are written *with* the chapter, in the same sitting, and are part of what "the chapter is drafted" means - a stub may have none, a `draft` may not owe a P0. P1 figures are added when the chapter is revised, or dropped.
 
-48 figures across the 30 pages that have figures: **33 core (P0)** and **15 supporting (P1)**. P1 figures are drawn only after every P0 exists; a P1 that never gets drawn costs nothing, because its lesson is written to stand without it.
+49 figures across the 30 pages that have figures: **34 core (P0)** and **15 supporting (P1)**. P1 figures are drawn only after every P0 exists; a P1 that never gets drawn costs nothing, because its lesson is written to stand without it.
 
 ## How a figure is built here (and why)
 
@@ -51,6 +51,7 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 | 4.1 | `04-block-anatomy.svg` | P0 | byte map | L1 | A Q4_0 block: one 16-bit scale and 16 packed nibble bytes for 32 weights, which is the 4.5 bits per weight the file pays. |
 | 4.2 | `04-block-error.svg` | P1 | bar | L5 | One outlier weight forces a larger block scale, so the other 31 values are quantized more coarsely: the error a block sees. |
 | 5.1 | `05-superblock.svg` | P0 | byte map | L2 | A 256-weight K-quant super-block: eight sub-blocks, one shared d/dmin pair, and the 12 bytes holding eight 6-bit scales and eight 6-bit mins - drawn as it is, not as planned: the packing puts sub-block 5's step in three different bytes. |
+| 5.2 | `05-scale-packing.svg` | P0 | byte map | L2 | The 12-byte scale/min plane at bit granularity: which bits of which byte belong to which sub-block's scale or minimum, with sub-block 5 outlined. |
 
 ### Part 2 · Arithmetic
 
@@ -145,6 +146,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 46 | this file |
-| Drawn | 12 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 13 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |
