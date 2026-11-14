@@ -12,12 +12,12 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Chapters | 29 | `ls -d src/[0-9][0-9]-*/ \| wc -l` |
 | Lessons (checklist items under `## Lessons`) | 146 | counted per page by `scripts/probe.py` |
 | Pages under `src/` | 43 | `find src -name '*.md' \| wc -l` |
-| Prose bytes under `src/` | 367770 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
+| Prose bytes under `src/` | 388602 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
 | Status | all 29 chapter pages `stub` | `rg -l 'Status\*\*: stub' src/[0-9][0-9]-*/index.md \| wc -l` |
 | Sources in the reference index | 29 | `python3 scripts/references.py` (prints the count) |
 | minfer citations tracked | 146 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
 | Behaviour probes recorded | 1 run, 1 probe executed / 7 defined | `ls runs/*.json`, `bash scripts/contract-probes.sh --list` |
-| Figures planned / drawn | 46 / 7 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
+| Figures planned / drawn | 46 / 8 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
 | Reader starter skeleton | 6 crates, 0 dependencies, builds offline | `cp -R starter /tmp/x && cd /tmp/x && cargo build && cargo test` |
 
 None of these are performance numbers. A chapter count is a fact about an outline, not evidence that the book teaches anything.

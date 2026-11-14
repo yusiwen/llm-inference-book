@@ -1,0 +1,110 @@
+{
+ "machines": [
+  {
+   "machine": "Apple M4 Pro (arm64)",
+   "compiler": "Apple clang -O2",
+   "row_len": 896,
+   "rows": 8192,
+   "runs": 7,
+   "identity": "within-tolerance",
+   "dispatch_picks": "neon-acc",
+   "kernels": [
+    {
+     "name": "scalar",
+     "requires": "always",
+     "ns_per_row": 97.8,
+     "gb_per_s": 5.15,
+     "gmac_per_s": 9.16,
+     "speedup_vs_scalar": 1.0,
+     "range_ms": [
+      0.755,
+      0.837
+     ],
+     "max_rel_vs_scalar": 0.0
+    },
+    {
+     "name": "neon-sdot",
+     "requires": "armv8.2 dotprod",
+     "ns_per_row": 25.9,
+     "gb_per_s": 19.48,
+     "gmac_per_s": 34.62,
+     "speedup_vs_scalar": 3.78,
+     "range_ms": [
+      0.211,
+      0.212
+     ],
+     "max_rel_vs_scalar": 0.0
+    },
+    {
+     "name": "neon-acc",
+     "requires": "armv8.2 dotprod, no per-block reduce",
+     "ns_per_row": 22.6,
+     "gb_per_s": 22.32,
+     "gmac_per_s": 39.68,
+     "speedup_vs_scalar": 4.33,
+     "range_ms": [
+      0.185,
+      0.195
+     ],
+     "max_rel_vs_scalar": 1.15e-07
+    }
+   ]
+  },
+  {
+   "machine": "Intel i7-11700B (x86_64)",
+   "compiler": "13.3.0",
+   "row_len": 896,
+   "rows": 8192,
+   "runs": 7,
+   "identity": "within-tolerance",
+   "dispatch_picks": "avx2",
+   "kernels": [
+    {
+     "name": "scalar",
+     "requires": "always",
+     "ns_per_row": 265.8,
+     "gb_per_s": 1.9,
+     "gmac_per_s": 3.37,
+     "speedup_vs_scalar": 1.0,
+     "range_ms": [
+      2.168,
+      2.212
+     ],
+     "max_rel_vs_scalar": 0.0
+    },
+    {
+     "name": "avx2",
+     "requires": "avx2+fma",
+     "ns_per_row": 43.6,
+     "gb_per_s": 11.56,
+     "gmac_per_s": 20.55,
+     "speedup_vs_scalar": 6.1,
+     "range_ms": [
+      0.356,
+      0.358
+     ],
+     "max_rel_vs_scalar": 1.22e-07
+    },
+    {
+     "name": "avx512-vnni",
+     "requires": "avx512f+vnni+bw+vl",
+     "ns_per_row": 58.1,
+     "gb_per_s": 8.67,
+     "gmac_per_s": 15.41,
+     "speedup_vs_scalar": 4.57,
+     "range_ms": [
+      0.476,
+      0.484
+     ],
+     "max_rel_vs_scalar": 1.22e-07
+    }
+   ]
+  }
+ ],
+ "bandwidth_gb_s": {
+  "Apple M4 Pro (arm64)": 198,
+  "Intel i7-11700B (x86_64)": 45.1
+ },
+ "note": "Two machines, one source file, one data set (8,192 rows of token_embd Q4_0 from the book's file). The bandwidth figures are Chapter 1's measured values for the same two machines; the headroom column divides them by the best kernel, which is what 'still compute-bound' means as a number.",
+ "invocation": "clang -O2 -o dotsimd scripts/dotsimd.c  (arm);  gcc -O3 -mf16c -o dotsimd scripts/dotsimd.c -lm  (x86);  then each machine runs dotsimd q4_0.gguf 150590816 896 8192 7 --json ..."
+}

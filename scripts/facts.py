@@ -400,6 +400,36 @@ def render_dot_headroom(f):
             "```"]
 
 
+
+def render_simd_table(f):
+    """Every kernel, both machines, in one table: speed, agreement, and what it needs to exist."""
+    out = ["| Machine | Kernel | ns per row | Weight throughput | vs scalar | Max difference, over the norm product | Requires |",
+           "|---|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        for k in m["kernels"]:
+            out.append(f"| {m['machine']} | `{k['name']}` | {k['ns_per_row']:.1f} | {k['gb_per_s']:.2f} GB/s | "
+                       f"{k['speedup_vs_scalar']:.2f}x | {k['max_rel_vs_scalar']:.1e} | {k['requires']} |")
+    return out
+
+
+def render_simd_headroom(f):
+    """How far the best kernel still is from the machine's measured bandwidth - the case for Threads."""
+    bw = f.get("bandwidth_gb_s", {})
+    rows = []
+    for m in f.get("machines", []):
+        best = max(m["kernels"], key=lambda k: k["gb_per_s"])
+        limit = bw.get(m["machine"])
+        head = f"{limit / best['gb_per_s']:.1f}x" if limit else "-"
+        rows.append((m["machine"], best["name"], best["gb_per_s"], limit, head, m["dispatch_picks"]))
+    out = ["```text",
+           "machine                          best kernel     GB/s   bandwidth   still short   dispatch picks"]
+    for name, kern, gbs, limit, head, picks in rows:
+        out.append(f"{name:32s} {kern:14s} {gbs:6.2f}  {('%.1f' % limit) if limit else '-':>8s}  "
+                   f"{head:>11s}   {picks}")
+    out.append("```")
+    return out
+
+
 K_FORMATS = {
     "Q4_K": (256, 144, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
                         ("qs", "u8[128]")]),
@@ -414,6 +444,8 @@ BLOCKS = {
     "error": render_error,
     "outlier": render_outlier,
     "layer-split": render_layer_split,
+    "simd-table": render_simd_table,
+    "simd-headroom": render_simd_headroom,
     "dot-errors": render_dot_errors,
     "dot-bounds": render_dot_bounds,
     "dot-speed": render_dot_speed,
@@ -506,6 +538,13 @@ def check():
                 findings.append(f"{p.relative_to(ROOT)}: block {name}.{block} differs from the facts file "
                                 f"(first differing line {first + 1}):\n      page:  {got.split(chr(10))[first][:100]}\n"
                                 f"      facts: {want.split(chr(10))[first][:100]}")
+    # A markdown table row containing "||" is a cell boundary that ate a code span: mdBook splits on every
+    # pipe, so `||w||*||a||` inside a table silently destroys the table. Caught by eye once; caught here now.
+    for page in sorted((ROOT / "src").rglob("*.md")):
+        for n, line in enumerate(page.read_text().split("\n"), 1):
+            if line.lstrip().startswith("|") and "||" in line:
+                findings.append(f"{page.relative_to(ROOT)}:{n}: a table row contains \"||\" - the markdown "
+                                f"parser will split the cell; spell the norm product as words")
     for f in sorted(FACTS.glob("*.json")):
         if f.stem not in used:
             findings.append(f"facts/{f.name}: no page uses these facts (stale file?)")

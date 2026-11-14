@@ -35,6 +35,10 @@ in the tree knows the answer. So numbers are generated:
 | `scripts/facts.py --check` | gate: page blocks equal the render, every facts file is used, and the artifact's sha256 still matches |
 | `scripts/gguf-crosscheck.py` | a *second* implementation (`gguf-py`) reads the same file; the verdict is committed in `reference/gguf-crosscheck.json` |
 
+**A table row is not prose.** mdBook splits a table cell on every pipe, including pipes inside a code
+span, so `||w||*||a||` in a table header silently destroys the table and the page still builds clean. Gate
+step 12 now flags any table row containing `||`; spell the norm product as words.
+
 **A mechanism claim is a fact too.** "Layer *i* got Q6_K because `use_more_bits` picks it" is the same
 kind of assertion as a byte count, and it fails the same way: the file was produced by *some* version of the
 reference tool, and that version's rule may not be the one at the baseline. Chapter 5 asserted the current
