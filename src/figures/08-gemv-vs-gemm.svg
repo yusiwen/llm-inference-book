@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 430" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="Two passes over the same weight matrix. On the left, decode: one activation vector is streamed against every weight row, so each byte of the weights is read for exactly one token. On the right, prefill: four activation vectors are held in registers while the same weight row is read once and multiplied by all four, so the same bytes serve four tokens at the cost of four times the arithmetic.">
+  <style>
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-a-w  { fill: #4d86b8; }
+    .fig-a-a1 { fill: #3f8f6f; }
+    .fig-a-e  { stroke: var(--quote-border, #6b7f92); stroke-width: 1; fill: none; }
+  </style>
+  <text class="fig-cap" x="24" y="22">THE SAME BYTES, ONE TOKEN OR FOUR</text>
+  <text class="fig-t" x="24" y="54">decode: one token, one pass per token</text>
+  <rect class="fig-a-w" x="54" y="68" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="87" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="106" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="125" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="144" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="163" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="182" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="201" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="54" y="220" width="86" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="68" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="87" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="106" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="125" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="144" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="163" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="182" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="201" width="16" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="176" y="220" width="16" height="15" rx="2"/>
+  <line class="fig-a-e" x1="198" y1="75" x2="230" y2="75"/>
+  <line class="fig-a-e" x1="198" y1="94" x2="230" y2="94"/>
+  <line class="fig-a-e" x1="198" y1="113" x2="230" y2="113"/>
+  <text class="fig-m" x="236" y="79">one dot product</text>
+  <text class="fig-m" x="236" y="98">per weight row</text>
+  <text class="fig-m" x="236" y="117">= 1 logit</text>
+  <text class="fig-m" x="54" y="276">the weights</text>
+  <text class="fig-m" x="176" y="276">1 token</text>
+  <text class="fig-s" x="54" y="316">bytes streamed per token: 76.6 MB (the whole matrix)</text>
+  <text class="fig-s" x="54" y="334">arithmetic per byte: 1.78 MAC</text>
+  <line x1="404" y1="44" x2="404" y2="352" stroke="var(--quote-border, #4a6577)" stroke-width="1" stroke-dasharray="4 4"/>
+  <text class="fig-t" x="430" y="54">prefill: four tokens, one pass for all four</text>
+  <rect class="fig-a-w" x="460" y="68" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="87" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="106" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="125" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="144" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="163" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="182" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="201" width="86" height="15" rx="2"/>
+  <rect class="fig-a-w" x="460" y="220" width="86" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="68" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="87" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="106" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="125" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="144" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="163" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="182" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="201" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="566" y="220" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="68" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="87" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="106" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="125" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="144" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="163" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="182" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="201" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="590" y="220" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="68" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="87" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="106" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="125" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="144" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="163" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="182" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="201" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="614" y="220" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="68" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="87" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="106" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="125" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="144" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="163" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="182" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="201" width="20" height="15" rx="2"/>
+  <rect class="fig-a-a1" x="638" y="220" width="20" height="15" rx="2"/>
+  <text class="fig-m" x="460" y="276">the same bytes</text>
+  <text class="fig-m" x="566" y="276">4 tokens</text>
+  <text class="fig-m" x="566" y="292">each weight byte feeds four products</text>
+  <text class="fig-s" x="460" y="316">bytes streamed per token: 19.2 MB (a quarter of the matrix)</text>
+  <text class="fig-s" x="460" y="334">arithmetic per byte: 7.1 MAC</text>
+  <text class="fig-t" x="24" y="378">which one wins is a property of the machine, not of the shape</text>
+  <text class="fig-s" x="24" y="398">The machine's own ratio decides: 2.0 MAC per byte it can read is the ridge point on the M4 Pro,</text>
+  <text class="fig-s" x="24" y="416">and this kernel sits at 1.78 MAC: one pass for four tokens costs the same as four passes (1.03x), and 32 tokens 1.29x.</text>
+</svg>

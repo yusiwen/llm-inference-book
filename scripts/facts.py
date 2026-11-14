@@ -430,6 +430,86 @@ def render_simd_headroom(f):
     return out
 
 
+
+def render_threads_sweep(f):
+    """Rows split across threads: what the split buys, and what a spawn costs."""
+    out = ["| Machine | Threads | Pool, ms | Spawn per call, ms | Weight throughput, pool | Throughput, spawn | Speedup vs 1 thread |",
+           "|---|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        for r in m["thread_sweep"]:
+            out.append(f"| {m['machine_key']} | {r['threads']} | {r['pool_ms']:.2f} | {r['spawn_ms']:.2f} | "
+                       f"{r['pool_gbs']:.1f} GB/s | {r['spawn_gbs']:.1f} GB/s | {r['speedup']:.2f}x |")
+    return out
+
+
+def render_token_sweep(f):
+    """The same pass with N tokens: one GEMM call against N one-token calls."""
+    out = ["| Machine | Tokens | One GEMM, ms | N one-token passes, ms | Per token, ms | Ratio (N passes / 1 GEMM) |",
+           "|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        for r in m["token_sweep"]:
+            out.append(f"| {m['machine_key']} | {r['tokens']} | {r['gemm_ms']:.3f} | {r['gemv_ms']:.3f} | "
+                       f"{r['per_token_ms']:.3f} | {r['gemv_over_gemm']:.2f}x |")
+    return out
+
+
+def render_ridge(f):
+    """Where the roof line is: the machine's arithmetic ceiling over its bandwidth ceiling,
+    against the intensity this format can offer per token."""
+    out = ["| Machine | Arithmetic ceiling, GMAC/s | Streaming bandwidth | Ridge, MAC per byte | Intensity per token | "
+           "Tokens where the pass stops being bandwidth-bound | Best measured gain over N passes |",
+           "|---|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        last = max(m["token_sweep"], key=lambda r: r["tokens"])
+        rows = m["shape"]["rows"]
+        macs = rows * m["shape"]["id"] * last["tokens"]
+        gmac = macs / (last["gemm_ms"] * 1e-3) / 1e9
+        bw = f["streaming_gb_s"][m["machine_key"]]
+        ridge = gmac / bw
+        intensity = 32.0 / 18.0        # 32 weights per 18-byte block: one MAC per weight, 1.78 per byte
+        n_ridge = ridge / intensity
+        best = max(m["token_sweep"], key=lambda r: r["gemv_over_gemm"])
+        out.append(f"| {m['machine_key']} | {gmac:.0f} | {bw:.1f} GB/s | {ridge:.2f} | {intensity:.2f} | "
+                   f"{n_ridge:.2f} | {best['gemv_over_gemm']:.2f}x at {best['tokens']} tokens |")
+    return out
+
+
+def render_overhead(f):
+    """A call that is mostly dispatch: the floor a persistent pool puts under every pass."""
+    out = ["| Machine | Shape | One thread, us | Persistent pool, us | Spawn per call, us | Pool speedup | Spawn overhead, us |",
+           "|---|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        o = m["overhead_us"]
+        fss = m["false_sharing_ms"]
+        out.append(f"| {m['machine_key']} | {o['rows']} rows, {fss['threads']} threads | {o['serial']:.1f} | "
+                   f"{o['pool']:.1f} | {o['spawn']:.1f} | {o['serial'] / o['pool']:.1f}x | "
+                   f"{o['spawn'] - o['pool']:.1f} |")
+    return out
+
+
+def render_sharing(f):
+    """Contiguous row ranges against interleaved rows: same work, shared cache lines."""
+    out = ["| Machine | Threads | Contiguous ranges, ms | Interleaved rows, ms | Cost of sharing a line |",
+           "|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        s = m["false_sharing_ms"]
+        out.append(f"| {m['machine_key']} | {s['threads']} | {s['contiguous']:.3f} | {s['interleaved']:.3f} | "
+                   f"{s['interleaved'] / s['contiguous']:.1f}x slower |")
+    return out
+
+
+
+def render_threshold(f):
+    """Where a call stops having enough work in it to be worth splitting."""
+    out = ["| Machine | Rows in the pass | One thread, us | Persistent pool, us | Spawn per call, us | Pool against one thread |",
+           "|---|---|---|---|---|---|"]
+    for m in f.get("machines", []):
+        for r in m["threshold_sweep"]:
+            out.append(f"| {m['machine_key']} | {r['rows']} | {r['serial_us']:.2f} | {r['pool_us']:.2f} | "
+                       f"{r['spawn_us']:.2f} | {r['serial_us'] / r['pool_us']:.2f}x |")
+    return out
+
+
 K_FORMATS = {
     "Q4_K": (256, 144, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
                         ("qs", "u8[128]")]),
@@ -444,6 +524,12 @@ BLOCKS = {
     "error": render_error,
     "outlier": render_outlier,
     "layer-split": render_layer_split,
+    "threads-sweep": render_threads_sweep,
+    "token-sweep": render_token_sweep,
+    "ridge": render_ridge,
+    "overhead": render_overhead,
+    "sharing": render_sharing,
+    "threshold": render_threshold,
     "simd-table": render_simd_table,
     "simd-headroom": render_simd_headroom,
     "dot-errors": render_dot_errors,
@@ -550,9 +636,10 @@ def check():
             findings.append(f"facts/{f.name}: no page uses these facts (stale file?)")
         data = json.loads(f.read_text())
         art = data.get("artifact")
-        if art is None:
+        if not isinstance(art, dict):
             # A measurement artifact (a timing run) describes a machine, not a file: there is no bytes hash
-            # to re-derive, and the run range inside it is what a reader should look at instead.
+            # to re-derive, and the run range inside it is what a reader should look at instead. Some of
+            # them name the instrument in a string instead of carrying a path, which is the same case.
             continue
         path = pathlib.Path(art["path"])
         if not path.exists():
