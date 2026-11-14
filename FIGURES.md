@@ -143,6 +143,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 46 | this file |
-| Drawn | 9 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 10 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

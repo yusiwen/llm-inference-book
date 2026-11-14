@@ -510,6 +510,130 @@ def render_threshold(f):
     return out
 
 
+
+def render_ledger(f):
+    """The precision ledger: per op, what the engine accumulates in, and what that costs against
+    a double-precision oracle. The comparison column is measured, not asserted."""
+    n = f["norm"]
+    witness = {}
+    wpath = ROOT / "facts" / "vecops-witness.json"
+    if wpath.exists():
+        for row in json.loads(wpath.read_text())["ops"]:
+            witness[row["op"]] = row["max_rel_diff"]
+    out = ["| Op | Input | Accumulate | Output | Max difference, f32 path against f64 | Comparison class |",
+           "|---|---|---|---|---|---|"]
+    out.append(f"| RMSNorm | f32 | f32, 8 lanes ({n['max_rel_vs_f64']['lanes_f32']:.1e}) "
+               f"or f32 sequential ({n['max_rel_vs_f64']['seq_f32']:.1e}) | f32 | "
+               f"{n['max_rel_vs_f64']['lanes_f32']:.1e} | bounded, 1e-6 |")
+    out.append(f"| softmax | f32 | f64 sum ({f['softmax']['max_rel_f32_sum']:.1e} if f32) | f32 | "
+               f"{f['softmax']['max_rel_f32_sum']:.1e} | bounded, 1e-5 |")
+    out.append(f"| SiLU | f32 | f32 | f32 | {f['silu']['max_rel_vs_double']:.1e} | bounded, 1e-6 |")
+    out.append(f"| SwiGLU | f32 | f32 | f32 | {f['silu']['max_rel_vs_double']:.1e} | bounded, 1e-6 |")
+    out.append(f"| RoPE | f32 | f32 (sin/cos in f32) | f32 | {witness.get('RoPE, half-split, positions 1..3', 0.0):.1e} "
+               f"| bounded, 1e-6 |")
+    r = f["residual"]
+    out.append(f"| residual add | f32 | f32 | f32 | {r['max_drift_over_max_abs']['f32']:.1e} over 24 adds "
+               f"| bounded, 1e-5 over a chain |")
+    out.append("")
+    out.append(f"Witness: {wpath.name if wpath.exists() else 'not run'} (numpy f64 on the same bytes) - "
+               f"the widest disagreement across all five ops is "
+               f"{max(witness.values()) if witness else 0.0:.1e}.")
+    return out
+
+
+def render_failures(f):
+    """The ops that do not lose a bit - they break, or they drift far enough to matter."""
+    s, r, rope = f["softmax"], f["residual"], f["rope"]
+    out = [
+        "| Failure | What happens | Measured threshold |",
+        "|---|---|---|",
+        f"| softmax without max subtraction, f32 | exp overflows, sum is inf, output is inf/inf = NaN | "
+        f"first NaN above logit {s['naive_breaks_above_logit']['f32']:.2f} |",
+        f"| softmax without max subtraction, f16 | the same, but f16 tops out at 65,504 | "
+        f"first NaN above logit {s['naive_breaks_above_logit']['f16']:.2f} |",
+        f"| residual stream kept in f16 | every add rounds the whole stream to 11 bits | "
+        f"{r['max_drift_over_max_abs']['f16']:.1e} of the stream's peak after {r['layers']} layers |",
+        f"| residual stream kept in bf16 | 8 mantissa bits, and the drift compounds | "
+        f"{r['max_drift_over_max_abs']['bf16']:.1e} of the stream's peak after {r['layers']} layers |",
+        f"| RoPE paired the wrong way | the scores are a different function of distance, and every "
+        f"invariant still holds | {rope['score_gap_between_pairings']:.1e} of the norm product |",
+    ]
+    return out
+
+
+def render_cost(f):
+    """What the pointwise ops cost, and what they add up to per token next to the matmul."""
+    ops = {o["op"]: o for o in f["cost_ns"]["ops"]}
+    out = ["| Op | Length | Median | Range | ns per element |", "|---|---|---|---|---|"]
+    for o in f["cost_ns"]["ops"]:
+        per = o["median_ns"] / o["len"]
+        out.append(f"| `{o['op']}` | {o['len']} | {o['median_ns']:.0f} ns | "
+                   f"{o['range_ns'][0]:.0f}-{o['range_ns'][1]:.0f} ns | {per:.2f} |")
+    e = f.get("exp", {})
+    if e:
+        out.append(f"| `expf` (libm) | 1 | {e['libm_ns_per_elem']:.2f} ns | "
+                   f"{e['libm_range'][0]:.2f}-{e['libm_range'][1]:.2f} ns | {e['libm_ns_per_elem']:.2f} |")
+        out.append(f"| `exp` (degree-5 polynomial) | 1 | {e['polynomial_ns_per_elem']:.2f} ns | "
+                   f"{e['polynomial_range'][0]:.2f}-{e['polynomial_range'][1]:.2f} ns | "
+                   f"{e['polynomial_ns_per_elem']:.2f} |")
+    return out
+
+
+def render_per_token(f):
+    """The same numbers assembled into a per-token budget for the book's model: 24 layers, 14 query
+    heads, 896 wide. Arithmetic, in the open, with every input named."""
+    ops = {o["op"]: o["median_ns"] for o in f["cost_ns"]["ops"]}
+    layers, heads, hidden = 24, 14, 896
+    rms, add, silu = ops["rms_norm(896)"], ops["add(896)"], ops["silu(896)"]
+    silu_ffn = silu * (4864 / hidden)          # the FFN gate is 4,864 wide
+    rope = 2 * rms                             # two rotations of one hidden-size vector, priced as a norm
+    out = ["| Context | softmax per head | attention softmax, per token (24 layers x 14 heads) | "
+           "everything else, per token | softmax share |",
+           "|---|---|---|---|---|"]
+    for ctx in (4096, 32768):
+        per_head = ops[f"softmax({ctx})"]
+        attn = per_head * heads * layers
+        other = (2 * rms + 3 * add + silu_ffn + rope) * layers
+        share = attn / (attn + other)
+        out.append(f"| {ctx} | {per_head / 1e3:.1f} us | {attn / 1e6:.2f} ms | {other / 1e6:.2f} ms | "
+                   f"{share * 100:.0f} per cent |")
+    out.append("")
+    out.append(f"Per layer: 2 RMSNorm ({2 * rms:.0f} ns), 3 residual adds ({3 * add:.0f} ns), "
+               f"SiLU over 4,864 ({silu_ffn:.0f} ns), RoPE ({rope:.0f} ns, priced as two 896-wide passes), "
+               f"and {heads} softmax rows of the context length.")
+    return out
+
+
+
+def render_witness(f):
+    """The second implementation's verdict, op by op."""
+    out = ["| Op | Max relative difference, C f32 path against numpy f64 | Note |",
+           "|---|---|---|"]
+    for o in f["ops"]:
+        out.append(f"| {o['op']} | {o['max_rel_diff']:.1e} | {o['note']} |")
+    out.append("")
+    out.append(f"Verdict: **{f['verdict']}**.")
+    return out
+
+
+
+def render_model_meta(f):
+    """The handful of metadata keys a kernel has to read: shapes, epsilon, rope base."""
+    keys = f["metadata"]["keys"]
+    want = ["general.architecture", "general.name", "qwen2.block_count", "qwen2.context_length",
+            "qwen2.embedding_length", "qwen2.feed_forward_length", "qwen2.attention.head_count",
+            "qwen2.attention.head_count_kv", "qwen2.rope.freq_base",
+            "qwen2.attention.layer_norm_rms_epsilon", "general.file_type"]
+    out = ["| Key | Type | Value |", "|---|---|---|"]
+    for k in want:
+        if k not in keys:
+            continue
+        v = keys[k]["value"]
+        shown = f"{v!r}" if k == "qwen2.attention.layer_norm_rms_epsilon" else v
+        out.append(f"| `{k}` | {keys[k]['type']} | {shown} |")
+    return out
+
+
 K_FORMATS = {
     "Q4_K": (256, 144, [("d", "f16"), ("dmin", "f16"), ("scales", "u8[12], 6-bit packed"),
                         ("qs", "u8[128]")]),
@@ -530,6 +654,11 @@ BLOCKS = {
     "overhead": render_overhead,
     "sharing": render_sharing,
     "threshold": render_threshold,
+    "ledger": render_ledger,
+    "witness": render_witness,
+    "failures": render_failures,
+    "vecops-cost": render_cost,
+    "per-token": render_per_token,
     "simd-table": render_simd_table,
     "simd-headroom": render_simd_headroom,
     "dot-errors": render_dot_errors,
@@ -548,6 +677,7 @@ BLOCKS = {
     "tensor-sample": render_tensor_sample,
     "regions": render_regions,
     "header": render_header,
+    "model-meta": render_model_meta,
 }
 
 

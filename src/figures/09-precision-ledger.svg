@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 502" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="The precision ledger as a flow: quantized weight bytes dequantize into an integer accumulator that widens to f32, RMSNorm accumulates its sum of squares in f64 and returns f32, softmax subtracts the row maximum, exponentiates in f32 and sums in f64, and the residual stream and every op output stay f32 so the identity gate can compare them.">
+  <style>
+    .fig-t    { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s    { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m    { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap  { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-box  { fill: var(--table-alternate-bg, #0f2438); stroke: var(--quote-border, #4a6577); stroke-width: 1; rx: 3; }
+    .fig-a-f32 { fill: #3f8f6f; }
+    .fig-a-f64 { fill: #4d86b8; }
+    .fig-a-int { fill: #b8703f; }
+    .fig-a-byt { fill: #6b7f92; }
+    .fig-a-ar  { stroke: var(--quote-border, #6b7f92); stroke-width: 1.2; fill: none; }
+    .fig-lbl  { fill: var(--fg, #dce6f0); font-size: 11px; }
+  </style>
+  <text class="fig-cap" x="24" y="22">WHERE EACH OP WIDENS AND NARROWS</text>
+  <rect x="24" y="44" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="66">token id</text>
+  <rect x="190" y="44" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="66">embedding lookup</text>
+  <rect class="fig-a-byt" x="606" y="52" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="66">bytes -> f32</text>
+  <rect x="24" y="106" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="128">hidden state</text>
+  <rect x="190" y="106" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="128">RMSNorm: sum of squares in f64, rsqrt in f32</text>
+  <rect class="fig-a-f64" x="606" y="114" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="128">f32 in, f32 out (f64 inside)</text>
+  <line class="fig-a-ar" x1="99" y1="78" x2="99" y2="104" marker-end="url(#ar)"/>
+  <rect x="24" y="168" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="190">attention</text>
+  <rect x="190" y="168" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="190">matmul: Q4_0 weights x Q8_0 activations</text>
+  <rect class="fig-a-int" x="606" y="176" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="190">bytes in, i32 lanes, f32 out</text>
+  <line class="fig-a-ar" x1="99" y1="140" x2="99" y2="166" marker-end="url(#ar)"/>
+  <rect x="24" y="230" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="252">scores</text>
+  <rect x="190" y="230" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="252">softmax: subtract the row max, exp in f32, sum in f64</text>
+  <rect class="fig-a-f64" x="606" y="238" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="252">f32 in, f32 out (f64 sum)</text>
+  <line class="fig-a-ar" x1="99" y1="202" x2="99" y2="228" marker-end="url(#ar)"/>
+  <rect x="24" y="292" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="314">residual</text>
+  <rect x="190" y="292" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="314">add the attention output and the ffn output</text>
+  <rect class="fig-a-f32" x="606" y="300" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="314">f32, never narrower</text>
+  <line class="fig-a-ar" x1="99" y1="264" x2="99" y2="290" marker-end="url(#ar)"/>
+  <rect x="24" y="354" width="150" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="34" y="376">ffn</text>
+  <rect x="190" y="354" width="400" height="34" rx="3" fill="none" stroke="var(--quote-border, #4a6577)" stroke-width="1"/>
+  <text class="fig-lbl" x="200" y="376">SiLU(gate) * up, then a matmul and an add</text>
+  <rect class="fig-a-f32" x="606" y="362" width="10" height="18" rx="2"/>
+  <text class="fig-m" x="624" y="376">f32 in, f32 out</text>
+  <line class="fig-a-ar" x1="99" y1="326" x2="99" y2="352" marker-end="url(#ar)"/>
+  <defs><marker id="ar" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--quote-border, #6b7f92)"/></marker></defs>
+  <text class="fig-t" x="24" y="434">the two rules this figure is drawn to show</text>
+  <text class="fig-s" x="24" y="452">1. An accumulator may be wider than its operands (f64 for a sum of squares, i32 for a dot product);</text>
+  <text class="fig-s" x="24" y="470">   the output dtype is what the next op and the identity gate see. 2. The residual stream never narrows:</text>
+  <text class="fig-s" x="24" y="488">   keeping it in bf16 cost 2.5 per cent of the stream peak over 24 layers, measured.</text>
+</svg>

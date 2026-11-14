@@ -1,0 +1,30 @@
+{
+ "artifact": "vecops-witness",
+ "witness": "numpy float64, scripts/vecops-check.py",
+ "compares": "facts/vecops.json (the C outputs, f32 paths) against the equations in f64",
+ "invocation": "uv run --with numpy python scripts/vecops-check.py facts/vecops.json --write facts/vecops-witness.json",
+ "ops": [
+  {
+   "op": "RMSNorm output",
+   "max_rel_diff": 2.540333485005798e-07,
+   "note": "scale 64.9683075 vs 64.9683054"
+  },
+  {
+   "op": "softmax (first 16 of 4096)",
+   "max_rel_diff": 7.429424777023187e-08,
+   "note": "sum 4066.0963 vs 4066.0963"
+  },
+  {
+   "op": "SiLU over [-4, 3.75]",
+   "max_rel_diff": 6.444929643906498e-08,
+   "note": "32 probe points"
+  },
+  {
+   "op": "RoPE, half-split, positions 1..3",
+   "max_rel_diff": 5.3482757641771495e-08,
+   "note": "the C kernel's own inv_freq expression, in f64"
+  }
+ ],
+ "verdict": "agree within 1e-6",
+ "note": "A witness for the arithmetic, not for the conventions: the RoPE row re-implements the half-split pairing because that is what the C kernel claims to do. A wrong pairing in both would agree perfectly - which is why the pairing itself is tested against a golden vector from a known engine, not against this file."
+}
