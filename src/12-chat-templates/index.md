@@ -690,5 +690,5 @@ the line.
 - [ ] Question 4: What does a round trip actually prove? (bytes survive, text may not)
 
 <!-- facts: template.provenance -->
-*`(unknown)`; on **arm64, Darwin 27.2.0, python 3.15.2, jinja2 3.1.6**. Command: see [the provenance index](../appendix/provenance.md#template). Raw numbers: `facts/template.json`.*
+*`scripts/tmpl.py`; renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and compares every case byte for byte with the reference renderer's committed output (HuggingFace `transformers` 5.17.0 `apply_chat_template`); the token counts come from the Chapter 11 tokenizer on the same bytes; on **arm64, Darwin 27.2.0, python 3.15.2, jinja2 3.1.6**; byte equality on every case; a byte or token count that differs is a failure, not a statistic. Command: see [the provenance index](../appendix/provenance.md#template). Raw numbers: `facts/template.json`.*
 <!-- /facts -->

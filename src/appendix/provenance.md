@@ -18,7 +18,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `gguf-qwen2.5-0.5b-q4_0` | `scripts/gguf-inspect.py` | parses the same model at Q4_0 | not machine-dependent | - | read once from the file |
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `kquant-check` | `scripts/kquant-check.py` | decodes K-quant super-blocks from adversarial random bytes, from real weights, and from the format's own packing | not machine-dependent | - | bit-exact comparisons, exhaustive over the blocks sampled |
-| `template` | `(not declared)` |  | arm64, Darwin 27.2.0 | per machine |  |
+| `template` | `scripts/tmpl.py` | renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and compares every case byte for byte with the reference renderer's committed output (HuggingFace `transformers` 5.17.0 `apply_chat_template`); the token counts come from the Chapter 11 tokenizer on the same bytes | arm64, Darwin 27.2.0 | per machine | byte equality on every case; a byte or token count that differs is a failure, not a statistic |
 | `threadbench` | `scripts/threadbench.c` | sweeps thread count, batch size, spawn-per-call against a pool, and two write layouts on one matrix | Apple M4 Pro (arm64) and 11th Gen Intel(R) Core(TM) i7-11700B @ 3.20GHz (x86_64) | per machine | median of the runs per machine, with the range where the runs disagree |
 | `tokenizer-witness` | `scripts/tok-check.py` | runs the model family's reference tokenizer on the same fixtures and compares ids with the book's instrument | not machine-dependent | - | 15 of 15 fixtures agree; a mismatch is a failure, not a statistic |
 | `tokenizer` | `scripts/tok.py` | encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, and decodes the ids back; the ids are compared one by one against the reference tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model family's own `tokenizer.json`) | arm64, Darwin 27.2.0 | per machine | exact id equality on every fixture string; nothing here is averaged |
@@ -125,10 +125,10 @@ uv run --with gguf python scripts/kquant-check.py --real facts/gguf-qwen2.5-0.5b
 
 ### template
 
-`(not declared)` - .
+`scripts/tmpl.py` - renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and compares every case byte for byte with the reference renderer's committed output (HuggingFace `transformers` 5.17.0 `apply_chat_template`); the token counts come from the Chapter 11 tokenizer on the same bytes.
 
 - **Machine**: arm64, Darwin 27.2.0
-- **Runs**: per machine; 
+- **Runs**: per machine; byte equality on every case; a byte or token count that differs is a failure, not a statistic
 - **Raw numbers**: `facts/template.json`
 
 ```bash

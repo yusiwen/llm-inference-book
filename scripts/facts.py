@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "template": ("scripts/tmpl.py",
+                 "renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and "
+                 "compares every case byte for byte with the reference renderer's committed output "
+                 "(HuggingFace `transformers` 5.17.0 `apply_chat_template`); the token counts come from the "
+                 "Chapter 11 tokenizer on the same bytes",
+                 "byte equality on every case; a byte or token count that differs is a failure, not a statistic",
+                 ),
     "tokenizer": ("scripts/tok.py",
                   "encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, "
                   "and decodes the ids back; the ids are compared one by one against the reference "
