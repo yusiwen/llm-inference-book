@@ -71,6 +71,24 @@ The book's own file gives the arithmetic a check. This model ships at several fo
 
 Look at that table before moving on. The file is called **q4_0**, and it is **5.37 bits per weight** in the blob, because 34 per cent of it is one Q8_0 tensor: the output matrix (`output.weight`, 896 x 151,936, the largest tensor in any of these files), which quantizers keep at higher precision because it is the last multiplication before the logits. That is Chapter 2's mixed-recipe lesson arriving from the other direction: **the format name describes the payload, not the file.**
 
+The block size is not a constant in the format - it is a property of the type, and the engine answers it in one match:
+
+<!-- code: src/quantize.rs::QuantTarget::blck_size@88ffa5d -->
+```rust
+
+/// The block size (elements per block) of the encoded layout.
+pub fn blck_size(self) -> usize {
+    match self {
+        QuantTarget::F32 | QuantTarget::F16 => 1,
+        QuantTarget::Q4_K | QuantTarget::Q5_K | QuantTarget::Q6_K => K_QUANT_BLOCK,
+        _ => 32,
+    }
+}
+```
+<!-- /code -->
+
+`1` for the float types, `K_QUANT_BLOCK` (256) for the K-quants, `32` for everything else. That is the arithmetic of this lesson in code: 32 weights per block is what makes a 2-byte scale cost half a bit per weight, and a 256-weight super-block with 12 bytes of scales costs 0.375. Note the `_` arm - the legacy quants share a block size, and the engine states that rather than listing them.
+
 ### Lesson 2 · Q4_0 and Q4_1: nibbles, offsets, and a scale that is a half float
 
 <figure class="book-figure">{{#include ../figures/04-block-anatomy.svg}}</figure>
@@ -210,6 +228,19 @@ The pair Q8_0 x Q4_0 is the historical core of llama.cpp's CPU performance: a Q8
 
 **Where Q8_0 shows up in this book's files.** In the q4_0 file, exactly one tensor is Q8_0 - `output.weight`, 144,643,072 bytes, 34 per cent of the whole file. That is not an accident of the quantizer: the LM head is the last multiplication before the logits, its error is not averaged over anything downstream, and quantizers in practice leave it at 8 bits (or 16) while compressing everything else to 4. When you write your loader, do not assume a file has one dtype (Chapter 2's tensor table already told you it does not), and do not assume the largest tensor is the embedding: here it is the output matrix, and it is big because it is stored at a higher precision than the embedding it duplicates.
 
+Q8_0 in full, which is the shortest block in the format family:
+
+<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
+```rust
+GgmlType::Q8_0 => {
+    let d = f16_at(b, 0);
+    (0..32).map(|j| d * b[2 + j] as i8 as f32).collect()
+}
+```
+<!-- /code -->
+
+One half-float scale and thirty-two signed bytes, no packing, no offset, no high-bit plane. `b[2 + j] as i8 as f32` is the entire reconstruction step. That brevity is the argument for the pair: activations are quantized to Q8_0 because decoding it is free, weights are Q4_0 (or a K-quant) because that is where the bytes are, and the kernel in Chapter 6 consumes the Q8_0 bytes without decoding them at all.
+
 ### Lesson 5 · Outliers, clipping, and the error a block sees: a worked example
 
 The error table above says a Q4_0 weight is off by about 8 per cent RMS. If that propagated into dot products unchanged, a 7B model at Q4_0 would be unusable: a single attention score would be 8 per cent wrong, and after 28 layers of compounding nothing would survive. It works anyway, for two reasons: **the error is roughly zero-mean and uncorrelated with the activation**, and **it averages out over the sum**.
@@ -263,6 +294,42 @@ Two engineering responses, both outside this chapter but worth naming so Chapter
 <!-- /facts -->
 
 Two decoders, the same bytes, **1,280 reconstructed weights** each, all bit-exact. Three of those formats (Q4_0, Q5_0, Q8_0) came from real tensors in a file written by llama.cpp's quantizer, so the bytes are not the witness's own output. The other two (Q4_1, Q5_1) do not appear in any file this book ships; their blocks were produced by the witness quantizing real weights, which means that comparison can catch a transcription error but **cannot** catch a shared misreading of the specification. Say that out loud when you report your own results: the difference between "verified" and "verified against itself" is the difference between this chapter's method and a test that always passes.
+
+The quantizer that produced this lesson's error table, where the clipping and the tie-breaking live:
+
+<!-- code: src/quantize.rs::quantize_q4_0@88ffa5d -->
+```rust
+fn quantize_q4_0(x: &[f32], contract: FmaContract) -> Vec<u8> {
+    let mut out = Vec::with_capacity(x.len() / 32 * 18);
+    for blk in x.chunks_exact(32) {
+        let (mut amax, mut max) = (0.0f32, 0.0f32);
+        for &v in blk {
+            if amax < v.abs() {
+                amax = v.abs();
+                max = v;
+            }
+        }
+        let d = max / -8.0;
+        let id = if d != 0.0 { 1.0 / d } else { 0.0 };
+        put_f16(&mut out, d);
+        let mut qs = [0u8; 16];
+        for j in 0..16 {
+            // llama.cpp's reference is compiled with `-ffp-contract=fast`, so
+            // `x*id + 8.5f` is contracted to an FMA on aarch64/x86. Without the
+            // FMA the encoder differs from `llama-quantize` in a handful of
+            // nibbles (12 of 64512 on one 0.5B tensor) — byte parity needs it.
+            let xi0 = trunc_i8(fma(contract, blk[j], id, 8.5)).min(15) as u8;
+            let xi1 = trunc_i8(fma(contract, blk[j + 16], id, 8.5)).min(15) as u8;
+            qs[j] = xi0 | (xi1 << 4);
+        }
+        out.extend_from_slice(&qs);
+    }
+    out
+}
+```
+<!-- /code -->
+
+Three things to take from it. `amax` is the largest **magnitude** but `max` keeps its **sign** - `d = max / -8.0`, so one block's scale is set by that block's single worst weight, which is this lesson's clip. `trunc_i8(...).min(15)` is a truncation toward zero and then a clamp, not a round: the reference truncates, and a rounder quantizer would drift from it. And the comment is the byte-parity obligation in its most concrete form - without the fused multiply-add, twelve nibbles out of 64,512 on one 0.5B tensor differ from `llama-quantize`, which is Chapter 5's Lesson 4 arriving early.
 
 ## Block anatomy and cost
 

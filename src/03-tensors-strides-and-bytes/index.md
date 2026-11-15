@@ -302,6 +302,19 @@ Two habits follow, and they are the practical content of this lesson.
 
 **And one warning about where this abstraction stops.** A transposed weight is not a stride trick when the dtype is quantized: the blocks are laid out along the contiguous axis, so "swap the two strides" gives you a tensor whose blocks no longer describe anything. Real engines handle it by quantizing a second, transposed copy of the matrix at load time, or by making the kernel read the non-contiguous axis - never by pretending the strides are free. That trade-off is Chapter 6's, and it is why `nn.Linear`'s `weight.T` is a one-word operation in PyTorch and a design decision here.
 
+Why unused dimensions are `1` and not `0`, in one line of ggml parity:
+
+<!-- code: src/gguf.rs::ggml_nelements@88ffa5d -->
+```rust
+fn ggml_nelements(ne: &[i64; GGML_MAX_DIMS]) -> i64 {
+    ne[0] * ne[1] * ne[2] * ne[3]
+}
+
+```
+<!-- /code -->
+
+`ne[0] * ne[1] * ne[2] * ne[3]` - a plain product, which only works because an unused dimension is `1`. A 2-D weight arrives as `[896, 151936, 1, 1]`, and its element count is the same product a reader would compute from the two real dimensions. That is the whole reason the engine carries four dimensions for every tensor instead of a rank: one shape type, no match arms, and `nb` stays a fixed four-element array. The batch and head dimensions in this lesson's diagrams are the same array with the `1`s replaced.
+
 ## Layout decisions
 
 | Decision | What it buys | What it costs | Where the book takes it up again |

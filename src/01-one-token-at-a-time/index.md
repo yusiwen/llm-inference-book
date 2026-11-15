@@ -122,6 +122,23 @@ Two consequences follow, and they are the two things most worth knowing before y
 
 **The two regimes are two different latency numbers.** Time to first token (TTFT) is paid by prefill and grows with prompt length, quadratically in its attention part. Inter-token latency (ITL) is paid by decode, is nearly flat in prompt length for the weight read, and grows with context length because the KV cache must be read too. A user who says "it is slow" is complaining about one of these two, and the fixes do not overlap. Asking which one is not pedantry; it is the first question of every optimization in this book.
 
+Both regimes reach the same kernel with one number different, and the engine's GPU dispatch says so out loud:
+
+<!-- code: src/cuda/methods/dispatch.rs::dispatch_matmul@88ffa5d -->
+```rust
+// excludes it. Decode (nt == 1) keeps the f32 kernel.
+// ...
+if nt > 1 && id <= 8192 {
+    let q8 = Self::get_or_grow(
+        &self.buf_q8_prefill,
+        nt * (id / 32) * Q8B,
+    );
+    self.quantize_q8_0(x, q8, id, nt);
+```
+<!-- /code -->
+
+`nt` is the number of tokens handed to the matmul, and the whole comment is the lesson: **decode (`nt == 1`) keeps the f32 kernel**, prefill quantizes its activations once and reuses them across the weight rows. The CPU path makes the identical decision without the branch - `mm_rows` loops `for t in 0..nt` inside `for o in 0..od`, so `nt == 1` *is* a GEMV and `nt == 1024` is a GEMM, in the same code (Chapter 8). The two lines elided above are about CUDA-Graph scratch, which Chapter 22 covers; nothing about the `nt` gate is elided.
+
 ### Lesson 3 · The roofline in one page, without calculus
 
 Engineers compare the two regimes with one ratio: **arithmetic intensity**, the FLOPs performed per byte moved. It has no units worth arguing about - it is FLOP/byte - and everything else is multiplication and division.
@@ -154,6 +171,8 @@ Two corollaries the rest of the book leans on.
 **Batching multiplies intensity by the batch size.** B decode steps sharing one weight read have intensity 16B/b, so a batch of eight moves a Q4 model from 3.6 to 29 FLOP/byte - past many CPUs' ridge points, and into the range where arithmetic starts to matter. This is the arithmetic behind "the same engine is memory-bound for one user and compute-bound for sixty".
 
 **The KV cache is bytes too.** Nothing in the formula counts the cache, but decode reads it every step and it grows with context. At 56 KiB per token, an 8,000-token conversation reads an extra 448 MiB per step - which at 198 GB/s is 2.4 milliseconds, a tenth of a token's budget at the 7B file's ceiling. At the model's full 32,768 tokens it is 1.75 GiB per step, nine milliseconds, and the cache is no longer a footnote. Long context moves the decode bound from the weights to the cache, which is why Chapter 18 treats the cache as a subsystem and not a `Vec`.
+
+<!-- no-code: this lesson is a cost model - bytes per weight x weights / bandwidth. The arithmetic is the content, and it is laid out in the table below rather than in a function. -->
 
 ### Lesson 4 · A decode ceiling you can compute by hand: file size divided by bandwidth
 
@@ -199,6 +218,8 @@ Four things this table is not.
 Now the check that keeps this honest instead of decorative. The reference machine's own serving record reports a 27B NVFP4 model at 11.8 tokens per second (*reported* - the author's earlier measurement on that machine, not reproduced here). That model's weights are 21.8 GB, so `21.8 GB x 11.8 tok/s = 257 GB/s` of implied read bandwidth - against the 242 GB/s the CUDA kernel measured on the same box. The real engine runs at 94 per cent of the kernel's streaming rate, which is what a bandwidth-bound decode loop should look like. It is also why this book treats "within a factor of two of the ceiling" as a pass condition rather than a coincidence.
 
 Your own version of that check is this chapter's deliverable: pick a model file you actually have, one machine, measure the bandwidth with the appendix's `membw.c`, divide, then compare against any engine you can run. If your number is off by more than 2x in the *optimistic* direction, you have a bug in the arithmetic or in the measurement. If the real engine is far under the ceiling, the interesting work starts.
+
+<!-- no-code: same reason as Lesson 3: a ceiling computed by hand from the file's size and a measured bandwidth. The numbers come from `facts/*.json`, which is the evidence, not from code. -->
 
 ### Lesson 5 · What an engine may be lazy about, and the four things it never may
 

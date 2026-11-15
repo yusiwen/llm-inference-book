@@ -56,6 +56,32 @@ Two properties of that layout are worth naming before the details, because every
 
 **The table is small; the metadata is not.** Figure 2.1 is drawn not to scale because the metadata is 5.9 MB against a 16.5 KB table. The reason is the tokenizer: `tokenizer.ggml.tokens` is an array of 151,936 strings and `tokenizer.ggml.merges` is 151,387 more, and both live in the metadata section as ordinary key-values. So "metadata" in GGUF does not mean "a few hyperparameters"; it means "everything that is not a weight", which includes a 4 MB vocabulary.
 
+The container has to carry exactly five facts about each tensor, and the engine's own struct is that list:
+
+<!-- code: src/gguf.rs::GgufTensorInfo@88ffa5d -->
+```rust
+#[derive(Clone)]
+pub struct GgufTensorInfo {
+    pub name: String,
+    pub ne: [i64; GGML_MAX_DIMS],   // number of elements per dimension
+    pub nb: [usize; GGML_MAX_DIMS], // stride in bytes per dimension
+    pub type_: GgmlType,
+    pub offset: u64, // offset from start of data section
+}
+
+impl GgufTensorInfo {
+    /// The tensor's payload size in bytes: whole quant blocks times the block size. This is
+    /// the number the loader slices the part with, and (E5 S2) what the `auto` offload fit
+    /// measures each block by — from the index, before anything is loaded or registered.
+    pub fn nbytes(&self) -> usize {
+        let n: i64 = self.ne.iter().product();
+        (n / self.type_.blck_size()) as usize * self.type_.type_size()
+    }
+```
+<!-- /code -->
+
+`name`, `ne`, `nb`, `type_`, `offset` - and nothing else, which is the argument: values are not in the table, shapes are, and both the strides (`nb`) and the size (`nbytes`) are **derived from the type**. `nbytes` is worth reading twice: it divides the element count by the block size and multiplies by the block's byte size, so a quantized tensor's size is a whole number of blocks or the file is invalid. This is also why a GGUF is inspectable before it is loadable - a reader can walk the table and print every tensor's geometry without decoding one byte of payload.
+
 ### Lesson 2 · The header, the metadata key-values, and the value types a parser must handle
 
 The first 24 bytes are the whole header, and they are the cheapest part of the format to get right:

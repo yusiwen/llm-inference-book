@@ -69,6 +69,25 @@ Where the super-block earns its place is not the median block at all - it is the
 
 **One shape fact to carry into Lesson 5.** A 256-weight block can only describe a row whose length is a multiple of 256. This model's hidden size is 896: fine for a 32-weight block (896 = 28 x 32), impossible for a 256-weight one (896 / 256 = 3.5). Every tensor whose row is 896 wide therefore *cannot* be stored as a K-quant, no matter what the mixture asks for. The file in this book's cache is named `q4_k_m` and most of its bytes are not K-quants at all - Lesson 5 counts them.
 
+Every size in this chapter's arithmetic, as the engine declares them:
+
+<!-- code: src/block.rs::Q4B@88ffa5d -->
+```rust
+pub const Q4B: usize = 18; // sizeof(block_q4_0)
+pub const Q41B: usize = 20; // sizeof(block_q4_1)
+pub const Q8B: usize = 34; // sizeof(block_q8_0)
+pub const Q4KB: usize = 144; // sizeof(block_q4_k)
+pub const Q6KB: usize = 210; // sizeof(block_q6_k)
+/// sizeof(block_q8_k) — 256-element activation block: d(f16,2) + qs(256 i8)
+/// + scales(16 i8) + bsums(16 i16). Used as the CPU activation format for
+/// K-quant matmuls (llama.cpp's choice: precomputed per-subblock sums avoid
+/// re-reducing the activation in every dot).
+pub const Q8KB: usize = 2 + 256 + 16 + 32; // 306
+```
+<!-- /code -->
+
+`Q4B` 18, `Q8B` 34, `Q4KB` 144, `Q6KB` 210, and `Q8KB` written as its parts (`2 + 256 + 16 + 32`) rather than as a number - which is the one place in the engine where a super-block's anatomy is legible at a glance. 144 bytes of Q4_K is 8 sub-blocks of `(2 + 2 + 16)` plus the 12-byte scale tail this lesson unpacks on paper; 210 of Q6_K is `128 + 64 + 16 + 2`. Those are the constants behind the bits-per-weight column, and they are literally `sizeof` from the reference header.
+
 ### Lesson 2 · The 6-bit scale packing, unpacked on paper before it is unpacked in code
 
 <figure class="book-figure">{{#include ../figures/05-superblock.svg}}</figure>
@@ -220,6 +239,26 @@ And the test to write *before* the gate, so you know the gate works: flip one by
 
 Do not weaken the test when it fails. The interesting failures all look like "the file is nearly identical": a scale chosen from `max` where the reference chose from `-min`, a rounding tie broken to even instead of away from zero, the iterative scale search stopping one step early. Each of those is a *bisectable* difference only because the gate is exact.
 
+The mechanism that makes byte-identity possible, and the reason a tolerance gate would have missed it:
+
+<!-- code: src/quantize.rs::nearest_int_mul@88ffa5d -->
+```rust
+/// `nearest_int(a * b)`: `-ffp-contract=fast` folds the magic constant into the
+/// product's FMA. The production object emits `fmadd s0, a, b, #12582912.0`
+/// (`fmov w0, #0x4b400000`) and only then reads the mantissa, so the product is
+/// **not** rounded before the add. Writing `nearest_int(a * b)` rounds twice and
+/// picks a different integer at a boundary.
+#[inline]
+fn nearest_int_mul(a: f32, b: f32, contract: FmaContract) -> i32 {
+    let val = fma(contract, a, b, 12_582_912.0f32);
+    let i = val.to_bits() as i32;
+    (i & 0x007f_ffff) - 0x0040_0000
+}
+```
+<!-- /code -->
+
+`12_582_912.0` is `1.5 x 2^23`: adding it to a float in this range forces the mantissa to align at the integer position, so reading the low mantissa bits *is* rounding to nearest - the classic magic-number trick, no branch. The doc comment is the gate's real subject: `-ffp-contract=fast` fuses the multiply and the add into one FMA, so the product is never rounded before the constant is added, and writing `nearest_int(a * b)` rounds twice and can pick a **different integer at a boundary**. That is why the engine threads an `FmaContract` through the quantizers instead of trusting the default, and why Chapter 5's gate compares bytes rather than a distance.
+
 ### Lesson 5 · Reading a quantized file's provenance: what the metadata does and does not record
 
 The metadata of the file in this book's cache says, in full:
@@ -278,6 +317,36 @@ Now the provenance argument. The metadata records *which mixture was requested*.
 So two files with `general.file_type = 15` can contain different bytes, and there is no field in either that says so. This book has one in front of it: the twelve-layer split above does not match the current rule, which is proof by example that the integer alone does not identify the bytes. The only provenance you can trust is the one you record yourself: the command, the tool version, the input hash, and the output hash - plus a gate that fails when any of them drifts.
 
 This is why Lesson 4's byte identity is not pedantry. Byte identity is the *only* property that makes a quantized file's name mean something.
+
+What the metadata actually records, from the encoder's side:
+
+<!-- code: src/quantize.rs::QuantTarget::file_type@88ffa5d -->
+```rust
+/// llama.cpp's `llama_ftype` value for `general.file_type`.
+///
+/// A uniform `q4_K`/`q5_K` file records 15/17 — the numbers of
+/// `LLAMA_FTYPE_MOSTLY_Q4_K_M`/`_Q5_K_M` — because that is what
+/// `llama-quantize --pure q4_K` records too, and [`Target::file_type`] gives
+/// the mixtures the same numbers: the metadata describes the ftype, not the
+/// file's shape, so nothing may infer "pure" from it. `q6_K` is 18.
+pub fn file_type(self) -> u32 {
+    match self {
+        QuantTarget::F32 => 0,   // LLAMA_FTYPE_ALL_F32
+        QuantTarget::F16 => 1,   // LLAMA_FTYPE_MOSTLY_F16
+        QuantTarget::Q4_0 => 2,  // LLAMA_FTYPE_MOSTLY_Q4_0
+        QuantTarget::Q4_1 => 3,  // LLAMA_FTYPE_MOSTLY_Q4_1
+        QuantTarget::Q8_0 => 7,  // LLAMA_FTYPE_MOSTLY_Q8_0
+        QuantTarget::Q5_0 => 8,  // LLAMA_FTYPE_MOSTLY_Q5_0
+        QuantTarget::Q5_1 => 9,  // LLAMA_FTYPE_MOSTLY_Q5_1
+        QuantTarget::Q4_K => 15, // LLAMA_FTYPE_MOSTLY_Q4_K_M
+        QuantTarget::Q5_K => 17, // LLAMA_FTYPE_MOSTLY_Q5_K_M
+        QuantTarget::Q6_K => 18, // LLAMA_FTYPE_MOSTLY_Q6_K
+    }
+}
+```
+<!-- /code -->
+
+The doc comment is the lesson: a uniform `q4_K` file and a `q4_K_M` mixture both record **15**, because `llama-quantize --pure q4_K` records 15 too. So `general.file_type` describes the ftype that was requested, not the file's actual shape - and nothing downstream may infer "pure" from it. The values themselves are llama.cpp's enum (`Q8_0` is 7, not 8), which is why a reader that prints the number next to the name needs this table and not the tensor type enum's own ordering.
 
 ## Super-block cost
 

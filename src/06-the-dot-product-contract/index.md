@@ -57,6 +57,19 @@ Two consequences to keep in your head:
 
 The activation side is small by comparison: 896 floats per row, and each is reused by every row of the matrix it multiplies. That asymmetry is the opening for Lesson 2: you can afford to spend arithmetic on the *weights* (which are read once) but you cannot afford to re-read the *activations* (which are tiny and hot). Quantizing the activation is not about saving bandwidth; it is about making the multiply cheap.
 
+Every shape this chapter is about arrives at one operator, and the engine's op vocabulary names it once:
+
+<!-- code: src/graph/ops.rs::Op::MatMul@88ffa5d -->
+```rust
+// ---- linear algebra ----
+MatMul {
+    transpose_b: bool,
+},
+```
+<!-- /code -->
+
+`transpose_b` is the only parameter - not a shape, not a dtype, not a kernel. Everything else about the matmul (how many tokens, which type the weight is, which backend) is decided later, at dispatch time, which is the separation this whole book is built on: the *graph* says multiply, the *dispatch* says how. The four projections of attention, the three of the feed-forward block, the output projection and the LM head are all this one node, differing only in their dimensions - which is why "billions of times" is a count of one op repeated rather than a catalogue of ops.
+
 ### Lesson 2 · Quantize the activation, once: Q8_0 blocks, scales, and the error budget
 
 The policy is one sentence: take the f32 activation row, and for every 32 values find the largest magnitude, divide by 127, and round into signed bytes. That is a Q8_0 row - the same block format Chapter 4 decoded, except that it never exists on disk.

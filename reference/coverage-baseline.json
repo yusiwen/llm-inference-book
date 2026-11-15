@@ -1,12 +1,3 @@
 {
-  "bare": {
-    "src/01-one-token-at-a-time/index.md": 3,
-    "src/02-the-file-is-the-model/index.md": 1,
-    "src/03-tensors-strides-and-bytes/index.md": 1,
-    "src/04-quantized-blocks-the-base-formats/index.md": 3,
-    "src/05-k-quants-and-byte-identity/index.md": 3,
-    "src/06-the-dot-product-contract/index.md": 1,
-    "src/08-gemv-gemm-and-the-thread-pool/index.md": 1,
-    "src/start/index.md": 3
-  }
+  "bare": {}
 }

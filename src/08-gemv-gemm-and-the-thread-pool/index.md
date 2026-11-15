@@ -266,6 +266,34 @@ In this chapter's pool the same principle appears in miniature as a **threshold*
 | Intel i7-11700B (x86_64) | 16384 | 2850.88 | 167.00 | 997.68 | 17.07x |
 <!-- /facts -->
 
+The queue's bound in code, with the reasoning that this lesson is really about:
+
+<!-- code: crates/minfer-cli/src/server/batch.rs::queue_max_from_env@88ffa5d -->
+```rust
+/// #150: the default number of jobs that may wait for a slot. Deliberately the
+/// same number as the job channel's capacity (`server::mod`): one number is easier
+/// to reason about than two, and a client refused by the worker's bound and one
+/// refused by the transport's block at the same depth.
+pub const QUEUE_MAX: usize = 64;
+
+/// `MINFER_QUEUE_MAX`, clamped to at least 1. Read once when the worker starts.
+///
+/// This is a **policy** knob (how long a client may wait for a slot), not a
+/// property of the machine, which is why it is an env switch rather than a
+/// constant the gates would have to guess. The gates pass the depth explicitly
+/// instead of setting the variable, so parallel tests cannot race it.
+pub fn queue_max_from_env() -> usize {
+    std::env::var("MINFER_QUEUE_MAX")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .unwrap_or(QUEUE_MAX)
+        .max(1)
+}
+```
+<!-- /code -->
+
+Two decisions in eighteen lines. **One number** (`64`) is deliberately the same as the job channel's capacity, so a client refused by the worker's bound and one blocked by the transport are refused at the same depth - two knobs would mean two explanations. And the knob is an **environment variable read once at startup**, because the bound is a policy choice about how long a client may wait, not a property of the machine; the gates pass the depth explicitly instead of setting the variable, so parallel tests cannot race it. What the lesson calls "failing a lagging run" is the third piece: `RUN_STALLED_MESSAGE` and its no-progress bound, which turn "still waiting" into an answer.
+
 ### Lesson 5 · When one thread is faster: tiny models and the overhead floor
 
 The threshold table is the answer to this lesson's question, and it says something different from what the plan expected: **on both machines the pool wins at every shape measured**, down to 128 rows - 1.71x on the Mac, 5.31x on the NUC. So "when is one thread faster" is not answered by rows. It is answered by the *fixed cost*, and the fixed cost is not what you would guess.

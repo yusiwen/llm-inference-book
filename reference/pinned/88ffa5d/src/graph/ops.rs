@@ -1,0 +1,385 @@
+//! Operator definitions and node metadata (Phase 1).
+//!
+//! Mirrors the `Op` enum in docs/COMPUTE-GRAPH-DESIGN.md §3.1. Key invariant:
+//! **KV cache positions are data, not structure** — `KvcacheStore`/`KvcacheLoad`
+//! carry only the layer index; the write position is injected via an input node
+//! (`positions`), so the graph topology never depends on `n_past`.
+
+use crate::tensor::TensorType;
+use crate::vec_ops::{RopeFreqs, RopeStyle};
+
+/// Attention mode.
+///
+/// `Mha` is part of the full attention-mode vocabulary (ggml parity) so a
+/// backend can express "not supported"; only `Gqa`/`Flash` are constructed by
+/// the supported architectures. What would construct it: an architecture with
+/// `n_head_kv == n_head` that spelled its attention out instead of reusing the
+/// GQA kernel. [#244] keeps it and reports the membership question.
+///
+/// [#244]: https://github.com/yusiwen/minfer/issues/244
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttnMode {
+    /// Part of the attention-mode vocabulary (llama.cpp parity); see the enum note
+    /// above — only `Gqa`/`Flash` are constructed, and an architecture with
+    /// `n_head_kv == n_head` that spelled its attention out would construct this.
+    #[allow(dead_code)]
+    Mha,
+    Gqa,
+    Flash,
+}
+
+/// Fused-op capability tag: drives the fusion pass (Phase 4) — a fusion is only
+/// applied when the target backend reports `supports_fused(FusedOp)`.
+///
+/// `SwiGLU` is the only fusion produced. The plan also sketched `BiasRope`
+/// (removed: no backend ever claimed the capability — bias+rope is covered by
+/// the build-time fused decode nodes) and `BatchMatMul` (deferred together with
+/// its `Op` variant: the single-output IR cannot express it).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FusedOp {
+    SwiGLU, // silu(gate) * up
+}
+
+/// Operator type. Implements full `PartialEq` (payloads included) so debug
+/// builds can verify graph-rebuild structural identity; the production graph
+/// reuse decision is params-only (see docs/COMPUTE-GRAPH-DESIGN.md §6).
+#[derive(Debug, Clone, PartialEq)]
+pub enum Op {
+    /// Leaf input node (token ids, positions, KV idx, ...). Filled externally
+    /// each step via `GraphAllocator::fill_input`; never part of the topology.
+    Input,
+
+    // ---- element-wise ----
+    Add,
+    Mul,
+    /// Part of the full op vocabulary (ggml parity) so a backend can refuse it;
+    /// no supported architecture emits a scale node. What would construct it: a
+    /// builder that scales an activation in place instead of folding the scale
+    /// into the producing op (llama.cpp's `ggml_scale`), for a temperature/1.0
+    /// style rescaled graph.
+    #[cfg_attr(not(test), allow(dead_code))]
+    Scale(f32),
+    Silu,
+
+    // ---- reduction ----
+    /// Softmax is part of the op vocabulary; the attention kernels fuse the
+    /// softmax internally, so no standalone softmax node is emitted. What would
+    /// construct it: an attention or sampling graph that exposes the normalized
+    /// probabilities as a node output instead of fusing them into the kernel.
+    #[cfg_attr(not(test), allow(dead_code))]
+    Softmax {
+        dim: usize,
+    },
+
+    // ---- normalization ----
+    RmsNorm {
+        eps: f32,
+    },
+    /// Per-head RMSNorm (Qwen3 `attn_q_norm`/`attn_k_norm`): the input is a
+    /// flat token-major buffer `[nt * nh * hd]`; each contiguous `hd`-wide row
+    /// (`t*nh + h`) is RMS-normalized with a weight of length `hd`. The buffer
+    /// layout makes this a contiguous `[nt*nh, hd]` matrix, so execution reuses
+    /// the RMSNorm kernels with `d = hd`, `n = nt*nh`.
+    QkNorm {
+        hd: usize,
+        nh: usize,
+        eps: f32,
+    },
+
+    // ---- linear algebra ----
+    MatMul {
+        transpose_b: bool,
+    },
+
+    // ---- indexing ----
+    GetRows,
+
+    // ---- positional encoding ----
+    RoPE {
+        style: RopeStyle,
+    },
+
+    // ---- attention ----
+    /// Attention. `explicit_span` is set when the batch covers more than one
+    /// sequence: `positions` alone cannot bound a query's window then, so a
+    /// backend that has not been ported to the explicit span input must refuse
+    /// the op (`Backend::supports_attn_span`) instead of deriving a wrong bound.
+    Attn {
+        mode: AttnMode,
+        explicit_span: bool,
+    },
+
+    // ---- KV cache (persistent external buffer; positions are data) ----
+    KvcacheStore {
+        layer: usize,
+    },
+    KvcacheLoad {
+        layer: usize,
+    },
+
+    // ---- view / reshape ----
+    /// A window into another node's buffer; D1's `GraphBuilder::split_parts`
+    /// constructs it, so it carries no allowance.
+    View {
+        offset: usize,
+        shape: [usize; 4],
+    },
+    /// Reshape/Permute/BatchMatMul are part of the full ggml op vocabulary; the
+    /// Qwen2 graph builder does not emit them. What would construct them: a
+    /// builder that needs a non-contiguous reinterpretation (`reshape`/
+    /// `permute`) or a batched matmul the single-output IR cannot express
+    /// (`batch_matmul`, deferred — see the `FusedOp::BatchMatMul` note). [#244]
+    /// keeps them and reports the membership question.
+    ///
+    /// [#244]: https://github.com/yusiwen/minfer/issues/244
+    #[cfg_attr(not(test), allow(dead_code))]
+    Reshape {
+        shape: [usize; 4],
+    },
+    /// Same deferred vocabulary as `Reshape` above: a permute needs a
+    /// non-contiguous reinterpretation no builder asks for. What would construct it:
+    /// a builder that wants a transposed view rather than a copied or reshaped
+    /// buffer.
+    #[cfg_attr(not(test), allow(dead_code))]
+    Permute {
+        dims: [usize; 4],
+    },
+
+    // ---- fused ops (fusion pass output, gated by backend supports_fused) ----
+    SwiGLU,
+    /// Deferred with its `FusedOp::BatchMatMul` tag (see the `FusedOp` note above):
+    /// the single-output IR cannot express a batched matmul, and no builder emits
+    /// one. What would construct it: that IR extension.
+    #[cfg_attr(not(test), allow(dead_code))]
+    BatchMatMul,
+    /// decode (nt==1) fused QKV: one concat matmul (wq/wk/wv) + bias+rope+store
+    /// in one kernel pass (llama `attn_bias_rope_store`). Carries the layer so
+    /// the scheduler can resolve the persistent K/V regions (kv_pair).
+    FusedQKV {
+        layer: usize,
+    },
+    /// decode (nt==1) QKV epilogue for MIXED-quant layers (D3-8): q/k/v come
+    /// from three SEPARATE matmuls (wq/wk/wv of different quant types cannot
+    /// share a concat matmul); this node applies the three biases, ropes q/k
+    /// in place (math verbatim rope_f32), and stores k/v into the persistent
+    /// regions — the same epilogue kernel as `Op::FusedQKV`'s concat form,
+    /// pointer-form. The builder wires attention to this node, so q's matmul
+    /// buffer has exactly one consumer and the in-place alias rule (§5)
+    /// applies. Carries the layer so the scheduler can resolve kv_pair.
+    QkvBiasRopeStore {
+        layer: usize,
+    },
+    /// decode (nt==1) fused FFN gate+up: one concat matmul (ffn_gate|ffn_up,
+    /// loader-registered `blk.{i}.ffn_gu`) whose output buffer carries gate
+    /// (rows 0..nf) and up (nf..2*nf); a single swiglu pass (silu(gate)*up,
+    /// llama `ggml_swiglu_split`) runs in place. The following down matmul
+    /// reads rows 0..nf (od = nf; nt==1 makes the concat layout safe).
+    FusedFFN,
+    /// decode (nt==1) fused QKV with per-head Q/K RMSNorm (Qwen3): one concat
+    /// matmul (wq|wk|wv) + per-head qk_norm (q/k) + a no-bias rope+store pass
+    /// (llama `build_norm(Qcur, attn_q_norm)` before `ggml_rope_ext`). Qwen3
+    /// has no attention biases and the existing `attn_bias_rope_store` kernel
+    /// cannot express the per-head norm, so this is a separate op (the Qwen2
+    /// `FusedQKV` path is untouched). Carries the layer so the scheduler can
+    /// resolve the persistent K/V regions (kv_pair).
+    FusedQkvNorm {
+        layer: usize,
+    },
+}
+
+/// Per-node metadata.
+///
+/// Deviation from the plan's `meta: Box<dyn Any + Send + Sync>`: a concrete
+/// enum is used instead — it is `PartialEq` (needed for the debug graph-reuse
+/// structural check), avoids downcast panics, and keeps `CNode` `Clone`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum NodeMeta {
+    None,
+    MatMul(MatMulMeta),
+    Norm(NormMeta),
+    Rope(RoPEMeta),
+    Attn(AttnMeta),
+    Kvcache(KvcacheMeta),
+    Embed(EmbedMeta),
+    FusedQkv(FusedQkvMeta),
+    QkvBiasRopeStore(QkvBiasRopeStoreMeta),
+    FusedFfn(FusedFfnMeta),
+    FusedQkvNorm(FusedQkvNormMeta),
+}
+
+/// Matmul target weight (+ optional bias) — resolved to a backend buffer by
+/// name at execution time; `weight_ttype` lets GPU backends pick the kernel
+/// without holding the whole Tensor.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MatMulMeta {
+    pub weight_name: String,
+    pub bias_name: Option<String>,
+    pub weight_ttype: TensorType,
+    /// Weight dims under the GGUF convention: memory `[out][in]` row-major,
+    /// metadata `[in, out]` — so `in_dim = shape[0]`, `out_dim = shape[1]`.
+    pub in_dim: usize,
+    pub out_dim: usize,
+}
+
+/// Normalization weight/bias names.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NormMeta {
+    pub weight_name: Option<String>,
+    pub bias_name: Option<String>,
+}
+
+/// RoPE params. `n_head`/`hd` are needed by the kernel (the rope applies per
+/// head over `hd` dims), so they ride in the metadata.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RoPEMeta {
+    pub freq_base: f32,
+    pub freq_scale: f32,
+    pub n_head: usize,
+    pub hd: usize,
+    /// #724: the `llama3` per-pair frequency factors, `None` when the file carries
+    /// no scaling — the kernels then evaluate today's `freq_scale / base^(2d/hd)`
+    /// unchanged (bit-identical, not merely close).
+    pub freqs: Option<Box<RopeFreqs>>,
+}
+
+/// Attention params. `layer` lets the backend resolve the layer's K/V regions
+/// (each layer has two persistent regions: K and V). `nkt` = KV row stride
+/// (n_embd), `scale` = QK scale.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AttnMeta {
+    pub layer: usize,
+    pub n_head: usize,
+    pub n_head_kv: usize,
+    pub hd: usize,
+    pub hd_kv: usize,
+    pub nkt: usize,
+    pub scale: f32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct KvcacheMeta {
+    /// Logical KV row width (`n_kv_embd`): what the store's K/V input carries.
+    pub n_embd: usize,
+    pub n_head_kv: usize,
+    /// C4: f32 words one cell occupies in the persistent region. Equal to `n_embd`
+    /// for f32/f16; larger-per-element for a packed Q8_0 region, where the
+    /// allocator sizes the region by `row_elems * n_ctx` instead of by the node's
+    /// logical element count. Stamped by `GraphBuilder::kvcache_store`.
+    pub row_elems: usize,
+}
+
+/// decode QKV fusion metadata: concat weight (wq|wk|wv rows), the three
+/// biases, and the rope/store parameters. `qkv_weight` is the loader-registered
+/// concat tensor (`blk.{i}.attn_qkv`); `od_total = nqt + 2*nkt`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FusedQkvMeta {
+    pub qkv_weight: String,
+    pub bias_q: Option<String>,
+    pub bias_k: Option<String>,
+    pub bias_v: Option<String>,
+    pub weight_ttype: TensorType,
+    /// Weight dims (GGUF convention): `in_dim = shape[0]`, concat `out_dim =
+    /// shape[1]` sum = nqt + nkt + nkt.
+    pub in_dim: usize,
+    pub nqt: usize,
+    pub nkt: usize,
+    pub hd: usize,
+    pub nh: usize,
+    pub nk: usize,
+    pub freq_base: f32,
+    pub freq_scale: f32,
+    pub rope_style: RopeStyle,
+    /// #724: the `llama3` per-pair frequency factors, `None` when the file carries
+    /// no scaling — the kernels then evaluate today's `freq_scale / base^(2d/hd)`
+    /// unchanged (bit-identical, not merely close).
+    pub freqs: Option<Box<RopeFreqs>>,
+    /// KV region element count (nkt * n_ctx) — for the allocator's ensure_kv.
+    pub kv_elems: usize,
+    /// C4/#144: f32 words one KV *cell* occupies in the persistent region —
+    /// `KvFormat::row_elems(nkt)`, the same width `KvcacheMeta::row_elems`
+    /// carries. The allocator sizes the region by `row_elems * n_ctx`, so the
+    /// fused node and the store node it replaces must agree under a packed
+    /// format (the pre-#144 `!packed` builder gate meant only the store kind
+    /// ever stamped one; a packed decode now builds the fused node).
+    pub row_elems: usize,
+}
+
+/// decode QKV epilogue metadata (mixed-quant class, D3-8): the three biases
+/// and the rope/store parameters (FusedQkvMeta minus the concat weight — the
+/// q/k/v inputs ARE the three matmul outputs, [nqt]/[nkt]/[nkt] f32, nt==1).
+#[derive(Debug, Clone, PartialEq)]
+pub struct QkvBiasRopeStoreMeta {
+    pub bias_q: Option<String>,
+    pub bias_k: Option<String>,
+    pub bias_v: Option<String>,
+    pub nqt: usize,
+    pub nkt: usize,
+    pub hd: usize,
+    pub freq_base: f32,
+    pub freq_scale: f32,
+    pub rope_style: RopeStyle,
+    /// #724: the `llama3` per-pair frequency factors, `None` when the file carries
+    /// no scaling — the kernels then evaluate today's `freq_scale / base^(2d/hd)`
+    /// unchanged (bit-identical, not merely close).
+    pub freqs: Option<Box<RopeFreqs>>,
+    /// KV region element count (nkt * n_ctx) — for the allocator's ensure_kv.
+    pub kv_elems: usize,
+    /// C4/#144: f32 words one KV cell occupies (see [`FusedQkvMeta::row_elems`]).
+    pub row_elems: usize,
+}
+
+/// decode FFN gate+up fusion metadata: the loader-registered concat weight
+/// `blk.{i}.ffn_gu` (ffn_gate|ffn_up rows), the shared input dim, and the FFN
+/// output dim nf (gate rows 0..nf, up rows nf..2*nf in the output buffer).
+#[derive(Debug, Clone, PartialEq)]
+pub struct FusedFfnMeta {
+    pub gu_weight: String,
+    pub weight_ttype: TensorType,
+    /// Weight dims (GGUF convention): `in_dim = shape[0]` (== n_embd), the
+    /// concat output has `2*nf` rows (`nf = shape[1]` of either weight).
+    pub in_dim: usize,
+    pub nf: usize,
+}
+
+/// decode QKV fusion metadata with per-head Q/K RMSNorm (Qwen3): the concat
+/// weight (wq|wk|wv rows), the two per-head norm weights, and the rope/store
+/// parameters. `qkv_weight` is the loader-registered concat tensor
+/// (`blk.{i}.attn_qkv`); `od_total = nqt + 2*nkt`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FusedQkvNormMeta {
+    pub qkv_weight: String,
+    /// Per-head Q RMSNorm weight (llama `attn_q_norm`, f32 [hd]) — optional in
+    /// the general case but present for Qwen3 (the gate requires both).
+    pub q_norm_name: Option<String>,
+    /// Per-head K RMSNorm weight (llama `attn_k_norm`, f32 [hd]).
+    pub k_norm_name: Option<String>,
+    pub weight_ttype: TensorType,
+    /// Weight dims (GGUF convention): `in_dim = shape[0]`, concat `out_dim =
+    /// shape[1]` sum = nqt + nkt + nkt.
+    pub in_dim: usize,
+    pub nqt: usize,
+    pub nkt: usize,
+    pub hd: usize,
+    pub nh: usize,
+    pub nk: usize,
+    pub freq_base: f32,
+    pub freq_scale: f32,
+    pub rope_style: RopeStyle,
+    /// #724: the `llama3` per-pair frequency factors, `None` when the file carries
+    /// no scaling — the kernels then evaluate today's `freq_scale / base^(2d/hd)`
+    /// unchanged (bit-identical, not merely close).
+    pub freqs: Option<Box<RopeFreqs>>,
+    /// KV region element count (nkt * n_ctx) — for the allocator's ensure_kv.
+    pub kv_elems: usize,
+    /// C4/#144: f32 words one KV cell occupies (see [`FusedQkvMeta::row_elems`]).
+    pub row_elems: usize,
+    /// Per-head RMSNorm epsilon (llama `f_norm_rms_eps`).
+    pub eps: f32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EmbedMeta {
+    pub vocab_size: usize,
+    pub weight_name: String,
+    pub weight_ttype: TensorType,
+}

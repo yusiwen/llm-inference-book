@@ -59,6 +59,8 @@ Two of the labels are worth practising now, because you will use them in your ow
 
 **Being right comes before being fast.** The correctness gate arrives in Chapter 27, which is late, and that is deliberate: by then you have something worth gating. But the *habit* starts in Chapter 1, with the rule that every kernel gets an obviously-correct scalar version first, and every optimisation is checked against it. An optimisation without an oracle is indistinguishable from a bug that makes the numbers smaller.
 
+<!-- no-code: this lesson is a contract about how numbers get into the book; what enforces it is this repository's gate (`scripts/verify.sh`), not a function in the engine. -->
+
 ### Lesson 2 · Pick your machines: one laptop, one optional GPU, and what each part of the book needs
 
 Every chapter opens with a compute tier, and the tier is a promise about what you need in order to *do* the chapter rather than read it:
@@ -131,6 +133,8 @@ Three things in that table are worth understanding now, because they are the fir
 - **Neither file is "the model".** Each is a table of tensors plus the metadata to interpret them: 28 layers, 4 key/value heads of 128 dimensions each, a 152,064-entry vocabulary, a 32,768-token context (reported from the model's config). Every one of those numbers turns into code you write, and into bytes you will read.
 
 A word on trust: these are the exact files this book's arithmetic uses, so using them keeps your numbers comparable to the book's. If you prefer a different family - Llama, Gemma, Mistral - the mechanics are identical and the numbers are not; say so in your notes, and do not compare your tokens per second to a table computed for a different file.
+
+<!-- no-code: this lesson is about acquiring a model file; the reader that consumes it is Chapter 2's whole subject. -->
 
 ### Lesson 4 · Set up the tree: a workspace whose crates you will add to for 29 chapters
 
@@ -209,6 +213,8 @@ Two habits worth forming in the first hour:
 
 - **Record the command, not just the number.** `./membw 2048 20` and "101 GB/s" are one fact; the number alone is unreproducible.
 - **Date every entry, and never edit an old one.** A corrected log stops being a log. Add a new row that supersedes the old one and say why.
+
+<!-- no-code: this lesson is a template for the reader's own notes file. There is nothing in the engine to quote, and inventing a snippet here would be decoration. -->
 
 ## The routing map
 
