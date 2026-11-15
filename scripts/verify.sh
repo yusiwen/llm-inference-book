@@ -132,4 +132,12 @@ echo "== 16. every quoted line of minfer code matches the pinned source =="
 python3 scripts/codecheck.py --check
 
 echo
+echo "== 17. no lesson explains the engine without quoting it =="
+# Steps 16 checks the quotes that exist; this one checks the ones that do not. A lesson with neither an
+# excerpt nor an explicit `<!-- no-code: why -->` is a lesson the reader cannot check against minfer - the
+# exact defect this book spent two passes closing. The count is ratcheted per page against
+# reference/coverage-baseline.json, so a page can only lose bare lessons and a new page starts at zero.
+python3 scripts/codecheck.py --coverage
+
+echo
 echo "all checks passed"

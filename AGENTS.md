@@ -156,6 +156,33 @@ A chapter that quotes the engine is making a checkable claim, the same way a tab
 - **Bumping the baseline re-opens every quote.** `python3 scripts/codecheck.py --vendor` re-copies the quoted
   files at the new commit; `--check` then fails on whatever minfer moved, which is the point.
 
+### Where the quote goes, and how much prose goes with it
+
+The gate checks that a quotation is real. These are the rules it cannot check - they are the editorial half,
+and they are what stops a chapter from being a wall of prose with code stapled to the bottom.
+
+- **Sketch, then reason, then verbatim.** A lesson that already carries a hand-written sketch keeps it where
+  it is; the verbatim excerpt goes **at the end of the lesson**, after the discussion that explains it. Never
+  between a sketch and the paragraph that reads it - that interrupts the argument at the exact moment it is
+  being made.
+- **One illustration per idea.** If a sketch *is* the engine's function - same name, same lines, renamed
+  arguments - the excerpt replaces it; keeping both is duplication with two different sets of identifiers. If
+  the sketch shows a *different* function or a different convention (a dequantizer where the kernel works
+  unsigned, a view with element strides where the engine stores bytes), keep both and say how they differ.
+  Deciding which of the two cases you are in is the work.
+- **A bridge sentence, not a paraphrase.** Default is one sentence introducing the excerpt, then the code,
+  then nothing. Add a paragraph only where the code says something the prose above did not - a stored value
+  the writer never used, a unit that changes meaning, a branch that exists for a reason no test names.
+  Restating the lesson after the code is the failure mode: it reads as padding and doubles the length.
+- **Reconcile a disagreement, never hide it.** When the engine's code differs from the book's simplified
+  form - `round_ties_even` against `.round()`, byte strides against element strides, unsigned codes against
+  centred ones - the excerpt wins and the prose says so. A sketch that contradicts the quote below it is
+  worse than no sketch: it teaches a wrong thing and a reader cannot tell which half is authoritative.
+- **A lesson that quotes nothing says why.** `<!-- no-code: reason -->` in the lesson, one line, and the
+  reason has to be structural ("this lesson is a cost model, there is no function"). Gate step 17 fails a
+  page that adds bare lessons beyond `reference/coverage-baseline.json`, so a new chapter starts at zero and
+  an old one can only burn down.
+
 ## Formulas, figures and monospace
 
 Three carriers, and the choice between them is a rule rather than a taste. A block that looks like a

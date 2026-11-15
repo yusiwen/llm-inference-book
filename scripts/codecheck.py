@@ -8,6 +8,7 @@ gate); this is the same guard for quotations.
     python3 scripts/codecheck.py --check     # every block matches the pinned source, or fail
     python3 scripts/codecheck.py --vendor    # re-copy the quoted files out of a local minfer checkout
     python3 scripts/codecheck.py --list      # what is quoted, and from where
+    python3 scripts/codecheck.py --coverage  # lessons that quote nothing, ratcheted per page
 
 A block is written as:
 
@@ -38,8 +39,9 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PINNED = ROOT / "reference" / "pinned"
 BASELINE = ROOT / "reference" / "baseline-citations.json"
+BASE = ROOT / "reference" / "coverage-baseline.json"
 MARKER = re.compile(
-    r"<!--\s*code:\s*(?P<path>[\w./-]+)::(?P<sym>[\w:<>]+)@(?P<commit>[0-9a-f]{7,40})\s*-->\n"
+    r"<!--\s*code:\s*(?P<path>[\w./-]+)::(?P<sym>[^@\n]+?)@(?P<commit>[0-9a-f]{7,40})\s*-->\n"
     r"(?P<fence>```[a-zA-Z]*)\n(?P<body>.*?)\n```\n<!--\s*/code\s*-->",
     re.S,
 )
@@ -76,10 +78,23 @@ def vendor(commit, paths, repo):
         print(f"  vendored {path} ({len(show.stdout.splitlines())} lines) -> {dest.relative_to(ROOT)}")
 
 
+def unparsed():
+    """A marker the regex cannot read is an excerpt nothing verifies - so it is a failure, not a skip."""
+    out = []
+    for md in sorted((ROOT / "src").rglob("*.md")):
+        text = md.read_text()
+        for m in re.finditer(r"<!--\s*code:", text):
+            if not MARKER.match(text, m.start()):
+                out.append(f"{md.relative_to(ROOT)}:{text[:m.start()].count(chr(10)) + 1}: marker does not "
+                           f"parse - the excerpt below it would go unchecked (symbol charset, fence, "
+                           f"or a missing <!-- /code -->)")
+    return out
+
+
 def check():
     commit = baseline_commit()
     items = blocks()
-    bad, checked = [], 0
+    bad, checked = unparsed(), 0
     for md, line_no, path, sym, at, body in items:
         where = f"{md.relative_to(ROOT)}:{line_no}"
         if not at.startswith(commit[:len(at)]) and not commit.startswith(at):
@@ -124,11 +139,65 @@ def listing():
     return 0
 
 
+def coverage(write_baseline):
+    """Every lesson should quote the engine, or say in one line why nothing can be quoted.
+
+    A lesson that explains an engine in prose alone cannot be checked against it - the failure this book
+    keeps closing. So each `### Lesson` either contains a marked excerpt or carries
+    `<!-- no-code: the reason -->`. The count is ratcheted **per page**: a page may only lose bare lessons
+    against `reference/coverage-baseline.json`, and a page that is not in that file starts at zero. New
+    chapters therefore cannot be written without quotes; old ones burn down.
+    """
+    lessons = re.compile(r"^### Lesson (\d+)\b", re.M)
+    current, total = {}, 0
+    for md in sorted((ROOT / "src").rglob("*.md")):
+        text = md.read_text()
+        heads = list(lessons.finditer(text))
+        if not heads:
+            continue
+        rel = str(md.relative_to(ROOT))
+        missing = []
+        for i, h in enumerate(heads):
+            end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
+            nxt = re.search(r"^## ", text[h.end():end], re.M)
+            span = text[h.end(): h.end() + nxt.start()] if nxt else text[h.end():end]
+            total += 1
+            if MARKER.search(span) or re.search(r"<!--\s*no-code:", span):
+                continue
+            missing.append(h.group(1))
+        if missing:
+            current[rel] = missing
+
+    if write_baseline:
+        BASE.write_text(json.dumps({"bare": {k: len(v) for k, v in sorted(current.items())}}, indent=2) + "\n")
+        print(f"wrote {BASE.relative_to(ROOT)}: {sum(len(v) for v in current.values())} bare lesson(s)")
+        return 0
+
+    base = json.loads(BASE.read_text())["bare"] if BASE.exists() else {}
+    bad = []
+    for rel, missing in sorted(current.items()):
+        allowed = base.get(rel, 0)
+        if len(missing) > allowed:
+            bad.append(f"{rel}: lesson(s) {', '.join(missing)} quote nothing and say nothing about why "
+                       f"({len(missing)} now, {allowed} allowed)")
+    for b in bad:
+        print(f"  {b}")
+    if bad:
+        print(f"FAIL: {len(bad)} page(s) above their bare-lesson baseline - quote the engine, or add "
+              f"<!-- no-code: why -->")
+        return 1
+    n = sum(len(v) for v in current.values())
+    print(f"clean ({n} lesson(s) without an excerpt, baseline {sum(base.values())}, {total} lessons)")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--vendor", action="store_true")
+    ap.add_argument("--coverage", action="store_true")
+    ap.add_argument("--write-baseline", action="store_true")
     ap.add_argument("--repo", default=str(pathlib.Path.home() / "git" / "mine" / "minfer"))
     args = ap.parse_args()
     if args.vendor:
@@ -136,6 +205,8 @@ def main():
         return 0
     if args.list:
         return listing()
+    if args.coverage:
+        return coverage(args.write_baseline)
     if args.check:
         return check()
     ap.print_help()
