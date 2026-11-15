@@ -1,0 +1,292 @@
+//! Declarative compute graph IR (Phase 1).
+//!
+//! Mirrors llama.cpp's `ggml_cgraph` + `llm_graph_context` layering; see
+//! docs/COMPUTE-GRAPH-DESIGN.md. The IR is pure data: building a
+//! `ComputeGraph` is side-effect free, and execution is delegated to the
+//! backend scheduler (Phase 4).
+
+pub mod alloc;
+pub mod backend;
+pub mod batch;
+
+/// Whether `backend` may take `(op, dtype)`: ordinary op support **plus** E1's
+/// span capability for a multi-sequence attention node, which no positions-based
+/// kernel can bound. The allocator and A1's op matrix both ask this, so the
+/// assignment rule has one definition (`docs/ARCHITECTURE-EXECUTION-PLAN.md` E1).
+pub fn backend_takes(b: &dyn backend::Backend, op: &ops::Op, dtype: DType) -> bool {
+    let span_ok = !matches!(
+        op,
+        ops::Op::Attn {
+            explicit_span: true,
+            ..
+        }
+    ) || b.supports_attn_span();
+    span_ok && b.supports_op(op, dtype)
+}
+/// Size classes, the allocation plan and memory accounting (E4).
+pub mod allocplan;
+pub mod builder;
+pub mod cache;
+/// Cross-backend staging-copy counters + the synchronous-reference gate (F5).
+pub mod copystats;
+pub mod cpu_backend;
+#[cfg(feature = "cuda")]
+pub mod cuda_backend;
+pub mod dot;
+pub mod fusion;
+pub mod json;
+/// Sequence-addressable KV cell store (Phase C / C1).
+pub mod kvcache;
+/// KV cache storage format + its `MINFER_CACHE_TYPE` gate (C4).
+pub mod kvformat;
+/// KV session save/restore container (C5).
+pub mod kvsession;
+#[cfg(all(target_os = "macos", feature = "metal"))]
+pub mod metal_backend;
+/// Layer offload plan: how many blocks run on the device (E5).
+///
+/// The plan is resolved on every build — a box with no device resolves an unset request to
+/// CPU-only — but a couple of its helpers have no caller without a device (the loader's
+/// registration filter compiles out), hence the allowance on those builds.
+#[cfg_attr(
+    not(any(all(target_os = "macos", feature = "metal"), feature = "cuda")),
+    allow(dead_code)
+)]
+pub mod offload;
+pub mod ops;
+pub mod params;
+/// Backend registry (F4): the name-keyed table, the handle, the filter.
+pub mod registry;
+pub mod scheduler;
+
+/// Op × dtype × backend correctness matrix (ticket A1). Test-only: it exists to
+/// keep the op semantics and the `supports_op` contract honest, not to run in
+/// production builds.
+#[cfg(test)]
+mod op_matrix;
+
+use ops::{NodeMeta, Op};
+
+/// Node index in `ComputeGraph::nodes`.
+pub type NodeId = usize;
+
+/// Activation dtype carried by node outputs (weight tensors keep their own
+/// `TensorType`; IR activations are F32 except where noted).
+///
+/// `F16`/`Q8_0` are part of the full IR dtype vocabulary (ggml parity): a
+/// backend's `supports_op(op, dtype)` answers `false` for them, which is how a
+/// future dtype-aware op expresses "not supported yet". No supported op
+/// constructs them, so each carries its own member-level allowance and names
+/// what would construct it — [#244] keeps them and reports the membership
+/// question (delete the variants vs keep the vocabulary) rather than deciding
+/// it here.
+///
+/// [#244]: https://github.com/yusiwen/minfer/issues/244
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DType {
+    F32,
+    /// Deferred (ggml parity): a half-precision activation. The device kernels
+    /// read f32 activations today; a kernel that takes an f16 activation buffer
+    /// is what would construct a node with this dtype.
+    #[cfg_attr(not(test), allow(dead_code))]
+    F16,
+    I32,
+    /// Deferred (ggml parity): an int8 activation buffer. The CPU quantizes
+    /// activations to Q8_0 *inside* the matmul kernels
+    /// (`dot_q*_q8_0`), never as a graph node output; the IR node that exposes
+    /// that quantized buffer is what would construct this.
+    #[cfg_attr(not(test), allow(dead_code))]
+    Q8_0,
+}
+
+/// The backend handle (F4): an opaque id into the [`registry`], not an enum.
+///
+/// Re-exported here because the IR has always called it `Backend`; the handle
+/// and the registry live in [`registry`]. See
+/// `docs/BACKEND-REGISTRY-DESIGN.md` for the two orders (identity vs priority)
+/// and the name surface.
+pub use registry::Backend;
+
+/// Backend buffer handle: a buffer id inside a specific backend's pool.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BufRef {
+    pub backend: Backend,
+    pub id: usize,
+    /// D1: element offset into the pool buffer. 0 for an owning node; non-zero
+    /// for an offset view (see [`CNode::view`]).
+    pub offset: usize,
+    /// D1: how many elements this reference covers — the node's element count.
+    /// An owning node covers its whole pool buffer; a view covers its window,
+    /// which is why the length travels with the reference instead of being
+    /// recovered from the pool (`copy_to_cpu`, slicing and the GPU pointer
+    /// arithmetic all need it).
+    pub len: usize,
+}
+
+impl BufRef {
+    /// An owning reference to a whole pool buffer.
+    pub fn own(backend: Backend, id: usize, len: usize) -> Self {
+        Self {
+            backend,
+            id,
+            offset: 0,
+            len,
+        }
+    }
+
+    /// A window into this reference (D1 views): same pool buffer, offset
+    /// advanced, length replaced by the window's.
+    pub fn window(&self, offset: usize, len: usize) -> Self {
+        Self {
+            backend: self.backend,
+            id: self.id,
+            offset: self.offset + offset,
+            len,
+        }
+    }
+}
+
+/// Persistent (never-freed) region — KV cache, etc.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersistentBuf {
+    pub name: String,
+    pub backend: Backend,
+    pub id: usize,
+}
+
+/// Single compute node.
+#[derive(Debug, Clone)]
+pub struct CNode {
+    pub id: NodeId,
+    pub name: String,
+    pub op: Op,
+    pub src: Vec<NodeId>,
+    pub out_shape: [usize; 4],
+    pub out_dtype: DType,
+    /// Backend assigned by the scheduler (Phase 4); None = undecided.
+    pub backend: Option<Backend>,
+    pub meta: NodeMeta,
+    /// D1: `Some` when this node does not own its output — it is a window into
+    /// another node's buffer. Set by `GraphBuilder::node` for the view-like ops
+    /// (`View`/`Reshape`/`Permute`); the allocator maps it onto the parent's
+    /// buffer and keeps the parent alive instead of copying.
+    pub view: Option<ViewAlias>,
+    /// E5: the transformer block this node belongs to (`None` for everything
+    /// outside a block: the embedding, the final norm, `lm_head`, and the
+    /// standalone test graphs). Stamped by `GraphBuilder::set_layer`, which the
+    /// model builders set once per block; the offload policy reads it to keep a
+    /// non-offloaded block's nodes off the device.
+    pub layer: Option<usize>,
+}
+
+/// D1: a node's output *is* (a window of) another node's buffer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ViewAlias {
+    pub src: NodeId,
+    /// Element offset into the parent's buffer. Always 0 in D1's first
+    /// increment: an offset view needs `BufRef` to carry an offset through the
+    /// `Backend` trait, which is increment 2. The field exists from the start so
+    /// the IR does not change shape twice.
+    pub offset: usize,
+}
+
+impl CNode {
+    pub fn n_elements(&self) -> usize {
+        self.out_shape.iter().product()
+    }
+    pub fn is_input(&self) -> bool {
+        matches!(self.op, Op::Input)
+    }
+}
+
+/// Compute graph: topologically ordered node sequence + input/output sets.
+#[derive(Debug, Clone, Default)]
+pub struct ComputeGraph {
+    pub nodes: Vec<CNode>,
+    pub inputs: Vec<NodeId>,
+    pub outputs: Vec<NodeId>,
+    /// Graph identifier for reuse detection (CUDA Graph caching etc.).
+    /// Populated by `GraphCache::replace_graph` (monotonic per process);
+    /// a reused graph keeps its uid.
+    pub uid: u64,
+}
+
+impl ComputeGraph {
+    /// 8g①: token-count hint for the CUDA capture gate — the first MatMul
+    /// node's output row count (activations are [d, nt]). `None` when the
+    /// graph has no matmul (synthetic test graphs), which leaves the capture
+    /// decision untouched.
+    ///
+    /// CUDA-only surface: the sole callers (the scheduler's replay path and
+    /// CUDA tests) are `#[cfg(feature = "cuda")]`, so the method is gated
+    /// too — non-CUDA builds drop it (and its dead-code warning) entirely.
+    #[cfg(feature = "cuda")]
+    pub fn capture_nt_hint(&self) -> Option<usize> {
+        self.nodes.iter().find_map(|n| match &n.meta {
+            crate::graph::ops::NodeMeta::MatMul(_) => Some(n.out_shape[1]),
+            _ => None,
+        })
+    }
+
+    pub fn node(&self, id: NodeId) -> &CNode {
+        &self.nodes[id]
+    }
+    pub fn n_nodes(&self) -> usize {
+        self.nodes.len()
+    }
+
+    /// Kahn topological sort. The builder appends sources before consumers, so
+    /// `nodes` is already topologically ordered; this validates the invariant
+    /// and returns a stable order (used by the allocator).
+    pub fn topo_order(&self) -> Result<Vec<NodeId>, String> {
+        let n = self.nodes.len();
+        let mut indeg = vec![0usize; n];
+        for node in &self.nodes {
+            if node.id >= n {
+                return Err(format!("node id {} out of range", node.id));
+            }
+            // #98: count each *distinct* predecessor once. The release pass
+            // below decrements per node by `src.contains(&u)`, so both passes
+            // must share one notion of "u is a predecessor of v": `add(x, x)`
+            // is one edge read twice, not two edges. Counting per source entry
+            // (`x + x` = 2) against a once-per-node release leaves `indeg`
+            // unreachable at 0 and reports a false cycle on a legal DAG. The
+            // source lists are tiny, so the quadratic scan is free.
+            for (j, &s) in node.src.iter().enumerate() {
+                if s >= n {
+                    return Err(format!("node {}: src {s} out of range", node.id));
+                }
+                if !node.src[..j].contains(&s) {
+                    indeg[node.id] += 1;
+                }
+            }
+        }
+        let mut queue: Vec<NodeId> = (0..n).filter(|&i| indeg[i] == 0).collect();
+        let mut order = Vec::with_capacity(n);
+        let mut qi = 0;
+        while qi < queue.len() {
+            let u = queue[qi];
+            qi += 1;
+            order.push(u);
+            for v in 0..n {
+                if self.nodes[v].src.contains(&u) {
+                    indeg[v] -= 1;
+                    if indeg[v] == 0 {
+                        queue.push(v);
+                    }
+                }
+            }
+        }
+        if order.len() != n {
+            return Err(format!(
+                "cycle detected: {}/{} nodes ordered",
+                order.len(),
+                n
+            ));
+        }
+        Ok(order)
+    }
+}
+
+#[cfg(test)]
+mod tests;

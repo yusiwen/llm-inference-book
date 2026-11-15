@@ -1,0 +1,184 @@
+{
+  "script": "scripts/graph.py",
+  "machine": "arm64, Darwin 27.2.0",
+  "compiler": "python 3.15.2",
+  "invocation": "python3 scripts/graph.py <engine binary> ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/graph.json",
+  "measurement": "the node lists, shapes and edges are read out of the engine's own per-node trace (MINFER_TRACE), which the visualizer consumes; the build count comes from MINFER_REBUILD_TRACE, one stderr line per build",
+  "engine": {
+    "binary": "/tmp/mf14-target/release/minfer",
+    "built_from": "the pinned baseline, in a `git worktree` of the engine repo: `cargo build --release -p minfer-cli`",
+    "backend": "cpu (--backend cpu, MINFER_DISABLE_MPS=1)",
+    "short_prompt": "The capital of France is",
+    "long_prompt": "The capital of France is Paris, and the capital of Germany is Berlin, but the capital of Italy is Rome, and the capital of Spain is",
+    "steps": 8,
+    "gguf": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    "gguf_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+  },
+  "shape": {
+    "prefill": {
+      "nodes": 443,
+      "input_nodes": 6,
+      "outputs": [
+        442
+      ],
+      "ops": {
+        "matmul": 169,
+        "rms_norm": 49,
+        "rope": 48,
+        "add": 48,
+        "kvcache_store": 24,
+        "kvcache_load": 24,
+        "attn": 24,
+        "silu": 24,
+        "swiglu": 24,
+        "input": 6,
+        "get_rows": 3
+      },
+      "backends": [
+        "cpu"
+      ],
+      "steps": 1
+    },
+    "decode": {
+      "nodes": 440,
+      "input_nodes": 5,
+      "outputs": [
+        439
+      ],
+      "ops": {
+        "matmul": 169,
+        "rms_norm": 49,
+        "rope": 48,
+        "add": 48,
+        "kvcache_store": 24,
+        "kvcache_load": 24,
+        "attn": 24,
+        "silu": 24,
+        "swiglu": 24,
+        "input": 5,
+        "get_rows": 1
+      },
+      "backends": [
+        "cpu"
+      ],
+      "steps": 7
+    },
+    "delta": {
+      "input": 1,
+      "get_rows": 2
+    },
+    "delta_names": [
+      "input tail_ids",
+      "get_rows get_rows",
+      "get_rows get_rows"
+    ]
+  },
+  "same_topology": {
+    "short_prompt_nodes": 443,
+    "long_prompt_nodes": 443,
+    "signature_equal": true,
+    "first_shape_difference": {
+      "node": 0,
+      "short": [
+        34,
+        1,
+        1,
+        1
+      ],
+      "long": [
+        58,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "dag": {
+    "depth": 268,
+    "nodes_at_max_depth": 1,
+    "max_fan_in": 4,
+    "max_fan_out": 72,
+    "leaves": 6,
+    "fan_in_histogram": {
+      "0": 30,
+      "1": 243,
+      "2": 122,
+      "3": 24,
+      "4": 24
+    }
+  },
+  "reuse": {
+    "builds": [
+      {
+        "n_tokens": 34,
+        "ms": 0.5
+      },
+      {
+        "n_tokens": 1,
+        "ms": 0.4
+      }
+    ],
+    "steps_executed": 8,
+    "decode_steps": 7,
+    "generated_tokens": 7
+  },
+  "trace": {
+    "step_keys": [
+      "logits_top",
+      "nodes",
+      "text",
+      "token"
+    ],
+    "node_stat_fields": [
+      "absmean",
+      "max",
+      "mean",
+      "min"
+    ],
+    "nodes_recorded": 368,
+    "logits_top": [
+      {
+        "id": 6722,
+        "prob": 0.9959,
+        "token": "\\u0120capital"
+      },
+      {
+        "id": 3946,
+        "prob": 0.0014,
+        "token": "\\u0120official"
+      },
+      {
+        "id": 1482,
+        "prob": 0.0009,
+        "token": "\\u0120current"
+      },
+      {
+        "id": 18374,
+        "prob": 0.0002,
+        "token": "\\u0120Capital"
+      },
+      {
+        "id": 3146,
+        "prob": 0.0002,
+        "token": "\\u0120country"
+      }
+    ],
+    "sample_cap": 64,
+    "token": 785,
+    "token_text": "The",
+    "logits_node": {
+      "id": 439,
+      "n": 151936,
+      "dtype": "f32",
+      "stats": {
+        "absmean": 3.683670428248665,
+        "max": 24.034343719482422,
+        "mean": -2.9418104599913875,
+        "min": -16.83612060546875
+      }
+    }
+  },
+  "output": {
+    "text": "The capital of France is Paris."
+  }
+}

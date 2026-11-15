@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 320" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="One run as a timeline. Step 0 executes the prefill graph, built once at 0.5 milliseconds; steps 1 to 7 execute the same decode graph, built once at 0.4 milliseconds. The graph row is flat from step 1 on, while the KV cell count rises from 34 to 41 across the run.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-box { stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .fig-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .7; }
+    .fig-a-build { stroke: #8f7ad1; stroke-width: 2; }
+    .fig-a-pre { fill: #4d86b8; fill-opacity: .55; }
+    .fig-a-dec { fill: #b8703f; fill-opacity: .42; }
+    .fig-a-line { stroke: #4d86b8; stroke-width: 2; fill: none; }
+  </style>
+  <text class="fig-cap" x="24" y="22">TWO BUILDS, 8 STEPS</text>
+  <text class="fig-s" x="24" y="40">the run the chapter's reuse table measures: one prefill graph, then one decode graph reused for every token</text>
+  <text class="fig-m" x="24" y="86">graph</text>
+  <rect class="fig-a-pre fig-box" x="82.0" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="118.8" y="88" text-anchor="middle">prefill</text>
+  <text class="fig-m" x="118.8" y="152" text-anchor="middle">0</text>
+  <rect class="fig-a-dec fig-box" x="159.5" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="196.2" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="196.2" y="152" text-anchor="middle">1</text>
+  <rect class="fig-a-dec fig-box" x="237.0" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="273.8" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="273.8" y="152" text-anchor="middle">2</text>
+  <rect class="fig-a-dec fig-box" x="314.5" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="351.2" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="351.2" y="152" text-anchor="middle">3</text>
+  <rect class="fig-a-dec fig-box" x="392.0" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="428.8" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="428.8" y="152" text-anchor="middle">4</text>
+  <rect class="fig-a-dec fig-box" x="469.5" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="506.2" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="506.2" y="152" text-anchor="middle">5</text>
+  <rect class="fig-a-dec fig-box" x="547.0" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="583.8" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="583.8" y="152" text-anchor="middle">6</text>
+  <rect class="fig-a-dec fig-box" x="624.5" y="70" width="73.5" height="28" rx="3"/>
+  <text class="fig-m" x="661.2" y="88" text-anchor="middle">decode</text>
+  <text class="fig-m" x="661.2" y="152" text-anchor="middle">7</text>
+  <path class="fig-a-build" d="M118.8 106 L118.8 122"/>
+  <text class="fig-m" x="118.8" y="137" text-anchor="middle">build 0.5 ms</text>
+  <path class="fig-a-build" d="M196.2 106 L196.2 122"/>
+  <text class="fig-m" x="196.2" y="137" text-anchor="middle">build 0.4 ms</text>
+  <text class="fig-m" x="24" y="180">KV cells</text>
+  <circle class="fig-a-dec" cx="118.8" cy="270.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="196.2" cy="259.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="273.8" cy="248.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="351.2" cy="237.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="428.8" cy="226.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="506.2" cy="215.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="583.8" cy="204.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <circle class="fig-a-dec" cx="661.2" cy="193.0" r="2.6" stroke="var(--quote-border, #4a6577)"/>
+  <polyline class="fig-a-line" points="118.8 270.0 196.2 259.0 273.8 248.0 351.2 237.0 428.8 226.0 506.2 215.0 583.8 204.0 661.2 193.0"/>
+  <text class="fig-m" x="118.8" y="288" text-anchor="middle">34</text>
+  <text class="fig-m" x="661.2" y="185.0" text-anchor="middle">41</text>
+  <line class="fig-rule" x1="24" y1="300" x2="786" y2="300"/>
+  <text class="fig-s" x="24" y="318">Flat from step 1 on: the topology never changes again, only the KV row grows.</text>
+</svg>

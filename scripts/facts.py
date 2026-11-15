@@ -1229,6 +1229,95 @@ def render_smp_grammar(f):
     return out
 
 
+
+def render_gr_shape(f):
+    """Chapter 14: what the two graph types are made of."""
+    pre, dec = f["shape"]["prefill"], f["shape"]["decode"]
+    out = ["| Quantity | Prefill graph | Decode graph |", "|---|---|---|"]
+    out.append(f"| Nodes | {pre['nodes']:,} | {dec['nodes']:,} |")
+    out.append(f"| Leaf inputs | {pre['input_nodes']:,} | {dec['input_nodes']:,} |")
+    out.append(f"| Output node | {', '.join(str(i) for i in pre['outputs'])} | "
+               f"{', '.join(str(i) for i in dec['outputs'])} |")
+    out.append(f"| Steps executed | {pre['steps']:,} | {dec['steps']:,} |")
+    out.append(f"| Backends assigned | {', '.join(pre['backends'])} | {', '.join(dec['backends'])} |")
+    out += ["", "| Op | Prefill | Decode |", "|---|---|---|"]
+    # deterministic order: count first, then the op name - a bare count-only key lets Python's set order (and
+    # with it PYTHONHASHSEED) decide the table's row order, which the fact gate correctly refuses.
+    ops = sorted(set(pre["ops"]) | set(dec["ops"]), key=lambda o: (-pre["ops"].get(o, 0), o))
+    for op in ops:
+        out.append(f"| `{op}` | {pre['ops'].get(op, 0):,} | {dec['ops'].get(op, 0):,} |")
+    return out
+
+
+def render_gr_topology(f):
+    """Chapter 14: the same topology for two prompts of different length."""
+    s = f["same_topology"]
+    d = s["first_shape_difference"]
+    out = ["| Quantity | Short prompt (34 tokens) | Long prompt (58 tokens) |", "|---|---|---|",
+           f"| Nodes | {s['short_prompt_nodes']:,} | {s['long_prompt_nodes']:,} |",
+           f"| Node sequence (op, name, edges) identical | - | **{'yes' if s['signature_equal'] else 'no'}** |"]
+    if d:
+        out.append(f"| Node {d['node']} shape | `{d['short']}` | `{d['long']}` |")
+    return out
+
+
+def render_gr_delta(f):
+    """Chapter 14: the three-node difference between the two graph types."""
+    delta = f["shape"]["delta"]
+    out = ["| Op | Prefill | Decode | Difference |", "|---|---|---|---|"]
+    for op, diff in sorted(delta.items(), key=lambda kv: -abs(kv[1])):
+        pre = f["shape"]["prefill"]["ops"].get(op, 0)
+        dec = f["shape"]["decode"]["ops"].get(op, 0)
+        out.append(f"| `{op}` | {pre:,} | {dec:,} | {diff:+,} |")
+    out += ["", "The nodes that exist only in the prefill graph: "
+            + ", ".join(f"`{_c(n)}`" for n in f["shape"]["delta_names"]) + "."]
+    return out
+
+
+def render_gr_dag(f):
+    """Chapter 14: the DAG the edges describe."""
+    d = f["dag"]
+    out = ["| Quantity | Value |", "|---|---|",
+           f"| Longest chain of nodes | {d['depth']} |",
+           f"| Nodes at that depth | {d['nodes_at_max_depth']} |",
+           f"| Most inputs one node takes | {d['max_fan_in']} |",
+           f"| Most consumers one node feeds | {d['max_fan_out']} |",
+           f"| Leaf inputs | {d['leaves']} |"]
+    hist = ", ".join(f"{k} input(s): {v}" for k, v in d["fan_in_histogram"].items())
+    out += ["", f"Nodes by input count - {hist}."]
+    return out
+
+
+def render_gr_reuse(f):
+    """Chapter 14: how many graphs a generation builds."""
+    r = f["reuse"]
+    out = ["| Build | Tokens in that graph | Cost (build + assign + alloc) |", "|---|---|---|"]
+    for i, b in enumerate(r["builds"], 1):
+        out.append(f"| {i} | {b['n_tokens']} | {b['ms']} ms |")
+    out += ["", f"Steps executed: **{r['steps_executed']}** (1 prefill + {r['decode_steps']} decode). "
+            f"Graphs built: **{len(r['builds'])}**."]
+    return out
+
+
+def render_gr_trace(f):
+    """Chapter 14: what one node of the trace says, and what the graph's output looks like."""
+    t = f["trace"]
+    logits = t["logits_node"] or {}
+    out = ["| Trace field | Value |", "|---|---|",
+           f"| Nodes recorded in one decode step | {t['nodes_recorded']:,} |",
+           f"| Per-node statistics | {', '.join(t['node_stat_fields'])} |",
+           f"| Largest sample kept per node | {t['sample_cap']} values |"]
+    if logits:
+        out += [f"| Output node | `{logits['id']}`, {logits['n']:,} values, {logits['dtype']} |",
+                f"| Output range | min {logits['stats']['min']:.2f}, max {logits['stats']['max']:.2f}, "
+                f"mean {logits['stats']['mean']:.2f} |"]
+    if t["logits_top"]:
+        out += ["", "| Rank | Id | Probability | Token |", "|---|---|---|---|"]
+        for i, row in enumerate(t["logits_top"], 1):
+            out.append(f"| {i} | {row['id']} | {row['prob']:.4f} | `{_c(row['token'])}` |")
+    return out
+
+
 BLOCKS = {
     "tok-vocab": render_tok_vocab,
     "tok-fixtures": render_tok_fixtures,
@@ -1279,6 +1368,12 @@ BLOCKS = {
     "cache-size": render_cache_size,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
+    "gr-trace": render_gr_trace,
+    "gr-reuse": render_gr_reuse,
+    "gr-dag": render_gr_dag,
+    "gr-delta": render_gr_delta,
+    "gr-topology": render_gr_topology,
+    "gr-shape": render_gr_shape,
     "smp-grammar": render_smp_grammar,
     "smp-stop": render_smp_stop,
     "smp-order": render_smp_order,
