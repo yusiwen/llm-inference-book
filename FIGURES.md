@@ -72,7 +72,7 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 |---|---|---|---|---|---|
 | 11.1 | `11-merge-loop.svg` | P0 | ladder | L1 | The merge loop on one piece: six byte marks, five rounds, the pair with the lowest merge rank winning each round, ending in one vocabulary token. Drawn as a merge ladder rather than the planned four-dialect panel - only the Qwen2 dialect is measurable here, and a panel of three documented columns beside one measured one is a claim, not a figure. |
 | 11.2 | `11-utf8-holdback.svg` | P0 | byte map | L5 | One four-byte character split across two tokens, with the bytes a streamer may print after each id and the bytes it must hold back. |
-| 12.1 | `12-prompt-anatomy.svg` | P1 | byte map | L1 | A rendered chat prompt annotated: role markers, the reasoning block, tool definitions, and the generation prefix the model must see last. |
+| 12.1 | `12-prompt-anatomy.svg` | P1 | byte map | L1 | One user turn rendered by the model's own template, drawn twice - once with each segment as wide as its bytes, once with every token the same width - showing that 27 of the 36 tokens are the template, 18 of them a default system sentence the user never wrote. The planned single annotated prompt was replaced because the token row is what makes the small segments readable. |
 | 13.1 | `13-sampler-pipeline.svg` | P0 | funnel | L1 | The sampler pipeline as a funnel: penalties, top-k, top-p and temperature each remove candidates before one token is drawn. |
 | 13.2 | `13-grammar-mask.svg` | P1 | matrix | L5 | A grammar masking the vocabulary at one decoder state, so tokens that would break the schema are impossible rather than unlikely. |
 
@@ -147,6 +147,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 50 | this file |
-| Drawn | 17 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 18 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

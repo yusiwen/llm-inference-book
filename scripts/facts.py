@@ -984,6 +984,115 @@ def render_tok_witness(f):
     return out
 
 
+
+def _c(s):
+    """A markdown table cell."""
+    return str(s).replace("|", "\\|").replace("\n", " ")
+
+
+def render_tmpl_program(f):
+    """Chapter 12: the template as a program - size, what it reads, what it calls."""
+    prog = f["program"]
+    rows = [
+        ("Template length", f"{prog['chars']:,} characters, {prog['bytes']:,} bytes, {prog['lines']} lines"),
+        ("`{{ ... }}` expressions", f"{prog['expressions']}"),
+        ("`{% ... %}` statements", f"{prog['statements']}"),
+        ("Variables it reads", ", ".join(f"`{v}`" for v in prog["variables"])),
+        ("Filters it calls", ", ".join(f"`{v}`" for v in prog["filters"])),
+        ("Roles it branches on", ", ".join(prog["roles"])),
+        ("sha256", f"`{prog['sha256'][:16]}...`"),
+    ]
+    return ["| Quantity | Value |", "|---|---|"] + [f"| {k} | {_c(v)} |" for k, v in rows]
+
+
+def render_tmpl_copies(f):
+    """Chapter 12: the same template shipped twice, and what the two copies disagree about."""
+    c = f["copies"]
+    out = [f"| Copy | Characters | sha256 |", "|---|---|---|",
+           f"| `tokenizer_config.json` (the model card) | {c['upstream']['chars']:,} | `{c['upstream']['sha256'][:16]}...` |",
+           f"| `tokenizer.chat_template` in the GGUF | {c['gguf']['chars']:,} | `{c['gguf']['sha256'][:16]}...` |",
+           "", f"Identical: **{'yes' if c['identical'] else 'no'}**."
+           + (f" {len(c['edits'])} edit(s)." if not c["identical"] else ""), ""]
+    if c["edits"]:
+        out += ["| At character | Removed | Inserted |", "|---|---|---|"]
+        for e in c["edits"]:
+            out.append(f"| {e['at']:,} | `{e['removed'] or '-'}` | `{e['inserted'] or '-'}` |")
+        out += ["", f"The model-card copy reads `{_c(c['upstream_around'])}`;",
+                f"the GGUF copy reads `{_c(c['gguf_around'])}`."]
+    return out
+
+
+def render_tmpl_anatomy(f):
+    """Chapter 12: one rendered prompt cut at its role markers - what is the user's and what is the template's."""
+    a = f["anatomy"]
+    out = [f"{a['prompt_bytes']} bytes, {a['prompt_tokens']} tokens. The segments below are cut at the special",
+           "tokens and add up to the whole prompt:", "",
+           "| At byte | Segment | Bytes | Tokens |", "|---|---|---|---|"]
+    for s in a["segments"]:
+        out.append(f"| {s['at']:,} | `{_c(s['text'])}` | {s['bytes']} | {s['tokens']} |")
+    out += ["", f"Sum of the segments: **{a['sum_of_segments']}** tokens against **{a['prompt_tokens']}** for the",
+            "whole prompt - the cut is at the special tokens, and a special token never merges with its",
+            "neighbours, so the counts add up."]
+    return out
+
+
+def render_tmpl_surfaces(f):
+    """Chapter 12: the same conversation with one knob moved."""
+    out = ["| Variant | Bytes | Tokens | Ends with |", "|---|---|---|---|"]
+    for r in f["surfaces"]:
+        out.append(f"| {r['variant']} | {r['bytes']:,} | {r['tokens']} | `{_c(r['tail'])}` |")
+    return out
+
+
+def render_tmpl_fixtures(f):
+    """Chapter 12: every committed case under three conditions."""
+    fx = f["fixtures"]
+    out = ["| Case | Tools | Bytes | Tokens | Reference | Jinja2 `tojson` | GGUF copy |",
+           "|---|---|---|---|---|---|---|"]
+    mark = {True: "same", False: "**differs**"}
+    for r in fx["cases"]:
+        out.append(f"| {r['name']} | {r['tools']} | {r['bytes']:,} | {r['tokens']} | "
+                   f"{mark[r['matches_reference']]} | {mark[r['native_tojson_matches']]} | "
+                   f"{mark[r['gguf_copy_matches']]} |")
+    out += ["", f"Rendered with the model card's copy: **{fx['agree']} of {fx['total']}** byte-identical to the",
+            f"reference renderer. With Jinja2's own `tojson`: **{fx['agree_native']} of {fx['total']}**. With the",
+            f"copy inside the GGUF: **{fx['agree_gguf_copy']} of {fx['total']}**."]
+    return out
+
+
+def render_tmpl_tojson(f):
+    """Chapter 12: one tool definition, four tojson policies."""
+    out = ["| Policy | Characters | Tokens | Output starts |", "|---|---|---|---|"]
+    for r in f["tojson"]:
+        out.append(f"| {r['policy']} | {r['chars']} | {r['tokens']} | `{_c(r['text'][:64])}` |")
+    return out
+
+
+def render_tmpl_thinking(f):
+    """Chapter 12: the reasoning flag, measured."""
+    out = [f"The template is {f['thinking']['template_chars']:,} characters; one user turn, generation prompt on:",
+           "", "| Variant | Characters | Tokens | Ends with |", "|---|---|---|---|"]
+    for r in f["thinking"]["rows"]:
+        out.append(f"| {r['variant']} | {r['chars']} | {r['tokens']} | `{_c(r['tail'])}` |")
+    return out
+
+
+def render_tmpl_pystr(f):
+    """Chapter 12: the Python the templates call, evaluated by Python."""
+    out = ["| Expression | Python returns |", "|---|---|"]
+    for r in f["pystr"]:
+        out.append(f"| `{_c(r['expression'])}` | `{_c(r['python'])}` |")
+    return out
+
+
+def render_tmpl_refusal(f):
+    """Chapter 12: what a renderer does with a template it cannot honour."""
+    out = ["| Template | Jinja2 default | Jinja2 strict |", "|---|---|---|"]
+    for r in f["refusal"]:
+        out.append(f"| `{_c(r['template'])}` | {_c(r['default'])} | {_c(r['strict'])} |")
+    return out
+
+
 BLOCKS = {
     "tok-vocab": render_tok_vocab,
     "tok-fixtures": render_tok_fixtures,
@@ -1034,6 +1143,15 @@ BLOCKS = {
     "cache-size": render_cache_size,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
+    "tmpl-refusal": render_tmpl_refusal,
+    "tmpl-pystr": render_tmpl_pystr,
+    "tmpl-thinking": render_tmpl_thinking,
+    "tmpl-tojson": render_tmpl_tojson,
+    "tmpl-fixtures": render_tmpl_fixtures,
+    "tmpl-surfaces": render_tmpl_surfaces,
+    "tmpl-anatomy": render_tmpl_anatomy,
+    "tmpl-copies": render_tmpl_copies,
+    "tmpl-program": render_tmpl_program,
 }
 
 

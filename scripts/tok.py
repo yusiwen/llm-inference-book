@@ -131,7 +131,7 @@ def read_tokenizer(path):
     r.u32(), r.u64()            # version, n_tensors
     n_kv = r.u64()
     want = {"tokenizer.ggml.model", "tokenizer.ggml.pre", "tokenizer.ggml.tokens",
-            "tokenizer.ggml.merges", "tokenizer.ggml.token_type"}
+            "tokenizer.ggml.merges", "tokenizer.ggml.token_type", "tokenizer.chat_template"}
     meta = {}
     for _ in range(n_kv):
         key = r.string()

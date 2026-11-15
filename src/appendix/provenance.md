@@ -18,6 +18,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `gguf-qwen2.5-0.5b-q4_0` | `scripts/gguf-inspect.py` | parses the same model at Q4_0 | not machine-dependent | - | read once from the file |
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `kquant-check` | `scripts/kquant-check.py` | decodes K-quant super-blocks from adversarial random bytes, from real weights, and from the format's own packing | not machine-dependent | - | bit-exact comparisons, exhaustive over the blocks sampled |
+| `template` | `(not declared)` |  | arm64, Darwin 27.2.0 | per machine |  |
 | `threadbench` | `scripts/threadbench.c` | sweeps thread count, batch size, spawn-per-call against a pool, and two write layouts on one matrix | Apple M4 Pro (arm64) and 11th Gen Intel(R) Core(TM) i7-11700B @ 3.20GHz (x86_64) | per machine | median of the runs per machine, with the range where the runs disagree |
 | `tokenizer-witness` | `scripts/tok-check.py` | runs the model family's reference tokenizer on the same fixtures and compares ids with the book's instrument | not machine-dependent | - | 15 of 15 fixtures agree; a mismatch is a failure, not a statistic |
 | `tokenizer` | `scripts/tok.py` | encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, and decodes the ids back; the ids are compared one by one against the reference tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model family's own `tokenizer.json`) | arm64, Darwin 27.2.0 | per machine | exact id equality on every fixture string; nothing here is averaged |
@@ -120,6 +121,18 @@ clang -O2 -o dotsimd scripts/dotsimd.c  (arm);  gcc -O3 -mf16c -o dotsimd script
 
 ```bash
 uv run --with gguf python scripts/kquant-check.py --real facts/gguf-qwen2.5-0.5b.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --real facts/gguf-qwen2.5-0.5b-q4_0.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf
+```
+
+### template
+
+`(not declared)` - .
+
+- **Machine**: arm64, Darwin 27.2.0
+- **Runs**: per machine; 
+- **Raw numbers**: `facts/template.json`
+
+```bash
+python3 scripts/tmpl.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/template.json
 ```
 
 ### threadbench

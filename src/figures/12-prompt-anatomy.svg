@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 330" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="One user turn rendered by the model's own chat template, drawn twice: once with each segment as wide as its bytes, and once with every token the same width. The prompt is 178 bytes and 36 tokens. The user's question is 35 bytes and 9 tokens; the default system sentence the template inserts is 75 bytes and 18 tokens; the five role markers are 5 tokens, the two standalone newlines 2 tokens, and the generation prefix 10 bytes and 2 tokens. Twenty-seven of the thirty-six tokens are not the user's text.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-box { stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .fig-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .7; }
+    .fig-a-mark { fill: #8f7ad1; fill-opacity: .78; }
+    .fig-a-tpl  { fill: #4d86b8; fill-opacity: .55; }
+    .fig-a-user { fill: #b8703f; fill-opacity: .62; }
+    .fig-a-gen  { fill: #5c9a72; fill-opacity: .60; }
+    .fig-a-nl   { fill: #7a8a99; fill-opacity: .45; }
+  </style>
+  <text class="fig-cap" x="24" y="22">THE PROMPT IS MOSTLY NOT YOURS</text>
+  <text class="fig-s" x="24" y="40">178 bytes, 36 tokens: one user question, rendered by the model's own template</text>
+  <text class="fig-m" x="24" y="80">bytes</text>
+  <rect class="fig-a-mark fig-box" x="96.0" y="62" width="46.5" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="142.5" y="62" width="290.7" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="433.2" y="62" width="38.8" height="30" rx="2"/>
+  <rect class="fig-a-nl fig-box" x="472.0" y="62" width="3.9" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="475.9" y="62" width="46.5" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="522.4" y="62" width="135.7" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="658.1" y="62" width="38.8" height="30" rx="2"/>
+  <rect class="fig-a-nl fig-box" x="696.8" y="62" width="3.9" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="700.7" y="62" width="46.5" height="30" rx="2"/>
+  <rect class="fig-a-gen fig-box" x="747.2" y="62" width="38.8" height="30" rx="2"/>
+  <text class="fig-m" x="24" y="158">tokens</text>
+  <rect class="fig-a-mark fig-box" x="96.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="115.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="134.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="153.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="172.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="191.8" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="211.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="230.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="249.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="268.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="287.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="306.8" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="326.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="345.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="364.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="383.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="402.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="421.8" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-tpl fig-box" x="441.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="460.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-nl fig-box" x="479.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="498.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="517.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="536.8" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="556.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="575.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="594.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="613.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="632.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="651.8" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-user fig-box" x="671.0" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="690.2" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-nl fig-box" x="709.3" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-mark fig-box" x="728.5" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-gen fig-box" x="747.7" y="140" width="17.8" height="30" rx="2"/>
+  <rect class="fig-a-gen fig-box" x="766.8" y="140" width="17.8" height="30" rx="2"/>
+  <line class="fig-rule" x1="24" y1="204" x2="786" y2="204"/>
+  <rect class="fig-a-mark fig-box" x="24" y="220" width="12" height="12" rx="2"/>
+  <text class="fig-m" x="42" y="230">special markers</text>
+  <text class="fig-t" x="42" y="250">5 tokens</text>
+  <rect class="fig-a-tpl fig-box" x="172" y="220" width="12" height="12" rx="2"/>
+  <text class="fig-m" x="190" y="230">default system</text>
+  <text class="fig-t" x="190" y="250">18 tokens</text>
+  <rect class="fig-a-user fig-box" x="320" y="220" width="12" height="12" rx="2"/>
+  <text class="fig-m" x="338" y="230">your question</text>
+  <text class="fig-t" x="338" y="250">9 tokens</text>
+  <rect class="fig-a-nl fig-box" x="468" y="220" width="12" height="12" rx="2"/>
+  <text class="fig-m" x="486" y="230">newlines</text>
+  <text class="fig-t" x="486" y="250">2 tokens</text>
+  <rect class="fig-a-gen fig-box" x="616" y="220" width="12" height="12" rx="2"/>
+  <text class="fig-m" x="634" y="230">generation prefix</text>
+  <text class="fig-t" x="634" y="250">2 tokens</text>
+  <text class="fig-s" x="24" y="284">27 of the 36 tokens are the template: role markers, two newlines, the generation prefix,</text>
+  <text class="fig-s" x="24" y="302">and a default system sentence the user never wrote.</text>
+</svg>

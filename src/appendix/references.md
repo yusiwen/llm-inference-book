@@ -55,6 +55,7 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 |---|---|---|---|
 | `[ieee754]` | *IEEE 754-2019, Standard for Floating-Point Arithmetic* - no arXiv ID (standard) | no arXiv ID | 9, 27 |
 | `[gguf]` | The GGUF file-format specification, in the ggml repository - no arXiv ID (specification) | no arXiv ID | 2, 12 |
+| `[jinja]` | Jinja2 template engine documentation, Pallets Projects - no arXiv ID (documentation) | no arXiv ID | 12 |
 | `[ggml-quant]` | The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification) | no arXiv ID | 3, 4, 5, 6 |
 | `[cuda-guide]` | *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | 22, 23 |
 | `[ptx]` | *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions) | no arXiv ID | 24 |

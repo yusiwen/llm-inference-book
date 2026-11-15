@@ -1,0 +1,524 @@
+{
+  "script": "scripts/tmpl.py",
+  "machine": "arm64, Darwin 27.2.0",
+  "compiler": "python 3.15.2, jinja2 3.1.6",
+  "invocation": "python3 scripts/tmpl.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/template.json",
+  "measurement": "the prompt bytes are compared with the reference renderer's committed output, one case at a time; the token counts come from this book's Chapter 11 tokenizer on the same bytes",
+  "gguf": {
+    "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+    "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    "template_key": "tokenizer.chat_template"
+  },
+  "witness": {
+    "reference": "HuggingFaceTB transformers 5.17.0 AutoTokenizer.apply_chat_template(tokenize=False)",
+    "template_source": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct/raw/7ae557604adf67be50417f59c2c2f167def9a775/tokenizer_config.json",
+    "fixture_sha256": "8e89e3ed6d0bc24ff94370fe86c5f5a5978753a0ca24327b813f29433241fdc8",
+    "recorded_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "recorded_gguf_template_sha256": "d5495a1e5db0611132a97e46a65dbb64a642a499421228b9c8b93229097fa9a4"
+  },
+  "program": {
+    "chars": 2509,
+    "bytes": 2509,
+    "lines": 55,
+    "expressions": 25,
+    "statements": 30,
+    "filters": [
+      "tojson"
+    ],
+    "variables": [
+      "add_generation_prompt",
+      "messages",
+      "tools"
+    ],
+    "roles": [
+      "system",
+      "user",
+      "assistant",
+      "tool"
+    ],
+    "sha256": "d5495a1e5db0611132a97e46a65dbb64a642a499421228b9c8b93229097fa9a4"
+  },
+  "copies": {
+    "upstream": {
+      "chars": 2507,
+      "sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f"
+    },
+    "gguf": {
+      "chars": 2509,
+      "sha256": "d5495a1e5db0611132a97e46a65dbb64a642a499421228b9c8b93229097fa9a4"
+    },
+    "identical": false,
+    "edits": [
+      {
+        "at": 687,
+        "removed": "",
+        "inserted": "{"
+      },
+      {
+        "at": 747,
+        "removed": "",
+        "inserted": "}"
+      }
+    ],
+    "first_difference": 687,
+    "upstream_around": " XML tags:\\n<tool_call>\\n{\\\"name\\\": <function-name>, \\\"argum",
+    "gguf_around": " XML tags:\\n<tool_call>\\n{{\\\"name\\\": <function-name>, \\\"argume"
+  },
+  "fixtures": {
+    "cases": [
+      {
+        "name": "single_user",
+        "tools": 0,
+        "generation_prompt": true,
+        "chars": 178,
+        "bytes": 178,
+        "tokens": 36,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "system_and_user",
+        "tools": 0,
+        "generation_prompt": true,
+        "chars": 133,
+        "bytes": 133,
+        "tokens": 24,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "multi_turn",
+        "tools": 0,
+        "generation_prompt": true,
+        "chars": 205,
+        "bytes": 205,
+        "tokens": 44,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "multi_turn_no_generation_prompt",
+        "tools": 0,
+        "generation_prompt": false,
+        "chars": 167,
+        "bytes": 167,
+        "tokens": 32,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "unicode_and_newlines",
+        "tools": 0,
+        "generation_prompt": true,
+        "chars": 200,
+        "bytes": 225,
+        "tokens": 52,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "reasoning_assistant_replay",
+        "tools": 0,
+        "generation_prompt": false,
+        "chars": 302,
+        "bytes": 304,
+        "tokens": 83,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "reasoning_assistant_turn",
+        "tools": 0,
+        "generation_prompt": true,
+        "chars": 360,
+        "bytes": 362,
+        "tokens": 94,
+        "matches_reference": true,
+        "native_tojson_matches": true,
+        "gguf_copy_matches": true,
+        "first_difference": null,
+        "gguf_copy_difference": null
+      },
+      {
+        "name": "single_function",
+        "tools": 1,
+        "generation_prompt": true,
+        "chars": 818,
+        "bytes": 818,
+        "tokens": 190,
+        "matches_reference": true,
+        "native_tojson_matches": false,
+        "gguf_copy_matches": false,
+        "first_difference": null,
+        "gguf_copy_difference": {
+          "at": 658,
+          "got": " tags:\\n<tool_call>\\n{{\"name\": <function-n",
+          "expected": " tags:\\n<tool_call>\\n{\"name\": <function-na"
+        }
+      },
+      {
+        "name": "two_functions_nested_schema",
+        "tools": 2,
+        "generation_prompt": true,
+        "chars": 1502,
+        "bytes": 1508,
+        "tokens": 393,
+        "matches_reference": true,
+        "native_tojson_matches": false,
+        "gguf_copy_matches": false,
+        "first_difference": null,
+        "gguf_copy_difference": {
+          "at": 1319,
+          "got": " tags:\\n<tool_call>\\n{{\"name\": <function-n",
+          "expected": " tags:\\n<tool_call>\\n{\"name\": <function-na"
+        }
+      },
+      {
+        "name": "no_system_message_no_generation_prompt",
+        "tools": 1,
+        "generation_prompt": false,
+        "chars": 831,
+        "bytes": 831,
+        "tokens": 196,
+        "matches_reference": true,
+        "native_tojson_matches": false,
+        "gguf_copy_matches": false,
+        "first_difference": null,
+        "gguf_copy_difference": {
+          "at": 698,
+          "got": " tags:\\n<tool_call>\\n{{\"name\": <function-n",
+          "expected": " tags:\\n<tool_call>\\n{\"name\": <function-na"
+        }
+      },
+      {
+        "name": "assistant_tool_call_replay",
+        "tools": 1,
+        "generation_prompt": true,
+        "chars": 1064,
+        "bytes": 1064,
+        "tokens": 250,
+        "matches_reference": true,
+        "native_tojson_matches": false,
+        "gguf_copy_matches": false,
+        "first_difference": null,
+        "gguf_copy_difference": {
+          "at": 698,
+          "got": " tags:\\n<tool_call>\\n{{\"name\": <function-n",
+          "expected": " tags:\\n<tool_call>\\n{\"name\": <function-na"
+        }
+      },
+      {
+        "name": "tool_response_replay",
+        "tools": 1,
+        "generation_prompt": true,
+        "chars": 991,
+        "bytes": 991,
+        "tokens": 233,
+        "matches_reference": true,
+        "native_tojson_matches": false,
+        "gguf_copy_matches": false,
+        "first_difference": null,
+        "gguf_copy_difference": {
+          "at": 698,
+          "got": " tags:\\n<tool_call>\\n{{\"name\": <function-n",
+          "expected": " tags:\\n<tool_call>\\n{\"name\": <function-na"
+        }
+      }
+    ],
+    "agree": 12,
+    "agree_native": 7,
+    "agree_gguf_copy": 7,
+    "total": 12
+  },
+  "tojson": [
+    {
+      "policy": "reference",
+      "chars": 307,
+      "tokens": 86,
+      "text": "{\"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"description\": \"Get the current weather for a city.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\", \"description\":..."
+    },
+    {
+      "policy": "jinja2-default",
+      "chars": 307,
+      "tokens": 85,
+      "text": "{\"function\": {\"description\": \"Get the current weather for a city.\", \"name\": \"get_weather\", \"parameters\": {\"properties\": {\"city\": {\"description\": \"The city name.\", \"type\": \"string\"}, \"unit\": {\"enum\": [..."
+    },
+    {
+      "policy": "compact",
+      "chars": 284,
+      "tokens": 64,
+      "text": "{\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"description\":\"Get the current weather for a city.\",\"parameters\":{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"The city name..."
+    },
+    {
+      "policy": "ascii",
+      "chars": 307,
+      "tokens": 86,
+      "text": "{\"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"description\": \"Get the current weather for a city.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\", \"description\":..."
+    }
+  ],
+  "surfaces": [
+    {
+      "variant": "no system message, prompt off",
+      "chars": 156,
+      "bytes": 156,
+      "tokens": 33,
+      "head": "<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. ...",
+      "tail": "hat is the capital of France?<|im_end|>\\n"
+    },
+    {
+      "variant": "no system message, prompt on",
+      "chars": 178,
+      "bytes": 178,
+      "tokens": 36,
+      "head": "<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. ...",
+      "tail": "France?<|im_end|>\\n<|im_start|>assistant\\n"
+    },
+    {
+      "variant": "explicit system, prompt off",
+      "chars": 116,
+      "bytes": 116,
+      "tokens": 23,
+      "head": "<|im_start|>system\\nYou are a concise assistant.<|im_end|>\\n...",
+      "tail": "hat is the capital of France?<|im_end|>\\n"
+    },
+    {
+      "variant": "explicit system, prompt on",
+      "chars": 138,
+      "bytes": 138,
+      "tokens": 26,
+      "head": "<|im_start|>system\\nYou are a concise assistant.<|im_end|>\\n...",
+      "tail": "France?<|im_end|>\\n<|im_start|>assistant\\n"
+    },
+    {
+      "variant": "one tool, generation prompt",
+      "chars": 689,
+      "bytes": 689,
+      "tokens": 154,
+      "head": "<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. ...",
+      "tail": "France?<|im_end|>\\n<|im_start|>assistant\\n"
+    },
+    {
+      "variant": "one tool, explicit system",
+      "chars": 649,
+      "bytes": 649,
+      "tokens": 144,
+      "head": "<|im_start|>system\\nYou are a concise assistant.\\n\\n# Tools\\...",
+      "tail": "France?<|im_end|>\\n<|im_start|>assistant\\n"
+    }
+  ],
+  "anatomy": {
+    "prompt_bytes": 178,
+    "prompt_tokens": 36,
+    "sum_of_segments": 36,
+    "segments": [
+      {
+        "at": 0,
+        "bytes": 12,
+        "tokens": 1,
+        "ids": [
+          151644
+        ],
+        "text": "<|im_start|>"
+      },
+      {
+        "at": 12,
+        "bytes": 75,
+        "tokens": 18,
+        "ids": [
+          8948,
+          198,
+          2610,
+          525
+        ],
+        "text": "system\\nYou are Qwen, created by Alibaba Cloud. You ..."
+      },
+      {
+        "at": 87,
+        "bytes": 10,
+        "tokens": 1,
+        "ids": [
+          151645
+        ],
+        "text": "<|im_end|>"
+      },
+      {
+        "at": 97,
+        "bytes": 1,
+        "tokens": 1,
+        "ids": [
+          198
+        ],
+        "text": "\\n"
+      },
+      {
+        "at": 98,
+        "bytes": 12,
+        "tokens": 1,
+        "ids": [
+          151644
+        ],
+        "text": "<|im_start|>"
+      },
+      {
+        "at": 110,
+        "bytes": 35,
+        "tokens": 9,
+        "ids": [
+          872,
+          198,
+          3838,
+          374
+        ],
+        "text": "user\\nWhat is the capital of France?"
+      },
+      {
+        "at": 145,
+        "bytes": 10,
+        "tokens": 1,
+        "ids": [
+          151645
+        ],
+        "text": "<|im_end|>"
+      },
+      {
+        "at": 155,
+        "bytes": 1,
+        "tokens": 1,
+        "ids": [
+          198
+        ],
+        "text": "\\n"
+      },
+      {
+        "at": 156,
+        "bytes": 12,
+        "tokens": 1,
+        "ids": [
+          151644
+        ],
+        "text": "<|im_start|>"
+      },
+      {
+        "at": 168,
+        "bytes": 10,
+        "tokens": 2,
+        "ids": [
+          77091,
+          198
+        ],
+        "text": "assistant\\n"
+      }
+    ]
+  },
+  "pystr": [
+    {
+      "expression": "\"don't stop\".title()",
+      "python": "\"Don'T Stop\"",
+      "recorded": "\"Don'T Stop\"",
+      "agrees": true
+    },
+    {
+      "expression": "\"  a  b  \".split(None, 1)",
+      "python": "['a', 'b  ']",
+      "recorded": "['a', 'b  ']",
+      "agrees": true
+    },
+    {
+      "expression": "\"a,b,,c\".split(\",\")",
+      "python": "['a', 'b', '', 'c']",
+      "recorded": "['a', 'b', '', 'c']",
+      "agrees": true
+    },
+    {
+      "expression": "\"x\".ljust(4, \"-\")",
+      "python": "'x---'",
+      "recorded": "'x---'",
+      "agrees": true
+    },
+    {
+      "expression": "\"a\\nb\\n\".splitlines(True)",
+      "python": "['a\\n', 'b\\n']",
+      "recorded": "['a\\n', 'b\\n']",
+      "agrees": true
+    },
+    {
+      "expression": "\"  x  \".rstrip()",
+      "python": "'  x'",
+      "recorded": "'  x'",
+      "agrees": true
+    },
+    {
+      "expression": "\"</think>abc\".split(\"</think>\")[-1].lstrip(\"\\n\")",
+      "python": "'abc'",
+      "recorded": "'abc'",
+      "agrees": true
+    }
+  ],
+  "refusal": [
+    {
+      "case": "undefined variable",
+      "template": "{{ nosuchvar }}",
+      "default": "renders ''",
+      "strict": "raises UndefinedError"
+    },
+    {
+      "case": "unknown filter",
+      "template": "{{ 'x' | nosuchfilter }}",
+      "default": "raises TemplateAssertionError",
+      "strict": "raises TemplateAssertionError"
+    },
+    {
+      "case": "unclosed statement",
+      "template": "{% if tools %}x",
+      "default": "raises TemplateSyntaxError",
+      "strict": "raises TemplateSyntaxError"
+    },
+    {
+      "case": "index into nothing",
+      "template": "{{ messages[0]['content'] }}",
+      "default": "raises UndefinedError",
+      "strict": "raises UndefinedError"
+    },
+    {
+      "case": "unknown method",
+      "template": "{{ 'x'.nosuchmethod() }}",
+      "default": "raises UndefinedError",
+      "strict": "raises UndefinedError"
+    }
+  ],
+  "thinking": {
+    "template_chars": 4168,
+    "rows": [
+      {
+        "variant": "thinking on (default)",
+        "chars": 81,
+        "tokens": 16,
+        "tail": " in strawberry?<|im_end|>\\n<|im_start|>assistant\\n"
+      },
+      {
+        "variant": "thinking off",
+        "chars": 100,
+        "tokens": 22,
+        "tail": "_end|>\\n<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n"
+      }
+    ]
+  }
+}
