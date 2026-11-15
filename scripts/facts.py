@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "sampler": ("scripts/smp.py",
+                "runs the engine's CLI on the model, keeps the logits it dumps, and replays the deterministic "
+                "part of the sampler pipeline (penalties, top-k, top-p, temperature) in Python so the engine's "
+                "own token stream can be reproduced from the engine's own logits",
+                "byte equality between the replay and the engine's text; the funnel, mass and entropy figures "
+                "are computed from those logits, one step at a time, never averaged",
+                ),
     "template": ("scripts/tmpl.py",
                  "renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and "
                  "compares every case byte for byte with the reference renderer's committed output "
@@ -1100,6 +1107,128 @@ def render_tmpl_refusal(f):
     return out
 
 
+
+def render_smp_verify(f):
+    """Chapter 13: the engine's output, replayed from the engine's own logits by this book's pipeline."""
+    out = ["| Run | Steps replayed | Python replay against the engine's text |", "|---|---|---|"]
+    for name, v in f["verify"].items():
+        verdict = "byte-identical" if v["match"] else "**differs**"
+        out.append(f"| {name.replace('_', ' ')} | {v['steps']} | {verdict} |")
+    first = next(iter(f["verify"].values()))
+    out += ["", f"The replay produced `{_c(first['text'])}` - the engine's own text, from the engine's own logits."]
+    return out
+
+
+def render_smp_prompts(f):
+    """Chapter 13: the prompt the showcase step comes from, chosen by measuring five candidates."""
+    out = ["| Candidate prompt | Top-1 mass | Tokens for 90% | Entropy |", "|---|---|---|---|"]
+    chosen = f["prompt_choice"]["chosen"]["prompt"]
+    for r in f["prompt_choice"]["candidates"]:
+        mark = " **chosen**" if r["prompt"] == chosen else ""
+        out.append(f"| `{_c(r['prompt'])}`{mark} | {r['top1']:.3f} | {r['tokens_90']} | {r['entropy']:.2f} |")
+    return out
+
+
+def render_smp_pipeline(f):
+    """Chapter 13: one real step, stage by stage."""
+    p = f["pipeline"]
+    out = [f"Step `{p['step']}`, prompt `{_c(p['prompt'])}`, top-1 mass before any stage: "
+           f"{p['top1_raw']:.3f}.", "",
+           "| Stage | Candidates left | What it did |", "|---|---|---|"]
+    for r in p["rows"]:
+        out.append(f"| {_c(r['stage'])} | {r['survivors']:,} | {_c(r['note'])} |")
+    return out
+
+
+def render_smp_temperature(f):
+    """Chapter 13: temperature on the same step - the ranking holds, the weights move."""
+    out = ["| Temperature | Top-1 mass | Top-5 mass | Tokens for 90% | Entropy | Argmax |", "|---|---|---|---|---|---|"]
+    for r in f["temperature"]:
+        out.append(f"| {r['temp']} | {r['top1']:.3f} | {r['top5']:.3f} | {r['tokens_90']} | {r['entropy']:.2f} | "
+                   f"`{r['argmax']}` |")
+    return out
+
+
+def render_smp_funnel(f):
+    """Chapter 13: the two truncating stages across the whole run."""
+    rows = f["funnel"]
+    after_p = [r["after_p"] for r in rows]
+    top1 = [r["top1"] for r in rows]
+
+    def stat(values, fmt="{:.0f}"):
+        ordered = sorted(values)
+        mid = ordered[len(ordered) // 2] if len(ordered) % 2 else (ordered[len(ordered) // 2 - 1] + ordered[len(ordered) // 2]) / 2
+        return fmt.format(ordered[0]), fmt.format(mid), fmt.format(ordered[-1])
+
+    out = [f"{len(rows)} steps of one greedy run, no penalties:", "",
+           "| Quantity | Smallest | Median | Largest |", "|---|---|---|---|"]
+    for label, values, fmt in (("Candidates after top-k 40", [r["after_k"] for r in rows], "{:,}"),
+                               ("Candidates after top-p 0.95", after_p, "{:,}"),
+                               ("Top-1 mass of the final set", top1, "{:.3f}"),
+                               ("Entropy of the final set (nats)", [r["entropy"] for r in rows], "{:.2f}")):
+        lo, mid, hi = stat(values, fmt)
+        out.append(f"| {label} | {lo} | {mid} | {hi} |")
+    widest = max(rows, key=lambda r: r["after_p"])
+    out += ["", f"Top-k never bound at all: it kept 40 candidates on every step. Top-p did the cutting - "
+            f"and the widest step ({_c(widest['step'])}) still kept {widest['after_p']} of the 40."]
+    return out
+
+
+def render_smp_penalty(f):
+    """Chapter 13: what the repeat penalty actually changed."""
+    p = f["penalty"]
+    out = ["| Quantity | Value |", "|---|---|",
+           f"| Steps where the penalty moved at least one logit | {p['steps_with_moves']} |",
+           f"| Steps where it changed the argmax | {p['steps_flipped']} |"]
+    if p["examples"]:
+        out += ["", "| Step | Logits moved | Argmax without | Argmax with |", "|---|---|---|---|"]
+        for e in p["examples"]:
+            out.append(f"| {_c(e['step'])} | {e['moved']} | `{e['plain']}` | `{e['penalised']}` |")
+    else:
+        out += ["", "Every step's argmax survived the penalty. The penalty is a *shift*, not a veto: it moved "
+                "logits on nearly every step and changed nothing about which token won."]
+    return out
+
+
+def render_smp_order(f):
+    """Chapter 13: the same three stages in three orders, on one measured step."""
+    out = ["| Order of the same stages | Candidates kept | Top-1 mass | Argmax |", "|---|---|---|---|"]
+    for r in f["order"]:
+        out.append(f"| {_c(r['order'])} | {r['survivors']:,} | {r['top1']:.3f} | `{r['argmax']}` |")
+    return out
+
+
+def render_smp_repro(f):
+    """Chapter 13: what a seed buys."""
+    out = ["| Run | Bytes | Same as the first run? | Shared prefix | Output |", "|---|---|---|---|---|"]
+    for r in f["repro"]:
+        out.append(f"| {_c(r['name'])} | {r['bytes']} | {'yes' if r['same_as_first'] else '**no**'} | "
+                   f"{r['shared_prefix_bytes']} B | `{_c(r['text'])}` |")
+    return out
+
+
+def render_smp_stop(f):
+    """Chapter 13: a stop string that spans more than one token."""
+    s = f["stop"]
+    out = ["| Quantity | Value |", "|---|---|",
+           f"| Stop string | `{_c(s['stop'])}` |",
+           f"| Tokens it spans | {s['stop_tokens']} (`{', '.join(str(i) for i in s['stop_ids'])}`) |",
+           f"| Full greedy output | `{_c(s['whole_text'])}` |",
+           f"| Output with the stop | `{_c(s['cut_text'])}` |",
+           f"| Stop text in the output | {'yes' if s['kept_stop_text'] else 'no'} |"]
+    return out
+
+
+def render_smp_grammar(f):
+    """Chapter 13: the same prompt with and without a schema, over eight seeds."""
+    out = ["| Condition | Runs | Output parses as the schema | Example |", "|---|---|---|---|"]
+    for r in f["grammar"]:
+        sample = r["samples"][0]
+        out.append(f"| {_c(r['condition'])} | {r['seeds']} | **{r['valid']} of {r['seeds']}** | "
+                   f"`{_c(sample['text'])}` |")
+    return out
+
+
 BLOCKS = {
     "tok-vocab": render_tok_vocab,
     "tok-fixtures": render_tok_fixtures,
@@ -1150,6 +1279,16 @@ BLOCKS = {
     "cache-size": render_cache_size,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
+    "smp-grammar": render_smp_grammar,
+    "smp-stop": render_smp_stop,
+    "smp-order": render_smp_order,
+    "smp-repro": render_smp_repro,
+    "smp-penalty": render_smp_penalty,
+    "smp-funnel": render_smp_funnel,
+    "smp-temperature": render_smp_temperature,
+    "smp-pipeline": render_smp_pipeline,
+    "smp-prompts": render_smp_prompts,
+    "smp-verify": render_smp_verify,
     "tmpl-refusal": render_tmpl_refusal,
     "tmpl-pystr": render_tmpl_pystr,
     "tmpl-thinking": render_tmpl_thinking,

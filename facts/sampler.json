@@ -1,0 +1,603 @@
+{
+  "script": "scripts/smp.py",
+  "machine": "arm64, Darwin 27.2.0",
+  "compiler": "python 3.15.2, numpy 2.5.4",
+  "invocation": "python3 scripts/smp.py <engine binary> ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/sampler.json",
+  "measurement": "the engine's own logits dumps are replayed through this script's pipeline; the token counts, funnel rows and entropy figures are computed from those logits",
+  "engine": {
+    "prompt": "The capital of France is",
+    "steps": 24,
+    "seed_default": 42,
+    "sampler_defaults": {
+      "repeat": 1.1,
+      "top_k": 40,
+      "top_p": 0.95,
+      "temp": 0.8
+    },
+    "backend": "cpu (--backend cpu, MINFER_DISABLE_MPS=1)",
+    "binary": "/tmp/mf-target/release/minfer",
+    "built_from": "the pinned baseline, in a `git worktree` of the engine repo: `cargo build --release -p minfer-cli`, so the numbers belong to the commit the chapter quotes rather than to whatever binary happened to be in the tree"
+  },
+  "verify": {
+    "greedy_no_penalty": {
+      "steps": 7,
+      "text": "The capital of France is Paris.",
+      "expected": "The capital of France is Paris.",
+      "match": true,
+      "ids": [
+        785,
+        6722,
+        315,
+        9625,
+        374,
+        12095,
+        13
+      ]
+    },
+    "greedy_repeat_1_1": {
+      "steps": 24,
+      "text": "Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha",
+      "expected": "Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha",
+      "match": true,
+      "ids": [
+        32942,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386,
+        6386
+      ]
+    },
+    "greedy_flat_prompt": {
+      "steps": 24,
+      "text": "As an AI language model, I don't have personal preferences or favorites. However...",
+      "expected": "As an AI language model, I don't have personal preferences or favorites. However...",
+      "match": true,
+      "ids": [
+        2121,
+        458,
+        15235,
+        4128,
+        1614,
+        11,
+        358,
+        1513,
+        944,
+        614,
+        4345,
+        19322
+      ]
+    }
+  },
+  "prompt_choice": {
+    "chosen": {
+      "prompt": "My favourite programming language is",
+      "top1": 0.3938038114151002,
+      "tokens_90": 26,
+      "entropy": 2.8780021450668776
+    },
+    "candidates": [
+      {
+        "prompt": "The capital of France is",
+        "top1": 0.7801118472492093,
+        "tokens_90": 2,
+        "entropy": 0.8687618460959493
+      },
+      {
+        "prompt": "Once upon a time",
+        "top1": 0.583688623567331,
+        "tokens_90": 15,
+        "entropy": 2.2021421759554154
+      },
+      {
+        "prompt": "The three primary colours are",
+        "top1": 0.8389801791151403,
+        "tokens_90": 5,
+        "entropy": 1.1020653850028748
+      },
+      {
+        "prompt": "My favourite programming language is",
+        "top1": 0.3938038114151002,
+        "tokens_90": 26,
+        "entropy": 2.8780021450668776
+      },
+      {
+        "prompt": "Q: What is 17 times 23? A:",
+        "top1": 0.4206213467733556,
+        "tokens_90": 3,
+        "entropy": 1.3294763083513035
+      }
+    ]
+  },
+  "pipeline": {
+    "step": "logits_prefill_00000.f32",
+    "prompt": "My favourite programming language is",
+    "top1_raw": 0.3938038114151002,
+    "rows": [
+      {
+        "stage": "raw logits",
+        "survivors": 151936,
+        "note": "every vocabulary entry"
+      },
+      {
+        "stage": "repeat penalty 1.0",
+        "survivors": 151936,
+        "note": "0 logit(s) moved - nothing repeats"
+      },
+      {
+        "stage": "top-k 40",
+        "survivors": 40,
+        "note": "the tail is set to -inf"
+      },
+      {
+        "stage": "top-p 0.95",
+        "survivors": 21,
+        "note": "the smallest set reaching the mass"
+      },
+      {
+        "stage": "temperature 0.8",
+        "survivors": 21,
+        "note": "the set does not change; the weights do"
+      },
+      {
+        "stage": "draw",
+        "survivors": 1,
+        "note": "one id, by the generator"
+      }
+    ]
+  },
+  "funnel": [
+    {
+      "step": "logits_prefill_00000.f32",
+      "after_k": 40,
+      "after_p": 21,
+      "mass_kept": 0.9999999999999998,
+      "top1": 0.584566239464655,
+      "entropy": 1.65763391761947
+    },
+    {
+      "step": "logits_decode_00001.f32",
+      "after_k": 40,
+      "after_p": 2,
+      "mass_kept": 0.9999999999999999,
+      "top1": 0.9361042495162831,
+      "entropy": 0.23755491135238357
+    },
+    {
+      "step": "logits_decode_00002.f32",
+      "after_k": 40,
+      "after_p": 2,
+      "mass_kept": 1.0,
+      "top1": 0.6326049401933199,
+      "entropy": 0.6575547181550333
+    },
+    {
+      "step": "logits_decode_00003.f32",
+      "after_k": 40,
+      "after_p": 3,
+      "mass_kept": 1.0,
+      "top1": 0.9475087929506628,
+      "entropy": 0.2347493936540227
+    },
+    {
+      "step": "logits_decode_00004.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00005.f32",
+      "after_k": 40,
+      "after_p": 2,
+      "mass_kept": 1.0,
+      "top1": 0.9702602214902162,
+      "entropy": 0.13383644583249296
+    },
+    {
+      "step": "logits_decode_00006.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00007.f32",
+      "after_k": 40,
+      "after_p": 5,
+      "mass_kept": 0.9999999999999999,
+      "top1": 0.8851166764961589,
+      "entropy": 0.42764191735075124
+    },
+    {
+      "step": "logits_decode_00008.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00009.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00010.f32",
+      "after_k": 40,
+      "after_p": 2,
+      "mass_kept": 0.9999999999999999,
+      "top1": 0.9764077805358412,
+      "entropy": 0.11170793991262146
+    },
+    {
+      "step": "logits_decode_00011.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00012.f32",
+      "after_k": 40,
+      "after_p": 4,
+      "mass_kept": 1.0,
+      "top1": 0.8490511447342016,
+      "entropy": 0.5877371825403924
+    },
+    {
+      "step": "logits_decode_00013.f32",
+      "after_k": 40,
+      "after_p": 14,
+      "mass_kept": 0.9999999999999998,
+      "top1": 0.5234169873065765,
+      "entropy": 1.3950634750795834
+    },
+    {
+      "step": "logits_decode_00014.f32",
+      "after_k": 40,
+      "after_p": 5,
+      "mass_kept": 0.9999999999999999,
+      "top1": 0.7976615804672338,
+      "entropy": 0.6865012920390896
+    },
+    {
+      "step": "logits_decode_00015.f32",
+      "after_k": 40,
+      "after_p": 3,
+      "mass_kept": 1.0,
+      "top1": 0.95838778435391,
+      "entropy": 0.1995598126990365
+    },
+    {
+      "step": "logits_decode_00016.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00017.f32",
+      "after_k": 40,
+      "after_p": 4,
+      "mass_kept": 1.0,
+      "top1": 0.9855937301046174,
+      "entropy": 0.0910960634797676
+    },
+    {
+      "step": "logits_decode_00018.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    },
+    {
+      "step": "logits_decode_00019.f32",
+      "after_k": 40,
+      "after_p": 7,
+      "mass_kept": 1.0,
+      "top1": 0.5599425045979115,
+      "entropy": 0.9109249862397801
+    },
+    {
+      "step": "logits_decode_00020.f32",
+      "after_k": 40,
+      "after_p": 4,
+      "mass_kept": 1.0,
+      "top1": 0.677502878046798,
+      "entropy": 0.8889470098029962
+    },
+    {
+      "step": "logits_decode_00021.f32",
+      "after_k": 40,
+      "after_p": 3,
+      "mass_kept": 1.0,
+      "top1": 0.5471971970169507,
+      "entropy": 0.9509896510159646
+    },
+    {
+      "step": "logits_decode_00022.f32",
+      "after_k": 40,
+      "after_p": 7,
+      "mass_kept": 1.0,
+      "top1": 0.3546851883594609,
+      "entropy": 1.5397215341433501
+    },
+    {
+      "step": "logits_decode_00023.f32",
+      "after_k": 40,
+      "after_p": 1,
+      "mass_kept": 1.0,
+      "top1": 1.0,
+      "entropy": -0.0
+    }
+  ],
+  "temperature": [
+    {
+      "temp": 0.5,
+      "top1": 0.862955813800317,
+      "top5": 0.976523906448316,
+      "tokens_90": 3,
+      "entropy": 0.6631759438088379,
+      "argmax": 2121
+    },
+    {
+      "temp": 0.8,
+      "top1": 0.584566239464655,
+      "top5": 0.8607276621837858,
+      "tokens_90": 7,
+      "entropy": 1.65763391761947,
+      "argmax": 2121
+    },
+    {
+      "temp": 1.2,
+      "top1": 0.35086473940257645,
+      "top5": 0.6884226285485447,
+      "tokens_90": 12,
+      "entropy": 2.374932759769153,
+      "argmax": 2121
+    },
+    {
+      "temp": 2.0,
+      "top1": 0.18481070179386042,
+      "top5": 0.499079796736263,
+      "tokens_90": 17,
+      "entropy": 2.8165862974663836,
+      "argmax": 2121
+    }
+  ],
+  "order": [
+    {
+      "order": "top-k -> top-p -> temperature (engine)",
+      "survivors": 21,
+      "mass": 0.9999999999999998,
+      "top1": 0.584566239464655,
+      "argmax": 2121
+    },
+    {
+      "order": "temperature -> top-k -> top-p",
+      "survivors": 12,
+      "mass": 0.9999999999999999,
+      "top1": 0.7368759939836523,
+      "argmax": 2121
+    },
+    {
+      "order": "top-p -> top-k -> temperature",
+      "survivors": 40,
+      "mass": 1.0,
+      "top1": 0.573522548547487,
+      "argmax": 2121
+    },
+    {
+      "order": "top-p alone (top-k off)",
+      "survivors": 69,
+      "mass": 1.0,
+      "top1": 0.5697444888525863,
+      "argmax": 2121
+    }
+  ],
+  "penalty": {
+    "steps_with_moves": 23,
+    "steps_flipped": 0,
+    "examples": []
+  },
+  "repro": [
+    {
+      "name": "seed 42",
+      "flags": "--temp 0.8 --top-k 40 --repeat-penalty 1.0 --seed 42",
+      "bytes": 126,
+      "same_as_first": true,
+      "shared_prefix_bytes": 126,
+      "text": "As an AI language model, I don't have person..."
+    },
+    {
+      "name": "seed 42, second run",
+      "flags": "--temp 0.8 --top-k 40 --repeat-penalty 1.0 --seed 42",
+      "bytes": 126,
+      "same_as_first": true,
+      "shared_prefix_bytes": 126,
+      "text": "As an AI language model, I don't have person..."
+    },
+    {
+      "name": "seed 43",
+      "flags": "--temp 0.8 --top-k 40 --repeat-penalty 1.0 --seed 43",
+      "bytes": 105,
+      "same_as_first": false,
+      "shared_prefix_bytes": 0,
+      "text": "Sure, I'd be happy to help you with your fav..."
+    },
+    {
+      "name": "seed 44",
+      "flags": "--temp 0.8 --top-k 40 --repeat-penalty 1.0 --seed 44",
+      "bytes": 137,
+      "same_as_first": false,
+      "shared_prefix_bytes": 6,
+      "text": "As an artificial intelligence, I don't have ..."
+    },
+    {
+      "name": "seed 42, top-k 5",
+      "flags": "--temp 0.8 --top-k 5 --repeat-penalty 1.0 --seed 42",
+      "bytes": 126,
+      "same_as_first": true,
+      "shared_prefix_bytes": 126,
+      "text": "As an AI language model, I don't have person..."
+    }
+  ],
+  "stop": {
+    "stop": "pple\\n",
+    "stop_tokens": 3,
+    "stop_ids": [
+      602,
+      273,
+      198
+    ],
+    "whole_text": "1. Apple\\n2. Orange\\n3. Banana",
+    "cut_text": "1. Apple",
+    "cut_at": 4,
+    "kept_stop_text": false
+  },
+  "grammar": [
+    {
+      "condition": "no schema",
+      "seeds": 8,
+      "valid": 0,
+      "samples": [
+        {
+          "seed": 42,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "To provide the weather in Paris with a temperature in Ce..."
+        },
+        {
+          "seed": 43,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "Certainly! Here is a JSON representation of the weather ..."
+        },
+        {
+          "seed": 44,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "Paris, France's capital and largest city, has a temperat..."
+        },
+        {
+          "seed": 45,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "```json\\n{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 10\\n}..."
+        },
+        {
+          "seed": 46,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "Certainly! Here's the JSON representing the weather in P..."
+        },
+        {
+          "seed": 47,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "Certainly! Here is the JSON data for the weather in Pari..."
+        },
+        {
+          "seed": 48,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "Sure! Here is the weather information for Paris as a JSO..."
+        },
+        {
+          "seed": 49,
+          "valid": false,
+          "why": "not JSON (Expecting value)",
+          "text": "I apologize, but as a language model created by Alibaba ..."
+        }
+      ]
+    },
+    {
+      "condition": "schema",
+      "seeds": 8,
+      "valid": 8,
+      "samples": [
+        {
+          "seed": 42,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 15\\n}"
+        },
+        {
+          "seed": 43,
+          "valid": true,
+          "why": "ok",
+          "text": "{\"city\": \"Paris, \"  \\t,\"temperature_c\": 13}"
+        },
+        {
+          "seed": 44,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 22\\n}"
+        },
+        {
+          "seed": 45,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 11\\n}"
+        },
+        {
+          "seed": 46,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 10\\n}"
+        },
+        {
+          "seed": 47,
+          "valid": true,
+          "why": "ok",
+          "text": "{\"city\": \"Paris, \" \\n \\t,\"temperature_c\": 7}"
+        },
+        {
+          "seed": 48,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 10\\n}"
+        },
+        {
+          "seed": 49,
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 10\\n}"
+        }
+      ]
+    },
+    {
+      "condition": "schema, greedy",
+      "seeds": 1,
+      "valid": 1,
+      "samples": [
+        {
+          "seed": "greedy",
+          "valid": true,
+          "why": "ok",
+          "text": "{\\n  \"city\": \"Paris\",\\n  \"temperature_c\": 10\\n}"
+        }
+      ]
+    }
+  ],
+  "texts": {
+    "greedy": "The capital of France is Paris.",
+    "greedy_penalty": "Ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha ha",
+    "list": "1. Apple\\n2. Orange\\n3. Banana"
+  }
+}
