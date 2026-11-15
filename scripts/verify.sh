@@ -123,6 +123,17 @@ echo "== 15. the provenance index matches the artifacts =="
 # generated from the artifacts rather than typed.
 python3 scripts/provenance.py --check
 
+# ...and a provenance line that names no script is worse than none: it looks like evidence. `render_provenance`
+# prints `(unknown)` when the artifact's instrument is missing from `INSTRUMENTS`, which the index check above
+# cannot see (the appendix would list the artifact and the page would still be anonymous).
+if bad=$(grep -rln '\*`(unknown)`' src/ 2>/dev/null) && [ -n "$bad" ]; then
+  for f in $bad; do echo "[E] $f: a provenance line names no script - add the artifact to INSTRUMENTS in scripts/facts.py" >&2; done
+  echo "FAIL: a provenance line prints (unknown)" >&2
+  exit 1
+else
+  echo "clean (every provenance line names its script)"
+fi
+
 echo
 echo "== 16. every quoted line of minfer code matches the pinned source =="
 # A quoted line is a claim like a number is. The sources are vendored under reference/pinned/<commit>/ so

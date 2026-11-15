@@ -667,6 +667,12 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "graph": ("scripts/graph.py",
+              "runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, "
+              "the shapes, the edges and the per-node statistics out of the trace the visualizer consumes",
+              "a structural comparison of two node sequences (equal or not), and node counts read one run at a "
+              "time; nothing here is averaged",
+              ),
     "sampler": ("scripts/smp.py",
                 "runs the engine's CLI on the model, keeps the logits it dumps, and replays the deterministic "
                 "part of the sampler pipeline (penalties, top-k, top-p, temperature) in Python so the engine's "

@@ -513,5 +513,5 @@ field or carrying one it should not.
 - [ ] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement)
 
 <!-- facts: graph.provenance -->
-*`(unknown)`; on **arm64, Darwin 27.2.0, python 3.15.2**. Command: see [the provenance index](../appendix/provenance.md#graph). Raw numbers: `facts/graph.json`.*
+*`scripts/graph.py`; runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, the shapes, the edges and the per-node statistics out of the trace the visualizer consumes; on **arm64, Darwin 27.2.0, python 3.15.2**; a structural comparison of two node sequences (equal or not), and node counts read one run at a time; nothing here is averaged. Command: see [the provenance index](../appendix/provenance.md#graph). Raw numbers: `facts/graph.json`.*
 <!-- /facts -->

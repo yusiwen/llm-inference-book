@@ -72,6 +72,16 @@ def artifact_of(name, d):
     return f"`facts/{name}.json`"
 
 
+def undeclared():
+    """Artifacts in facts/ whose instrument nobody declared.
+
+    The page under each measured table prints the script name from `scripts/facts.py`'s own table; this appendix
+    prints it from this one. Two tables, one artifact list - so a missing entry shows up as `(unknown)` on a page
+    and as `(not declared)` here, and both are checked rather than rendered.
+    """
+    return [f.stem for f in sorted(FACTS.glob("*.json")) if f.stem not in INSTRUMENTS]
+
+
 def render():
     rows = []
     sections = []
@@ -125,6 +135,11 @@ def main():
     new = rewrite(text, body)
 
     if args.check:
+        missing = undeclared()
+        if missing:
+            print("facts/*.json with no instrument in INSTRUMENTS (scripts/provenance.py): "
+                  + ", ".join(missing))
+            return 1
         if new != text:
             print(f"{PAGE.relative_to(ROOT)}: the provenance index is stale - run "
                   f"`python3 scripts/provenance.py --render`")
