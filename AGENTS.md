@@ -71,6 +71,11 @@ Rules that follow:
 3. **A new citation must be added to the inventory** - the gate fails otherwise, by design.
 4. **A baseline bump follows the six steps on the baseline page**, reads the drift report, and commits
    as `docs(baseline): move to <tag or sha>`.
+5. **A claim with an expiry date gets an issue in this repository.** When a chapter quotes a number that
+   minfer intends to change - a negative result, a known gap, an A/B that the engine is actively closing -
+   open an issue here naming the page, the paragraph, the figures and the re-measurement, and link it from
+   the prose. A comment on minfer's own issue is not enough: that repository's tracker is about minfer, and
+   this is about a page. Chapter 10's Q8_0 paragraph and issue 2 are the pattern.
 
 ## Non-negotiables
 
