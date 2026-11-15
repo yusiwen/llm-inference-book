@@ -1,0 +1,696 @@
+{
+ "script": "scripts/tok.py",
+ "machine": "arm64, Darwin 27.2.0",
+ "compiler": "python 3.15.2, regex 2026.11.9",
+ "invocation": "python3 scripts/tok.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/tokenizer.json",
+ "gguf": {
+  "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+  "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+  "tokens": 151936,
+  "merges": 151387,
+  "model": "gpt2",
+  "pre": "qwen2",
+  "token_type_counts": {
+   "1": 151643,
+   "3": 20,
+   "4": 2,
+   "5": 271
+  },
+  "first_tokens": [
+   "!",
+   "\"",
+   "#",
+   "$",
+   "%",
+   "&",
+   "'",
+   "("
+  ],
+  "first_merges": [
+   "\u0120 \u0120",
+   "\u0120\u0120 \u0120\u0120",
+   "i n",
+   "\u0120 t",
+   "\u0120\u0120\u0120\u0120 \u0120\u0120\u0120\u0120",
+   "e r",
+   "\u0120\u0120 \u0120",
+   "o n"
+  ],
+  "byte_tokens": 256,
+  "special_tokens": [
+   {
+    "token": "<|endoftext|>",
+    "id": 151643,
+    "type": "control"
+   },
+   {
+    "token": "<|im_start|>",
+    "id": 151644,
+    "type": "control"
+   },
+   {
+    "token": "<|im_end|>",
+    "id": 151645,
+    "type": "control"
+   },
+   {
+    "token": "<|object_ref_start|>",
+    "id": 151646,
+    "type": "control"
+   },
+   {
+    "token": "<|object_ref_end|>",
+    "id": 151647,
+    "type": "control"
+   },
+   {
+    "token": "<|box_start|>",
+    "id": 151648,
+    "type": "control"
+   },
+   {
+    "token": "<|box_end|>",
+    "id": 151649,
+    "type": "control"
+   },
+   {
+    "token": "<|quad_start|>",
+    "id": 151650,
+    "type": "control"
+   },
+   {
+    "token": "<|quad_end|>",
+    "id": 151651,
+    "type": "control"
+   },
+   {
+    "token": "<|vision_start|>",
+    "id": 151652,
+    "type": "control"
+   },
+   {
+    "token": "<|vision_end|>",
+    "id": 151653,
+    "type": "control"
+   },
+   {
+    "token": "<|vision_pad|>",
+    "id": 151654,
+    "type": "control"
+   }
+  ],
+  "n_special": 293
+ },
+ "pre_pattern": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
+ "fixtures": [
+  {
+   "name": "empty",
+   "text": "",
+   "chars": 0,
+   "bytes": 0,
+   "ids_raw": [],
+   "ids_nfc": [],
+   "ids": [],
+   "n_ids": 0,
+   "decoded": "",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "one space",
+   "text": " ",
+   "chars": 1,
+   "bytes": 1,
+   "ids_raw": [
+    220
+   ],
+   "ids_nfc": [
+    220
+   ],
+   "ids": [
+    220
+   ],
+   "n_ids": 1,
+   "decoded": " ",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "plain word",
+   "text": "hello",
+   "chars": 5,
+   "bytes": 5,
+   "ids_raw": [
+    14990
+   ],
+   "ids_nfc": [
+    14990
+   ],
+   "ids": [
+    14990
+   ],
+   "n_ids": 1,
+   "decoded": "hello",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "leading space",
+   "text": " hello",
+   "chars": 6,
+   "bytes": 6,
+   "ids_raw": [
+    23811
+   ],
+   "ids_nfc": [
+    23811
+   ],
+   "ids": [
+    23811
+   ],
+   "n_ids": 1,
+   "decoded": " hello",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "two spaces",
+   "text": "hello  world",
+   "chars": 12,
+   "bytes": 12,
+   "ids_raw": [
+    14990,
+    220,
+    1879
+   ],
+   "ids_nfc": [
+    14990,
+    220,
+    1879
+   ],
+   "ids": [
+    14990,
+    220,
+    1879
+   ],
+   "n_ids": 3,
+   "decoded": "hello  world",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "precomposed",
+   "text": "H\\xe9llo",
+   "chars": 5,
+   "bytes": 6,
+   "ids_raw": [
+    39,
+    18503,
+    385
+   ],
+   "ids_nfc": [
+    39,
+    18503,
+    385
+   ],
+   "ids": [
+    39,
+    18503,
+    385
+   ],
+   "n_ids": 3,
+   "decoded": "H\\xe9llo",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "combining mark",
+   "text": "He\\u0301llo",
+   "chars": 6,
+   "bytes": 7,
+   "ids_raw": [
+    1519,
+    53839,
+    75,
+    385
+   ],
+   "ids_nfc": [
+    39,
+    18503,
+    385
+   ],
+   "ids": [
+    39,
+    18503,
+    385
+   ],
+   "n_ids": 3,
+   "decoded": "H\\xe9llo",
+   "decodes_as_text": true,
+   "roundtrip_same": false,
+   "nfc_same": false,
+   "nfc_changes_ids": true,
+   "specials_change_ids": false
+  },
+  {
+   "name": "cjk",
+   "text": "\\u4e2d\\u6587",
+   "chars": 2,
+   "bytes": 6,
+   "ids_raw": [
+    104811
+   ],
+   "ids_nfc": [
+    104811
+   ],
+   "ids": [
+    104811
+   ],
+   "n_ids": 1,
+   "decoded": "\\u4e2d\\u6587",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "emoji",
+   "text": "\\U0001f642",
+   "chars": 1,
+   "bytes": 4,
+   "ids_raw": [
+    145080
+   ],
+   "ids_nfc": [
+    145080
+   ],
+   "ids": [
+    145080
+   ],
+   "n_ids": 1,
+   "decoded": "\\U0001f642",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "newlines",
+   "text": "line\\n\\nbreak",
+   "chars": 11,
+   "bytes": 11,
+   "ids_raw": [
+    1056,
+    271,
+    8960
+   ],
+   "ids_nfc": [
+    1056,
+    271,
+    8960
+   ],
+   "ids": [
+    1056,
+    271,
+    8960
+   ],
+   "n_ids": 3,
+   "decoded": "line\\n\\nbreak",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "digits",
+   "text": "1234567890",
+   "chars": 10,
+   "bytes": 10,
+   "ids_raw": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    15
+   ],
+   "ids_nfc": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    15
+   ],
+   "ids": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    15
+   ],
+   "n_ids": 10,
+   "decoded": "1234567890",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "contraction",
+   "text": "don't",
+   "chars": 5,
+   "bytes": 5,
+   "ids_raw": [
+    15007,
+    944
+   ],
+   "ids_nfc": [
+    15007,
+    944
+   ],
+   "ids": [
+    15007,
+    944
+   ],
+   "n_ids": 2,
+   "decoded": "don't",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "special text",
+   "text": "<|im_start|>system",
+   "chars": 18,
+   "bytes": 18,
+   "ids_raw": [
+    27,
+    91,
+    318,
+    4906,
+    91,
+    29,
+    8948
+   ],
+   "ids_nfc": [
+    27,
+    91,
+    318,
+    4906,
+    91,
+    29,
+    8948
+   ],
+   "ids": [
+    151644,
+    8948
+   ],
+   "n_ids": 2,
+   "decoded": "<|im_start|>system",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": true
+  },
+  {
+   "name": "tab",
+   "text": "a\\tb",
+   "chars": 3,
+   "bytes": 3,
+   "ids_raw": [
+    64,
+    2233
+   ],
+   "ids_nfc": [
+    64,
+    2233
+   ],
+   "ids": [
+    64,
+    2233
+   ],
+   "n_ids": 2,
+   "decoded": "a\\tb",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  },
+  {
+   "name": "long",
+   "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "chars": 200,
+   "bytes": 200,
+   "ids_raw": [
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440
+   ],
+   "ids_nfc": [
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440
+   ],
+   "ids": [
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440
+   ],
+   "n_ids": 25,
+   "decoded": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decodes_as_text": true,
+   "roundtrip_same": true,
+   "nfc_same": true,
+   "nfc_changes_ids": false,
+   "specials_change_ids": false
+  }
+ ],
+ "merge_trace": [
+  {
+   "round": 0,
+   "pair": null,
+   "rank": null,
+   "units": [
+    "\u0120",
+    "h",
+    "e",
+    "l",
+    "l",
+    "o"
+   ]
+  },
+  {
+   "round": 1,
+   "pair": [
+    "e",
+    "l"
+   ],
+   "rank": 45,
+   "units": [
+    "\u0120",
+    "h",
+    "el",
+    "l",
+    "o"
+   ]
+  },
+  {
+   "round": 2,
+   "pair": [
+    "\u0120",
+    "h"
+   ],
+   "rank": 49,
+   "units": [
+    "\u0120h",
+    "el",
+    "l",
+    "o"
+   ]
+  },
+  {
+   "round": 3,
+   "pair": [
+    "l",
+    "o"
+   ],
+   "rank": 129,
+   "units": [
+    "\u0120h",
+    "el",
+    "lo"
+   ]
+  },
+  {
+   "round": 4,
+   "pair": [
+    "el",
+    "lo"
+   ],
+   "rank": 4535,
+   "units": [
+    "\u0120h",
+    "ello"
+   ]
+  },
+  {
+   "round": 5,
+   "pair": [
+    "\u0120h",
+    "ello"
+   ],
+   "rank": 23555,
+   "units": [
+    "\u0120hello"
+   ]
+  }
+ ],
+ "holdback": {
+  "text": "\\U0001f9cb",
+  "ids": [
+   123908,
+   233
+  ],
+  "rows": [
+   {
+    "id": 123908,
+    "token": "\u00f0\u0141\u00a7",
+    "bytes": 3,
+    "whole": 0,
+    "held_back": 3
+   },
+   {
+    "id": 233,
+    "token": "\u012d",
+    "bytes": 4,
+    "whole": 4,
+    "held_back": 0
+   }
+  ],
+  "splits": true
+ },
+ "summary": {
+  "fixtures": 15,
+  "roundtrip_differs": [
+   "combining mark"
+  ],
+  "ids_total": 58,
+  "nfc_changes": [
+   "combining mark"
+  ],
+  "engine_vs_raw": [
+   "combining mark",
+   "special text"
+  ],
+  "specials_change": [
+   "special text"
+  ],
+  "bytes_total": 294
+ }
+}

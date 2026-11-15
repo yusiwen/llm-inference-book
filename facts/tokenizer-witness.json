@@ -1,0 +1,270 @@
+{
+ "script": "scripts/tok-check.py",
+ "witness": {
+  "tool": "tokenizers 0.23.3",
+  "file": "tok-qwen2.5-0.5b.json",
+  "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+  "bytes": 7031645,
+  "vocab": 151643,
+  "merges": 151387,
+  "added_tokens": 22,
+  "normalizer": "NFC",
+  "pre_tokenizer": "Split"
+ },
+ "fixtures": [
+  {
+   "name": "empty",
+   "reference_ids": [],
+   "instrument_ids": [],
+   "match": true,
+   "n_reference": 0
+  },
+  {
+   "name": "one space",
+   "reference_ids": [
+    220
+   ],
+   "instrument_ids": [
+    220
+   ],
+   "match": true,
+   "n_reference": 1
+  },
+  {
+   "name": "plain word",
+   "reference_ids": [
+    14990
+   ],
+   "instrument_ids": [
+    14990
+   ],
+   "match": true,
+   "n_reference": 1
+  },
+  {
+   "name": "leading space",
+   "reference_ids": [
+    23811
+   ],
+   "instrument_ids": [
+    23811
+   ],
+   "match": true,
+   "n_reference": 1
+  },
+  {
+   "name": "two spaces",
+   "reference_ids": [
+    14990,
+    220,
+    1879
+   ],
+   "instrument_ids": [
+    14990,
+    220,
+    1879
+   ],
+   "match": true,
+   "n_reference": 3
+  },
+  {
+   "name": "precomposed",
+   "reference_ids": [
+    39,
+    18503,
+    385
+   ],
+   "instrument_ids": [
+    39,
+    18503,
+    385
+   ],
+   "match": true,
+   "n_reference": 3
+  },
+  {
+   "name": "combining mark",
+   "reference_ids": [
+    39,
+    18503,
+    385
+   ],
+   "instrument_ids": [
+    39,
+    18503,
+    385
+   ],
+   "match": true,
+   "n_reference": 3
+  },
+  {
+   "name": "cjk",
+   "reference_ids": [
+    104811
+   ],
+   "instrument_ids": [
+    104811
+   ],
+   "match": true,
+   "n_reference": 1
+  },
+  {
+   "name": "emoji",
+   "reference_ids": [
+    145080
+   ],
+   "instrument_ids": [
+    145080
+   ],
+   "match": true,
+   "n_reference": 1
+  },
+  {
+   "name": "newlines",
+   "reference_ids": [
+    1056,
+    271,
+    8960
+   ],
+   "instrument_ids": [
+    1056,
+    271,
+    8960
+   ],
+   "match": true,
+   "n_reference": 3
+  },
+  {
+   "name": "digits",
+   "reference_ids": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    15
+   ],
+   "instrument_ids": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    15
+   ],
+   "match": true,
+   "n_reference": 10
+  },
+  {
+   "name": "contraction",
+   "reference_ids": [
+    15007,
+    944
+   ],
+   "instrument_ids": [
+    15007,
+    944
+   ],
+   "match": true,
+   "n_reference": 2
+  },
+  {
+   "name": "special text",
+   "reference_ids": [
+    151644,
+    8948
+   ],
+   "instrument_ids": [
+    151644,
+    8948
+   ],
+   "match": true,
+   "n_reference": 2
+  },
+  {
+   "name": "tab",
+   "reference_ids": [
+    64,
+    2233
+   ],
+   "instrument_ids": [
+    64,
+    2233
+   ],
+   "match": true,
+   "n_reference": 2
+  },
+  {
+   "name": "long",
+   "reference_ids": [
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440
+   ],
+   "instrument_ids": [
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440,
+    69440
+   ],
+   "match": true,
+   "n_reference": 25
+  }
+ ],
+ "answer": {
+  "compared": 15,
+  "agree": 15,
+  "mismatches": []
+ }
+}

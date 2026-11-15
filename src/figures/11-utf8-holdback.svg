@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 342" width="100%" style="max-width:100%;height:auto"
+     role="img" aria-label="A four-byte emoji split across two tokens. The first id carries three of the four UTF-8 bytes, so zero whole characters are available and all three bytes are held back; the second id completes the sequence and the character is printed. The table lists per id the bytes held, the whole characters available, what may be printed and what must be held.">
+  <style>
+    .fig-t   { fill: var(--fg, #dce6f0); font-size: 12.5px; font-weight: 600; }
+    .fig-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .fig-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .fig-box { fill: var(--quote-bg, #1d2833); stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .fig-unit { fill: var(--fg, #dce6f0); font-size: 12.5px; }
+    .fig-rank { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; }
+    /* the pair that won this round: one accent, semantic class so a theme change cannot drop it */
+    .fig-a-win { stroke: #8f7ad1; stroke-width: 2.2; }
+    .fig-a-tok1 { fill: #4d86b8; fill-opacity: .55; }
+    .fig-a-tok2 { fill: #b8703f; fill-opacity: .55; }
+    .fig-a-hold { stroke: #b8703f; stroke-width: 2; stroke-dasharray: 4 3; }
+  </style>
+  <text class="fig-cap" x="24" y="22">ONE CHARACTER, TWO TOKENS</text>
+  <text class="fig-s" x="24" y="40">a byte-level vocabulary can split a single UTF-8 character; a streamer must not print half of one</text>
+  <rect class="fig-a-tok1 fig-box" x="150" y="70" width="48" height="30" rx="3"/>
+  <text class="fig-unit" x="174.0" y="90" text-anchor="middle">F0</text>
+  <rect class="fig-a-tok1 fig-box" x="204" y="70" width="48" height="30" rx="3"/>
+  <text class="fig-unit" x="228.0" y="90" text-anchor="middle">9F</text>
+  <rect class="fig-a-tok1 fig-box" x="258" y="70" width="48" height="30" rx="3"/>
+  <text class="fig-unit" x="282.0" y="90" text-anchor="middle">A7</text>
+  <rect class="fig-a-tok2 fig-box" x="312" y="70" width="48" height="30" rx="3"/>
+  <text class="fig-unit" x="336.0" y="90" text-anchor="middle">8B</text>
+  <text class="fig-m" x="150" y="118">byte 0</text>
+  <text class="fig-m" x="312" y="118">byte 3</text>
+  <path class="fig-a-hold" d="M154 106 L154 126 L302 126 L302 106"/>
+  <text class="fig-m" x="154" y="144">id 123908: bytes 0-2 (blue)</text>
+  <text class="fig-m" x="314" y="144">id 233: byte 3 (orange)</text>
+  <text class="fig-m" x="24" y="186">after each id: what the decoder holds, and what it may hand to the terminal</text>
+  <line x1="24" y1="196" x2="790" y2="196" class="fig-box"/>
+  <text class="fig-m" x="24" y="216">id</text>
+  <text class="fig-m" x="150" y="216">hex bytes held</text>
+  <text class="fig-m" x="400" y="216">whole characters</text>
+  <text class="fig-m" x="590" y="216">may print</text>
+  <text class="fig-m" x="700" y="216">must hold</text>
+  <text class="fig-rank" x="24" y="244">123908</text>
+  <text class="fig-rank" x="150" y="244">F0 9F A7</text>
+  <text class="fig-rank" x="400" y="244">0</text>
+  <text class="fig-rank" x="590" y="244">nothing</text>
+  <text class="fig-rank" x="700" y="244">3 bytes</text>
+  <line x1="24" y1="254" x2="790" y2="254" class="fig-box" opacity="0.35"/>
+  <text class="fig-rank" x="24" y="278">233</text>
+  <text class="fig-rank" x="150" y="278">F0 9F A7 8B</text>
+  <text class="fig-rank" x="400" y="278">4</text>
+  <text class="fig-rank" x="590" y="278">the character</text>
+  <text class="fig-rank" x="700" y="278">0 bytes</text>
+  <line x1="24" y1="288" x2="790" y2="288" class="fig-box" opacity="0.35"/>
+  <text class="fig-m" x="24" y="318">Rule: print only the longest prefix that ends on a character boundary; keep the rest until the next id arrives.</text>
+</svg>

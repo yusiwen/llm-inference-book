@@ -667,6 +667,17 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "tokenizer": ("scripts/tok.py",
+                  "encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, "
+                  "and decodes the ids back; the ids are compared one by one against the reference "
+                  "tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model "
+                  "family's own `tokenizer.json`)",
+                  "exact id equality on every fixture string; nothing here is averaged"),
+    "tokenizer-witness": ("scripts/tok-check.py",
+                          "runs the model family's reference tokenizer on the same fixtures and compares "
+                          "ids with the book's instrument",
+                          "15 of 15 fixtures agree; a mismatch is a failure, not a statistic"),
+
     # facts stem -> (script, what it measures, statistic)
     "gguf-qwen2.5-0.5b": ("scripts/gguf-inspect.py",
                           "parses the file: header, every metadata key, every tensor record, and the byte "
@@ -857,7 +868,131 @@ def render_mask_effect(f):
             f"the weight moves it in the fourth decimal place."]
 
 
+
+def _cell(s):
+    """A markdown table cell: pipes become \\| and newlines become spaces."""
+    return str(s).replace("|", "\\|").replace("\n", " ")
+
+
+def render_tok_vocab(f):
+    """Chapter 11: what the file itself declares about its tokenizer."""
+    g = f["gguf"]
+    rows = [
+        ("Tokens in the vocabulary", f"{g['tokens']:,}"),
+        ("Merges", f"{g['merges']:,}"),
+        ("Single-byte tokens", f"{g['byte_tokens']}"),
+        ("Tokens declared special", f"{g['n_special']:,}"),
+        ("`tokenizer.ggml.model`", f"`{g['model']}`"),
+        ("`tokenizer.ggml.pre`", f"`{g['pre']}`"),
+        ("Normalizer", "not recorded in the file"),
+    ]
+    out = ["| Quantity | Value |", "|---|---|"]
+    out += [f"| {a} | {b} |" for a, b in rows]
+    return out
+
+
+def render_tok_fixtures(f):
+    """Chapter 11: the fixture set, with the ids this instrument produced."""
+    out = ["| Fixture | Text (escaped) | Bytes | Ids | Count |", "|---|---|---|---|---|"]
+    for x in f["fixtures"]:
+        ids = ", ".join(str(i) for i in x["ids"][:10]) + (" ..." if x["n_ids"] > 10 else "") if x["ids"] else "-"
+        shown = x["text"] if len(x["text"]) <= 24 else f"{x['text'][:8]}... ({len(x['text'])} chars)"
+        out.append(f"| {x['name']} | `{_cell(shown)}` | {x['bytes']} | `{ids}` | {x['n_ids']} |")
+    return out
+
+
+def render_tok_columns(f):
+    """Chapter 11: the same string through three passes - raw BPE, NFC, then the engine (NFC + specials)."""
+    out = ["| Fixture | No normalizer | NFC first | NFC + declared specials |", "|---|---|---|---|"]
+    for x in f["fixtures"]:
+        if not (x["nfc_changes_ids"] or x["specials_change_ids"]):
+            continue
+        a = ", ".join(map(str, x["ids_raw"]))
+        b = ", ".join(map(str, x["ids_nfc"]))
+        c = ", ".join(map(str, x["ids"]))
+        out.append(f"| {x['name']} | `{a}` | `{b}` | `{c}` |")
+    out.append("")
+    out.append(f"{len(f['summary']['engine_vs_raw'])} of {f['summary']['fixtures']} fixtures change ids "
+               f"between the raw pass and the engine's pass.")
+    return out
+
+
+def render_tok_specials(f):
+    """Chapter 11: the token_type histogram, which is what makes a token special."""
+    g = f["gguf"]
+    names = {"1": "normal (text the splitter may produce)", "3": "control", "4": "user-defined",
+             "5": "unused", "6": "byte"}
+    out = ["| `token_type` | Meaning | Count |", "|---|---|---|"]
+    for k, v in sorted(g["token_type_counts"].items(), key=lambda kv: -kv[1]):
+        out.append(f"| {k} | {names.get(k, 'other')} | {int(v):,} |")
+    out.append("")
+    out.append("| Token | Id | Type |")
+    out.append("|---|---|---|")
+    for s in g["special_tokens"][:6]:
+        out.append(f"| `{_cell(s['token'])}` | {s['id']} | {s['type']} |")
+    return out
+
+
+def render_tok_holdback(f):
+    """Chapter 11: one character, two tokens, and what a streamer may print."""
+    h = f["holdback"]
+    out = [f"`{h['text']}` encodes to `{h['ids']}` - one character, {len(h['ids'])} tokens.", "",
+           "| Id | Bytes so far | Whole UTF-8 characters | Bytes held back | May print |",
+           "|---|---|---|---|---|"]
+    for r in h["rows"]:
+        may = "nothing" if r["held_back"] else "the character"
+        out.append(f"| {r['id']} | {r['bytes']} | {r['whole']} | {r['held_back']} | {may} |")
+    return out
+
+
+def render_tok_merges(f):
+    """Chapter 11: the merge loop on one piece, with the rank that won each round."""
+    out = ["| Round | Pair joined | Rank | Piece after |", "|---|---|---|---|"]
+    for r in f["merge_trace"]:
+        units = "`" + " ".join(u.replace("\u0120", "_") for u in r["units"]) + "`"
+        if r["round"] == 0:
+            out.append(f"| 0 | - | - | {units} |")
+        else:
+            a, b = r["pair"][0].replace("\u0120", "_"), r["pair"][1].replace("\u0120", "_")
+            out.append(f"| {r['round']} | `{a}` + `{b}` | {r['rank']:,} | {units} |")
+    return out
+
+
+def render_tok_roundtrip(f):
+    """Chapter 11: what decode(encode(x)) gives back, per fixture - the round trip is not the identity."""
+    out = ["| Fixture | Text (escaped) | Ids | Decodes to | Same? |", "|---|---|---|---|---|"]
+    for x in f["fixtures"]:
+        if x["name"] in ("long",):
+            continue
+        out.append(f"| {x['name']} | `{_cell(x['text'])}` | {x['n_ids']} id(s) | `{_cell(x['decoded'])}` | "
+                   f"{'yes' if x['roundtrip_same'] else '**no**'} |")
+    return out
+
+
+def render_tok_witness(f):
+    """Chapter 11: the witness - the reference implementation's own numbers and its verdict on every fixture."""
+    w, a = f["witness"], f["answer"]
+    out = [f"| Quantity | `{w['file']}` |", "|---|---|",
+           f"| Vocabulary entries | {w['vocab']:,} |",
+           f"| Merges | {w['merges']:,} |",
+           f"| Added tokens | {w['added_tokens']} |",
+           f"| Normalizer | `{w['normalizer']}` |",
+           f"| Pre-tokenizer starts with | `{w['pre_tokenizer']}` |",
+           f"| Tool | `{w['tool']}` |",
+           "",
+           f"Compared {a['compared']} fixture strings: **{a['agree']} agree**."]
+    return out
+
+
 BLOCKS = {
+    "tok-vocab": render_tok_vocab,
+    "tok-fixtures": render_tok_fixtures,
+    "tok-columns": render_tok_columns,
+    "tok-specials": render_tok_specials,
+    "tok-holdback": render_tok_holdback,
+    "tok-merges": render_tok_merges,
+    "tok-witness": render_tok_witness,
+    "tok-roundtrip": render_tok_roundtrip,
     "anatomy": render_anatomy,
     "agreement": render_agreement,
     "error": render_error,

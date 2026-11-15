@@ -19,6 +19,8 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `kquant-check` | `scripts/kquant-check.py` | decodes K-quant super-blocks from adversarial random bytes, from real weights, and from the format's own packing | not machine-dependent | - | bit-exact comparisons, exhaustive over the blocks sampled |
 | `threadbench` | `scripts/threadbench.c` | sweeps thread count, batch size, spawn-per-call against a pool, and two write layouts on one matrix | Apple M4 Pro (arm64) and 11th Gen Intel(R) Core(TM) i7-11700B @ 3.20GHz (x86_64) | per machine | median of the runs per machine, with the range where the runs disagree |
+| `tokenizer-witness` | `scripts/tok-check.py` | runs the model family's reference tokenizer on the same fixtures and compares ids with the book's instrument | not machine-dependent | - | 15 of 15 fixtures agree; a mismatch is a failure, not a statistic |
+| `tokenizer` | `scripts/tok.py` | encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, and decodes the ids back; the ids are compared one by one against the reference tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model family's own `tokenizer.json`) | arm64, Darwin 27.2.0 | per machine | exact id equality on every fixture string; nothing here is averaged |
 | `vecops-witness` | `scripts/vecops-check.py` | recomputes every op in numpy f64 from the C program's own fixture bytes | not machine-dependent | - | max relative difference, one pass |
 | `vecops` | `scripts/vecops.c` | computes each vector op the way an engine writes it, reports the error against an f64 oracle, and times the op | Apple M4 Pro | 3 | median of three runs for timing; the errors are deterministic and identical across runs |
 
@@ -130,6 +132,30 @@ uv run --with gguf python scripts/kquant-check.py --real facts/gguf-qwen2.5-0.5b
 
 ```bash
 clang -O2 -pthread -o threadbench scripts/threadbench.c -lm  (arm); gcc -O3 -mavx2 -mfma -mf16c -pthread -o threadbench scripts/threadbench.c -lm  (x86); then each machine runs ./threadbench q4_0.gguf 150590816 896 151936 --json ...
+```
+
+### tokenizer-witness
+
+`scripts/tok-check.py` - runs the model family's reference tokenizer on the same fixtures and compares ids with the book's instrument.
+
+- **Machine**: not machine-dependent
+- **Runs**: -; 15 of 15 fixtures agree; a mismatch is a failure, not a statistic
+- **Raw numbers**: `facts/tokenizer-witness.json`
+
+```bash
+(no command recorded)
+```
+
+### tokenizer
+
+`scripts/tok.py` - encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, and decodes the ids back; the ids are compared one by one against the reference tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model family's own `tokenizer.json`).
+
+- **Machine**: arm64, Darwin 27.2.0
+- **Runs**: per machine; exact id equality on every fixture string; nothing here is averaged
+- **Raw numbers**: `facts/tokenizer.json`
+
+```bash
+python3 scripts/tok.py ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --out facts/tokenizer.json
 ```
 
 ### vecops-witness

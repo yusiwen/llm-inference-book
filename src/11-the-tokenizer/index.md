@@ -1,19 +1,47 @@
 # Chapter 11 · The Tokenizer
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: stub
+> - **Status**: draft
 > - **Build step S11**: A tokenizer that loads its vocabulary from the model file and encodes and decodes text exactly as the reference does, including the awkward cases.
-> - **Rule of this book**: This chapter is text to ids and back. What wraps those ids into a prompt (templates, special tokens) is Chapter 12; what turns logits into the next id is Chapter 13.
+> - **Rule of this book**: This chapter is text to ids and back. What wraps those ids into a prompt (templates, special tokens in a conversation) is Chapter 12; what turns logits into the next id is Chapter 13.
 
 ## First, the gist
 
-A model does not see characters, it sees integer ids from a fixed vocabulary, and the split is learned. **BPE** (byte-pair encoding) is the usual algorithm: start from bytes, repeatedly merge the most frequent adjacent pair into a new symbol, and keep the merge list. That is the easy half. The hard half is that every model family disagrees about what text it feeds the merge list - how spaces are marked, whether a normalizer runs first, which token is special - and those disagreements are recorded in the model file, not in the algorithm. An engine that gets any of them wrong produces token ids that look plausible and answers that are subtly broken.
+A model never sees characters. It sees integers, each one an index into a fixed vocabulary that the training
+run learned at the same time as the weights. Turning text into those integers is **tokenization**, and it
+happens entirely outside the network: a tokenizer is a lookup program with a merge table, and if it disagrees
+with the one used at training time, the model is being handed ids that mean something else.
+
+The usual algorithm is **byte-pair encoding** (BPE). Start from bytes, treat every byte as a one-character
+symbol, then repeatedly join the pair that the file's merge table ranks lowest. Each join turns two symbols
+into one, so a word becomes a short sequence of vocabulary entries, and the final symbols are looked up as ids.
+That is a twenty-line loop, and this chapter shows the engine's version of it.
+
+Everything hard about tokenization is around that loop. Which text goes into it - because a normalizer may
+rewrite the input first. Where it may not cross - because a pre-tokenizer cuts the text into pieces, and no
+merge may span a cut, which is why `" hello"` and `"hello"` are different tokens despite sharing five
+characters. What gets a special id of its own rather than being tokenized as text. And what a byte-level
+vocabulary does when it meets a character no merge ever produced.
+
+None of those decisions is in the algorithm. They are recorded in the model file - partly. Chapter 2's
+metadata map showed the keys; this chapter reads what they mean, measures them on one real file, and shows
+the parts the file leaves out and the engine must therefore decide from context.
+
+Every number below was produced twice: once by this book's instrument reading the GGUF
+(`scripts/tok.py`), and once by the reference implementation in the model family's own `tokenizer.json`,
+driven by HuggingFace `tokenizers` (`scripts/tok-check.py`). The two agree on every fixture string; if they
+had not, this chapter would not exist in this form.
 
 ## What you'll be able to do
 
-- Load a BPE vocabulary and merges from the model file and encode text with no external tokenizer library.
-- Identify which pre-tokenization family a file declares, and what each family does to spaces, accents and bytes.
-- Explain why a special token is declared by the file rather than inferred from its name, and what a missing byte token means.
+- Load a BPE vocabulary and merge table from the model file and encode text with no tokenizer library.
+- Identify which pre-tokenization family a file declares, and what each family does to spaces, digits and
+  bytes.
+- Explain why the same visible text can produce two different id sequences, and which of the model's own
+  fields decides that.
+- Explain why a special token is declared by the file rather than inferred from its spelling, and what a
+  missing byte token would mean.
+- Say what a decode round trip does and does not prove.
 
 ## Lessons
 
@@ -23,21 +51,537 @@ A model does not see characters, it sees integer ids from a fixed vocabulary, an
 - [ ] 4. Special tokens, byte fallback, and unknown characters that must not be silently dropped
 - [ ] 5. Decoding is not the inverse: what round-tripping can and cannot prove
 
+### Lesson 1 · Vocabulary, merges, and the merge loop on a real sentence
+
+Two arrays in the file decide almost everything:
+
+<!-- facts: tokenizer.tok-vocab -->
+| Quantity | Value |
+|---|---|
+| Tokens in the vocabulary | 151,936 |
+| Merges | 151,387 |
+| Single-byte tokens | 256 |
+| Tokens declared special | 293 |
+| `tokenizer.ggml.model` | `gpt2` |
+| `tokenizer.ggml.pre` | `qwen2` |
+| Normalizer | not recorded in the file |
+<!-- /facts -->
+
+`tokens` is the vocabulary: a list of 151,936 strings, and an id is a position in that list. `merges` is the
+merge table: 151,387 lines, each two symbols that were joined during training, **in the order they were
+learned**. That order is the whole table - a merge's rank is its line number, and the loop always takes the
+lowest-ranked pair currently adjacent.
+
+Before the loop runs, one step has to happen: **byte-level encoding**. The vocabulary is a list of strings, and
+raw byte values 0x00 to 0xFF are not all printable, so every byte is mapped to a printable character first -
+`!` stays `!`, and a space becomes `\u0120` (which renders as an `G`-like mark and is why token dumps look
+full of them). The vocabulary was built on those marks, so the encoder must produce them too. The map is a
+fixed permutation of 256 characters, generated by the same twenty lines in every implementation since GPT-2.
+
+Then the loop, on one piece:
+
+<!-- facts: tokenizer.tok-merges -->
+| Round | Pair joined | Rank | Piece after |
+|---|---|---|---|
+| 0 | - | - | `_ h e l l o` |
+| 1 | `e` + `l` | 45 | `_ h el l o` |
+| 2 | `_` + `h` | 49 | `_h el l o` |
+| 3 | `l` + `o` | 129 | `_h el lo` |
+| 4 | `el` + `lo` | 4,535 | `_h ello` |
+| 5 | `_h` + `ello` | 23,555 | `_hello` |
+<!-- /facts -->
+
+Six characters, five rounds, one token. Note the second column: round 1 joins `e`+`l` at rank 45 even though
+`l`+`l` sits next to it and looks more obvious. Rank 45 beats whatever rank `l`+`l` has (or it has none), and
+that is the entire decision rule - no frequency counting at encode time, no lookahead, no scoring.
+
+<figure class="book-figure">{{#include ../figures/11-merge-loop.svg}}</figure>
+
+*Figure 11.1 - the merge loop on the marks of `" hello"`. Each round joins the pair with the lowest rank in the merge table; the violet outline marks the pair that won, and the count of units falls from six to one. The leading space is drawn as `_` because the byte-level mark for 0x20 is not printable in this font.*
+
+The engine's loop, in full:
+
+<!-- code: src/tokenizer.rs::bpe_encode@88ffa5d -->
+```rust
+fn bpe_encode(&self, token: &str) -> Vec<u32> {
+    // Split into characters
+    let mut word: Vec<String> = token.chars().map(|c| c.to_string()).collect();
+
+    loop {
+        // Find the best merge (lowest rank)
+        let mut best_rank: Option<usize> = None;
+        let mut best_idx: Option<usize> = None;
+
+        for i in 0..word.len().saturating_sub(1) {
+            let pair = (word[i].clone(), word[i + 1].clone());
+            if let Some(&rank) = self.merges.get(&pair) {
+                if best_rank.is_none() || rank < best_rank.unwrap() {
+                    best_rank = Some(rank);
+                    best_idx = Some(i);
+                }
+            }
+        }
+
+        if best_idx.is_none() {
+            break;
+        }
+
+        // Merge at best_idx
+        let idx = best_idx.unwrap();
+        let merged = format!("{}{}", word[idx], word[idx + 1]);
+        word.splice(idx..=idx + 1, std::iter::once(merged));
+    }
+```
+<!-- /code -->
+
+That is O(n^2) in the piece length and it is the production path, not a reference kept for tests: pieces are
+short (one word, one run of digits, one symbol cluster), so n is small and the constant matters more than the
+asymptote. The piece is then looked up, and anything not in the vocabulary is emitted byte by byte - which is
+Lesson 4's subject.
+
+Two fixtures make the point that a leading space is part of the token, not decoration:
+
+<!-- facts: tokenizer.tok-fixtures -->
+| Fixture | Text (escaped) | Bytes | Ids | Count |
+|---|---|---|---|---|
+| empty | `` | 0 | `-` | 0 |
+| one space | ` ` | 1 | `220` | 1 |
+| plain word | `hello` | 5 | `14990` | 1 |
+| leading space | ` hello` | 6 | `23811` | 1 |
+| two spaces | `hello  world` | 12 | `14990, 220, 1879` | 3 |
+| precomposed | `H\xe9llo` | 6 | `39, 18503, 385` | 3 |
+| combining mark | `He\u0301llo` | 7 | `39, 18503, 385` | 3 |
+| cjk | `\u4e2d\u6587` | 6 | `104811` | 1 |
+| emoji | `\U0001f642` | 4 | `145080` | 1 |
+| newlines | `line\n\nbreak` | 11 | `1056, 271, 8960` | 3 |
+| digits | `1234567890` | 10 | `16, 17, 18, 19, 20, 21, 22, 23, 24, 15` | 10 |
+| contraction | `don't` | 5 | `15007, 944` | 2 |
+| special text | `<\|im_start\|>system` | 18 | `151644, 8948` | 2 |
+| tab | `a\tb` | 3 | `64, 2233` | 2 |
+| long | `aaaaaaaa... (200 chars)` | 200 | `69440, 69440, 69440, 69440, 69440, 69440, 69440, 69440, 69440, 69440 ...` | 25 |
+<!-- /facts -->
+
+`hello` is one id, `" hello"` is a different single id, and both are one token. The vocabulary contains a
+version with the leading space baked in because that is what the training text looked like, and the merge loop
+cannot produce the space-prefixed form from the bare one: the marks are already different at position zero.
+This is the class of bug that makes an engine "work" and still be wrong, and it is invisible unless you compare
+ids.
+
+### Lesson 2 · Pre-tokenization families: one algorithm, many dialects
+
+Before the merge loop, the text is cut into pieces that no merge may cross. The cut is one regular expression,
+and the file names which one to use in a single string: `tokenizer.ggml.pre`, which for this model is
+`qwen2`. The expression itself is not in the file. This is the first of the two things the file leaves out,
+and the engine carries it as an enum of dialects:
+
+<!-- code: src/tokenizer.rs::PreTokenizer@88ffa5d -->
+```rust
+pub enum PreTokenizer {
+    /// `qwen2` (aliases: `deepseek-r1-qwen`): Qwen2 / Qwen2.5 / Qwen3.
+    Qwen2,
+    /// `qwen35`: Qwen3.5 — letter runs also consume Unicode combining marks.
+    Qwen35,
+    /// `llama-bpe` (aliases: `llama3`, `llama-v3`): Llama 3.x — the letter and
+    /// symbol arms are the Qwen2 ones, but digits group **up to three at a
+    /// time** (`\p{N}{1,3}`).
+    LlamaBpe,
+    // ...
+/// `jina-v1-en`: the **plain GPT-2** rule —
+/// `(?i:'s|'t|'re|'ve|'m|'ll|'d)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)`.
+/// A piece may start with **one space** (the other rules allow a preceding
+/// non-letter instead), digits group without limit, the symbol arm has no
+/// trailing-newline tail, and there is no `\s*[\r\n]+` arm.
+```
+<!-- /code -->
+
+Read `JinaV1En`'s doc comment carefully: it is the GPT-2 pattern, spelled out. That is the dialect most
+tutorials teach, and it is **not** the one this model uses. The `qwen2` rule it does use is seven alternatives,
+tried left to right at each position:
+
+| Branch | What it matches |
+|---|---|
+| `(?i:'s\|'t\|'re\|'ve\|'m\|'ll\|'d)` | a contraction suffix, case-insensitively |
+| `[^\r\n\p{L}\p{N}]?\p{L}+` | optionally one non-letter mark, then a run of letters |
+| `\p{N}` | **one** digit |
+| ` ?[^\s\p{L}\p{N}]+[\r\n]*` | optional space, a run of symbols, then any newlines |
+| `\s*[\r\n]+` | a newline run, with the spaces before it |
+| `\s+(?!\S)` | whitespace not followed by more text (the trailing spaces) |
+| `\s+` | any other whitespace |
+
+Three branches are worth proving rather than believing, and the fixture table proves all three:
+
+- **Digits split one at a time** (`\p{N}`, not `\p{N}+`): `1234567890` is ten ids. Compare Llama 3's rule,
+  which is the same pattern with `\p{N}{1,3}` - the same string would be four ids there. Two files, two
+  id sequences, same text.
+- **The second space of a double space gets its own token**: `hello  world` is `14990, 220, 1879`. The
+  `\s+(?!\S)` branch matches the first space plus... nothing, because it must not be followed by non-space,
+  so the split falls out as one space per piece for the trailing run. The third id, `1879`, is `" world"`
+  with the leading space included.
+- **The leading space joins the word** (`[^\r\n\p{L}\p{N}]?\p{L}+`): `" hello"` is one piece rather than a
+  space plus `hello`, which is why it is one id (23,811) and not `220` followed by `14,990`.
+
+Nothing about that is in the algorithm. The dialects are data, and a file that names a dialect the engine does
+not implement has to be refused rather than approximated - an approximation here produces plausible ids and a
+model that rambles.
+
+The `pre` key only matters inside the byte-level BPE engine, which is the second half of the picture: the file
+also names an *engine* in `tokenizer.ggml.model`, and the engine is what decides whether `pre` participates at
+all.
+
+### Lesson 3 · Normalization before splitting: NFC
+
+Here is a question the format answers badly. The file records no normalizer. Yet the reference tokenizer for
+this model declares one - `NFC` - and a tokenizer that skips it produces different ids for text that looks
+identical on screen.
+
+**NFC** is Unicode's composed form: `e` followed by a combining acute accent is two code points, and NFC
+replaces that pair with the single code point `e-acute`. The text renders the same either way; the bytes differ,
+and so do the marks the merge loop sees.
+
+<!-- facts: tokenizer.tok-columns -->
+| Fixture | No normalizer | NFC first | NFC + declared specials |
+|---|---|---|---|
+| combining mark | `1519, 53839, 75, 385` | `39, 18503, 385` | `39, 18503, 385` |
+| special text | `27, 91, 318, 4906, 91, 29, 8948` | `27, 91, 318, 4906, 91, 29, 8948` | `151644, 8948` |
+
+2 of 15 fixtures change ids between the raw pass and the engine's pass.
+<!-- /facts -->
+
+Four ids become three, and the three are exactly the ids of the precomposed string from the fixture table
+(`39, 18503, 385`). Without the normalizer, `Héllo` typed with a combining accent is a different word to the
+model than `Héllo` typed with a precomposed one - a difference the user cannot see and cannot report.
+
+The engine decides this from the pre-tokenizer family, because the file does not say:
+
+<!-- code: src/tokenizer.rs::Tokenizer::applies_nfc@88ffa5d -->
+```rust
+/// Whether the input is normalized to NFC: true when the file's
+/// pre-tokenizer rule declares one (ADR-0044). SentencePiece has no rule, and
+/// the SPM families this engine accepts declare none.
+pub fn applies_nfc(&self) -> bool {
+    self.pre.map_or(false, |pre| pre.applies_nfc())
+}
+
+/// The text this tokenizer actually tokenizes: NFC when the rule declares it,
+/// the input itself otherwise.
+fn normalized<'a>(&self, text: &'a str) -> std::borrow::Cow<'a, str> {
+    if self.applies_nfc() {
+        nfc::nfc(text)
+    } else {
+        std::borrow::Cow::Borrowed(text)
+    }
+}
+```
+<!-- /code -->
+
+`Cow` is the point of the second function's signature: the common case is text that is already normalized, and
+copying every prompt to satisfy a normalizer that will not change it is a waste the type system can refuse. The
+normalizer itself is a hand-written implementation - decomposition tables, canonical ordering by combining
+class, then recomposition - with a fast test in front of it:
+
+<!-- code: src/tokenizer/nfc.rs::needs_normalization@88ffa5d -->
+```rust
+/// Whether `input` can change under NFC at all: a character that decomposes
+/// (canonically), a combining mark that may need reordering, a conjoining jamo
+/// that may compose, or a character that can be the second half of a canonical
+/// composition — the last matters because Indic vowel signs compose with a
+/// combining class of 0, so neither of the first two tests sees them. A
+/// conservative test: a `true` answer only means the full pipeline runs.
+fn needs_normalization(input: &str) -> bool {
+    input.chars().any(|c| {
+        let cp = c as u32;
+        decomposition_of(cp).is_some()
+            || combining_class(cp) != 0
+            || is_hangul_jamo(cp)
+            || is_composition_second(cp)
+    })
+}
+```
+<!-- /code -->
+
+Four conditions, and the fourth is the one a from-scratch implementation misses: a character can participate in
+a composition without decomposing and without being a combining mark - an Indic vowel sign has combining class
+zero, so the first two tests say "nothing to do" and the text is silently left unnormalized. The comment calls
+the test conservative on purpose: a false positive costs one pass, a false negative costs a wrong token.
+
+If you implement this chapter in Rust, do not write your own normalization tables. The `unicode-normalization`
+crate is the standard implementation and it is not a dependency worth avoiding; what the engine gained by
+hand-writing it is visible only in `#132`'s ADRs, and the reason is the project's no-new-dependencies rule,
+not a claim that hand-written tables are better.
+
+### Lesson 4 · Special tokens, byte fallback, and characters that must not vanish
+
+A vocabulary has more than text in it. The file classifies every entry with `tokenizer.ggml.token_type`, and the
+histogram is what "declared special" means:
+
+<!-- facts: tokenizer.tok-specials -->
+| `token_type` | Meaning | Count |
+|---|---|---|
+| 1 | normal (text the splitter may produce) | 151,643 |
+| 5 | unused | 271 |
+| 3 | control | 20 |
+| 4 | user-defined | 2 |
+
+| Token | Id | Type |
+|---|---|---|
+| `<\|endoftext\|>` | 151643 | control |
+| `<\|im_start\|>` | 151644 | control |
+| `<\|im_end\|>` | 151645 | control |
+| `<\|object_ref_start\|>` | 151646 | control |
+| `<\|object_ref_end\|>` | 151647 | control |
+| `<\|box_start\|>` | 151648 | control |
+<!-- /facts -->
+
+293 of the 151,936 entries are special: the 20 control tokens, the 2 user-defined ones, and the 271 unused
+placeholders the trainer reserved. 151,643 + 293 = 151,936, so the split is exact.
+
+That accounting is also the cleanest thing to check on any file you meet, because the two vocabularies agree
+where it matters and disagree where it does not: the GGUF's 151,643 normal entries are exactly the reference
+`tokenizer.json`'s 151,643 vocabulary entries, its 20 control and 2 user-defined tokens are that file's 22
+added tokens, and its 271 unused entries do not exist there at all - they are slots the writer reserved and
+never filled. A tokenizer that reads the GGUF and a tokenizer that reads `tokenizer.json` therefore have the
+same text vocabulary and a different number of ids, which is precisely the kind of difference that makes two
+programs disagree about a prompt while both being right about their own file.
+
+Why does it matter? Because a special token is matched **before** the merge loop, and it contributes its own
+id, not its characters:
+
+<!-- facts: tokenizer-witness.tok-witness -->
+| Quantity | `tok-qwen2.5-0.5b.json` |
+|---|---|
+| Vocabulary entries | 151,643 |
+| Merges | 151,387 |
+| Added tokens | 22 |
+| Normalizer | `NFC` |
+| Pre-tokenizer starts with | `Split` |
+| Tool | `tokenizers 0.23.3` |
+
+Compared 15 fixture strings: **15 agree**.
+<!-- /facts -->
+
+The one fixture that shows the difference is `"<|im_start|>system"`: seven ids as plain text, two as the engine
+encodes it (`151644, 8948`). Seven ids would be a prompt that reads like markup to the model and a session that
+behaves mysteriously; two is a role boundary. This is ADR-0043's whole content - *a special token is declared by
+the file, never inferred from its name* - and it is why the table above, not a string comparison, decides.
+
+The engine scans for specials first, earliest position wins:
+
+<!-- code: src/tokenizer.rs::Tokenizer::encode@88ffa5d -->
+```rust
+pub fn encode(&self, text: &str) -> Vec<u32> {
+    let normalized = self.normalized(text);
+    let text: &str = normalized.as_ref();
+    let mut result = Vec::new();
+    let mut remaining = text;
+    // SentencePiece prefixes the first raw-text segment (and every segment
+    // after a special token) with a space — llama.cpp's `is_prev_special`,
+    // which starts `true` (`src/llama-vocab.cpp:3413`).
+    let mut prev_special = true;
+
+    loop {
+        // Find the earliest position where any special token starts.
+        let mut earliest: Option<(usize, u32, usize)> = None; // (byte_pos, id, byte_len)
+        'scan: for (ci, ch) in remaining.char_indices() {
+            if let Some(group) = self.special_by_first.get(&ch) {
+                let rest = &remaining[ci..];
+                for (pat, id) in group {
+                    if rest.starts_with(pat.as_str()) {
+                        earliest = Some((ci, *id, pat.len()));
+                        break 'scan; // group is longest-first; earliest char wins
+                    }
+                }
+            }
+        }
+
+        if let Some((pos, id, len)) = earliest {
+            // Encode text before the special token
+            if pos > 0 {
+                result.extend(self.encode_text(&remaining[..pos], prev_special));
+            }
+            result.push(id);
+            remaining = &remaining[pos + len..];
+            prev_special = true;
+```
+<!-- /code -->
+
+Now the other half: what happens to a character that the merge loop cannot build. In a byte-level
+vocabulary the answer is arithmetic - all 256 bytes have tokens, so any string can be represented exactly - and
+the engine verifies that at load time and refuses to run without it:
+
+<!-- code: src/tokenizer.rs::byte_fallback@88ffa5d -->
+```rust
+/// One token per byte of a byte-encoded piece.
+///
+/// `Tokenizer::load` verified that every one of the 256 byte tokens exists,
+/// so a miss here is an invariant violation and aborts with the value —
+/// the engine never substitutes a wrong id.
+fn byte_fallback(&self, piece: &str) -> Vec<u32> {
+    let mut out = Vec::with_capacity(piece.len());
+    for c in piece.chars() {
+        let single = c.to_string();
+        match self.vocab.get(&single) {
+            Some(&id) => out.push(id),
+            None => panic!(
+                "tokenizer invariant violated: no token for byte-encoded character {c:?} \
+                 (U+{:04X}); Tokenizer::load verifies all 256 byte tokens",
+                c as u32
+            ),
+        }
+    }
+    out
+}
+```
+<!-- /code -->
+
+A `panic!` in a tokenizer looks like an overreaction until you compare it with the alternatives. Returning a
+zero, or a best guess, or dropping the character, all produce text the model sees and the user did not write -
+and a chat that quietly loses a combining mark or a stray byte is much harder to debug than a crash on load.
+The invariant is checked once, at load, so the panic is unreachable in practice; that is the point of stating
+it as a panic rather than as a fallback.
+
+A file that declares no vocabulary at all is the third case, and the engine refuses text tokenization rather
+than inventing ids for it. The `decode_checked` entry point spells the refusal out:
+
+<!-- code: src/tokenizer.rs::Tokenizer::decode_checked@88ffa5d -->
+```rust
+pub fn decode_checked(&self, ids: &[u32]) -> Result<Vec<u8>, String> {
+    if self.model == TokenizerModel::None {
+        return Err(format!(
+            "this file declares `tokenizer.ggml.model = {}` (a vocabulary-less model): its ids \
+             have no text representation to decode",
+            "none/no_vocab"
+        ));
+    }
+    Ok(self.decode_bytes(ids))
+}
+```
+<!-- /code -->
+
+### Lesson 5 · Decoding is not the inverse
+
+Decoding looks trivial: each id names a string, concatenate the strings, undo the byte-level map, interpret the
+bytes as UTF-8. Two things make it not the inverse of encoding.
+
+The first is the normalizer. `encode` may rewrite the text, so `decode(encode(x))` returns the *normalized*
+text, not `x`. Fourteen of the fifteen fixtures come back unchanged; the combining-mark one comes back as its
+precomposed form, because NFC changed it on the way in:
+
+<!-- facts: tokenizer.tok-roundtrip -->
+| Fixture | Text (escaped) | Ids | Decodes to | Same? |
+|---|---|---|---|---|
+| empty | `` | 0 id(s) | `` | yes |
+| one space | ` ` | 1 id(s) | ` ` | yes |
+| plain word | `hello` | 1 id(s) | `hello` | yes |
+| leading space | ` hello` | 1 id(s) | ` hello` | yes |
+| two spaces | `hello  world` | 3 id(s) | `hello  world` | yes |
+| precomposed | `H\xe9llo` | 3 id(s) | `H\xe9llo` | yes |
+| combining mark | `He\u0301llo` | 3 id(s) | `H\xe9llo` | **no** |
+| cjk | `\u4e2d\u6587` | 1 id(s) | `\u4e2d\u6587` | yes |
+| emoji | `\U0001f642` | 1 id(s) | `\U0001f642` | yes |
+| newlines | `line\n\nbreak` | 3 id(s) | `line\n\nbreak` | yes |
+| digits | `1234567890` | 10 id(s) | `1234567890` | yes |
+| contraction | `don't` | 2 id(s) | `don't` | yes |
+| special text | `<\|im_start\|>system` | 2 id(s) | `<\|im_start\|>system` | yes |
+| tab | `a\tb` | 2 id(s) | `a\tb` | yes |
+<!-- /facts -->
+
+That is correct behaviour - the normalizer is part of the contract - but it means a round-trip test is not a
+test of the tokenizer. It proves your decode is consistent with your encoder. It says nothing about whether
+either matches the reference, and it cannot catch a pre-tokenizer difference at all, because both halves of
+your own implementation share it.
+
+The second reason decoding is not trivial is streaming. Bytes arrive one id at a time, and a single character
+can be split across two ids - this chapter's emoji fixture is exactly that, four bytes in two tokens:
+
+<!-- facts: tokenizer.tok-holdback -->
+`\U0001f9cb` encodes to `[123908, 233]` - one character, 2 tokens.
+
+| Id | Bytes so far | Whole UTF-8 characters | Bytes held back | May print |
+|---|---|---|---|---|
+| 123908 | 3 | 0 | 3 | nothing |
+| 233 | 4 | 4 | 0 | the character |
+<!-- /facts -->
+
+<figure class="book-figure">{{#include ../figures/11-utf8-holdback.svg}}</figure>
+
+*Figure 11.2 - one character, two tokens. After the first id there are three bytes and zero whole characters, so a streamer must print nothing and hold all three; the second id completes the sequence. The rule is the last line: print the longest prefix that ends on a character boundary, keep the rest.*
+
+A decoder that hands its bytes to the terminal as they arrive prints three invalid bytes, and the terminal shows
+replacement characters. The engine's holdback is a byte scanner and nothing more:
+
+<!-- code: src/tokenizer.rs::complete_utf8_prefix_len@88ffa5d -->
+```rust
+/// character boundary.
+///
+/// Mirrors llama.cpp's `format_incomplete_utf8` holdback: when a multi-byte
+/// character is split across two tokens, the trailing bytes are kept until the
+/// character completes, so streamed output never contains U+FFFD.
+pub fn complete_utf8_prefix_len(bytes: &[u8]) -> usize {
+    let mut end = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        let b = bytes[i];
+        let len = if b < 0x80 {
+            1
+        } else if b & 0xE0 == 0xC0 {
+            2
+        } else if b & 0xF0 == 0xE0 {
+            3
+        } else if b & 0xF8 == 0xF0 {
+            4
+        } else {
+            1 // stray continuation byte: consume it as one unit
+        };
+        if i + len > bytes.len() {
+            break; // incomplete trailing character
+        }
+        i += len;
+        end = i;
+    }
+    end
+}
+```
+<!-- /code -->
+
+The leading byte of a UTF-8 sequence states its own length; `0b110xxxxx` is two bytes, `0b1110xxxx` three,
+`0b11110xxx` four. So the rule is: walk the bytes, stop at the first sequence that runs past the end, and return
+the offset of the last complete character. The `else` arm is not dead code - a stray continuation byte is a
+corrupt sequence, and treating it as one byte lets the decoder make progress instead of stalling forever on data
+it cannot parse.
+
+**How to test a tokenizer, then.** Not by decoding the model's answers: compare ids, one string at a time,
+against the reference. That is what this chapter's instrument does, and what the project does: fifteen strings,
+fifteen exact id comparisons, a mismatch is a failure with the string printed. A tokenizer bug that reaches you
+as a bad answer costs a week; a tokenizer bug that reaches you as a failing fixture costs a minute.
+
 ## Dialects seen in the wild
 
-| Family | Space handling | Normalizer | Special-token rule | Your implementation status |
+The file names one engine (`tokenizer.ggml.model`) and, inside the byte-level BPE engine, one pre-tokenizer
+family (`tokenizer.ggml.pre`). What each family does, and which of them this book measures:
+
+| Family | Engine / `pre` value | Space handling | What it does to digits | Measured here |
 |---|---|---|---|---|
-| GPT-2 style |  |  |  |  |
-| Llama-3 style |  |  |  |  |
-| SentencePiece / Unigram |  |  |  |  |
-| WordPiece |  |  |  |  |
-| vocabulary-less |  |  |  |  |
+| GPT-2 style | `gpt2` + `jina-v1-en` | one optional space joins the piece | one run, no limit | no - documented from the engine's enum |
+| Qwen2 style | `gpt2` + `qwen2` | one optional non-letter joins a letter run | one digit per id | **yes** - this model |
+| Llama-3 style | `gpt2` + `llama-bpe` | same as Qwen2 | up to three digits per id | no |
+| SentencePiece | `llama` | a leading U+2581 (the SPM space mark) is prefixed to each segment | whatever the scores prefer | no |
+| Unigram | `t5` | text is rewritten by a precompiled charsmap first | whichever segment wins the Viterbi walk | no |
+| WordPiece | `bert` | every word gets a phantom U+2581 prefix, greedy longest match | greedy longest match | no |
+| vocabulary-less | `none` / `no_vocab` | none - there are no text ids | refused at the checked entry points | no |
+
+One row of that table is measured on this model and the rest are read out of the engine's own documentation of
+each dialect. The distinction matters: an unmeasured row is a claim about what other people's tokenizers do, and
+the book marks it as such rather than dressing it in the authority of a number.
 
 ## Project
 
-**Build step S11 · the tokenizer conformance suite.** Build a fixture set of awkward strings: leading spaces, doubled spaces, non-ASCII, emoji, a lone combining mark, a string longer than the context. Compare your ids with the reference tokenizer's, one string at a time.
+**Build step S11 · the tokenizer conformance suite.** Build a fixture set of awkward strings - leading spaces,
+doubled spaces, non-ASCII, emoji, a lone combining mark, a string longer than the context - and compare your ids
+with the reference tokenizer's, one string at a time. The fifteen strings in this chapter are a starting point,
+not a standard; add the cases your own users type.
 
-Do not test by decoding the model's answers. Test ids directly; a tokenizer bug that shows up as a bad answer is a week of your life.
+Do not test by decoding the model's answers. Test ids directly. A tokenizer bug that shows up as a bad answer
+is a week of your life.
 
 ## Deliverable
 
@@ -54,14 +598,27 @@ Do not test by decoding the model's answers. Test ids directly; a tokenizer bug 
 ## Reading
 
 - code: `src/tokenizer.rs`, `src/tokenizer/nfc.rs` at the book's [pinned baseline](../appendix/baseline.md)
-- decisions: ADR-0042 (the tokenizer applies the model's declared NFC normalizer), ADR-0043 (a special token is declared by the file), ADR-0052 (vocabulary-less files refuse at the checked entry points)
+- decisions: ADR-0042 (the tokenizer applies the model's declared NFC normalizer), ADR-0043 (a special token
+  is declared by the file), ADR-0044 (the normalizer follows the pre-tokenizer family), ADR-0045 (the engine
+  dispatch is a match on `tokenizer.ggml.model`), ADR-0052 (vocabulary-less files refuse at the checked entry
+  points)
 - docs: `docs/CHAT-TEMPLATE-AND-TOKENIZER-DESIGN.md`
-- [bpe] Sennrich, Haddow and Birch, *Neural Machine Translation of Rare Words with Subword Units* (arXiv 2015, ACL 2016) - arXiv:1508.07909
-- [jm] Jurafsky and Martin, *Speech and Language Processing* (3rd edition draft) - no arXiv ID (book; the tokenization chapter)
+- [bpe] Sennrich, Haddow and Birch, *Neural Machine Translation of Rare Words with Subword Units*
+  (arXiv 2015, ACL 2016) - arXiv:1508.07909
+- [jm] Jurafsky and Martin, *Speech and Language Processing* (3rd edition draft) - no arXiv ID (book; the
+  tokenization chapter)
 
 ## Backfill
 
-- [ ] Question 1: Where does the time go? (compute-bound or bandwidth-bound, and how do I tell?)
-- [ ] Question 2: Why are the weights bytes instead of floats? (what quantization buys and costs)
-- [ ] Question 3: Where does the boundary between the engine and the device live? (graph, backend seam, dispatch)
-- [ ] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement)
+- [ ] Question 1: Why can the same visible text produce two id sequences? (normalizer, pre-tokenizer, and what the file does not record)
+- [ ] Question 2: Where does the algorithm end and the dialect begin? (one merge loop, one regex table)
+- [ ] Question 3: What must never be silent? (a missing byte token, an unsupported dialect, a special token inferred from its name)
+- [ ] Question 4: What does a round trip actually prove? (bytes survive, text may not)
+
+<!-- facts: tokenizer-witness.provenance -->
+*`scripts/tok-check.py`; runs the model family's reference tokenizer on the same fixtures and compares ids with the book's instrument; 15 of 15 fixtures agree; a mismatch is a failure, not a statistic. Raw numbers: `facts/tokenizer-witness.json`.*
+<!-- /facts -->
+
+<!-- facts: tokenizer.provenance -->
+*`scripts/tok.py`; encodes a fixture set of awkward strings from the vocabulary and merges inside the GGUF, and decodes the ids back; the ids are compared one by one against the reference tokenizer implementation (scripts/tok-check.py, HuggingFace `tokenizers` on the model family's own `tokenizer.json`); on **arm64, Darwin 27.2.0, python 3.15.2, regex 2026.11.9**; exact id equality on every fixture string; nothing here is averaged. Command: see [the provenance index](../appendix/provenance.md#tokenizer). Raw numbers: `facts/tokenizer.json`.*
+<!-- /facts -->
