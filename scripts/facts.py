@@ -667,6 +667,15 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "alloc": ("scripts/alloc.py",
+              "runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the "
+              "graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the "
+              "end, views extending their parent); charges the transient nodes to a first-fit arena and the "
+              "`kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with "
+              "`/usr/bin/time -l`",
+              "bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the "
+              "busiest step, and the class-rounded total; the RSS is the OS's own number for the same run",
+              ),
     "dispatch": ("scripts/dispatch.py",
                  "runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records "
                  "each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend "
@@ -1329,6 +1338,70 @@ def render_fs_tests(f):
     return out
 
 
+def _mb(n):
+    return f"{n / 1048576:.2f} MiB"
+
+
+def render_al_liveness(f):
+    """Chapter 17: what one arena costs against giving every node its own buffer."""
+    out = ["| | Prefill (34 tokens) | Decode (1 token) |", "|---|---|---|"]
+    pre, dec = f["phases"]["prefill"], f["phases"]["decode"]
+    out.append(f"| Nodes in the graph | {pre['nodes']} | {dec['nodes']} |")
+    out.append(f"| Sum of every buffer, no reuse | {pre['naive_bytes']:,} B ({_mb(pre['naive_bytes'])}) "
+               f"| {dec['naive_bytes']:,} B ({_mb(dec['naive_bytes'])}) |")
+    out.append(f"| One arena, first fit over the live set | {pre['arena_bytes']:,} B ({_mb(pre['arena_bytes'])}) "
+               f"| {dec['arena_bytes']:,} B ({_mb(dec['arena_bytes'])}) |")
+    out.append(f"| Live-set floor (no allocator can go below) | {pre['live_floor_bytes']:,} B "
+               f"({_mb(pre['live_floor_bytes'])}) | {dec['live_floor_bytes']:,} B ({_mb(dec['live_floor_bytes'])}) |")
+    out.append(f"| Naive / arena | {pre['sum_over_floor'] and round(pre['naive_bytes'] / pre['arena_bytes'], 2)}x "
+               f"| {round(dec['naive_bytes'] / dec['arena_bytes'], 2)}x |")
+    out.append(f"| Arena / floor (what fragmentation costs) | {pre['arena_over_floor']}x | {dec['arena_over_floor']}x |")
+    out.append(f"| Allocations served from a dead buffer | {pre['reused_allocations']} of {pre['nodes']} "
+               f"| {dec['reused_allocations']} of {dec['nodes']} |")
+    out.append(f"| Largest transient buffer | `{pre['largest_buffer']['op']}` "
+               f"{'x'.join(str(d) for d in pre['largest_buffer']['shape'])} = "
+               f"{pre['largest_buffer']['bytes']:,} B | `{dec['largest_buffer']['op']}` "
+               f"{'x'.join(str(d) for d in dec['largest_buffer']['shape'])} = "
+               f"{dec['largest_buffer']['bytes']:,} B |")
+    return out
+
+
+def render_al_ledger(f):
+    """Chapter 17: the ledger - what the model says should be resident, next to what the process held."""
+    pre = f["phases"]["prefill"]
+    proc = f["process"]
+    kv = pre["kv_region_bytes"]
+    total = proc["gguf_bytes"] + kv + pre["arena_bytes"]
+    out = ["| Region | Bytes | Share of the prediction | Lifetime |", "|---|---|---|---|"]
+    out.append(f"| Weights (the GGUF file) | {proc['gguf_bytes']:,} | "
+               f"{proc['gguf_bytes'] / total * 100:.1f}% | for the process |")
+    out.append(f"| KV regions ({pre['kv_layers']} layers, {pre['kv_layers'] and kv // pre['kv_layers']:,} B each) "
+               f"| {kv:,} | {kv / total * 100:.1f}% | persistent across rebuilds |")
+    out.append(f"| Activation arena | {pre['arena_bytes']:,} | {pre['arena_bytes'] / total * 100:.1f}% "
+               f"| dies with the graph |")
+    out.append(f"| **Predicted resident** | **{total:,}** | 100% | |")
+    out.append(f"| **Observed peak RSS** | **{proc['maxrss_bytes']:,}** | "
+               f"{proc['maxrss_bytes'] / total * 100:.1f}% of the prediction | |")
+    out.append(f"| Difference (observation minus prediction) | {proc['maxrss_bytes'] - total:,} | | |")
+    out.append("")
+    out.append(f"For scale: giving every buffer its own allocation would need {pre['naive_bytes']:,} B of "
+               f"activations instead of {pre['arena_bytes']:,} B - {round(pre['naive_bytes'] / pre['arena_bytes'], 2)}x "
+               f"more, and still an order of magnitude less than the weights.")
+    return out
+
+
+def render_al_classes(f):
+    """Chapter 17: what rounding every activation up to its size class costs on this graph."""
+    c = f["classes"]
+    out = ["| | Bytes |", "|---|---|"]
+    out.append(f"| Exact sizes | {c['exact_bytes']:,} |")
+    out.append(f"| Rounded to size classes | {c['rounded_bytes']:,} |")
+    out.append(f"| Overhead | {c['overhead_pct']}% |")
+    out.append(f"| Nodes in the power-of-two regime (<= 16 KiB) | {c['nodes_pow2_regime']} |")
+    out.append(f"| Nodes in the 16 KiB-step regime | {c['nodes_grain_regime']} |")
+    return out
+
+
 def render_ds_registry(f):
     """Chapter 16: one id space, two orders."""
     r = f["registry"]
@@ -1477,6 +1550,9 @@ def render_gr_trace(f):
 
 
 BLOCKS = {
+    "al-liveness": render_al_liveness,
+    "al-ledger": render_al_ledger,
+    "al-classes": render_al_classes,
     "ds-registry": render_ds_registry,
     "ds-matrix": render_ds_matrix,
     "ds-assignment": render_ds_assignment,

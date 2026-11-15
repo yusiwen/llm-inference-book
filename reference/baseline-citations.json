@@ -56,7 +56,8 @@
   },
   {
    "pages": [
-    "ch 1"
+    "ch 1",
+    "ch 17"
    ],
    "path": "docs/ARCHITECTURE.md",
    "resolved": true,
@@ -287,6 +288,7 @@
   {
    "pages": [
     "appendix/home",
+    "ch 16",
     "ch 19",
     "part 0"
    ],
@@ -431,14 +433,6 @@
     "ch 14"
    ],
    "path": "docs/inference_e2e_walkthrough/05-graph-builder-ir.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "ch 17"
-   ],
-   "path": "docs/inference_e2e_walkthrough/07-allocator-liveness-kv.md",
    "resolved": true,
    "symbol": null
   },
@@ -714,6 +708,7 @@
   {
    "pages": [
     "appendix/home",
+    "ch 16",
     "ch 17"
    ],
    "path": "src/graph/alloc.rs",
@@ -738,8 +733,7 @@
   },
   {
    "pages": [
-    "ch 15",
-    "ch 16"
+    "ch 15"
    ],
    "path": "src/graph/backend.rs",
    "resolved": true,
@@ -813,6 +807,7 @@
   {
    "pages": [
     "ch 10",
+    "ch 17",
     "ch 18"
    ],
    "path": "src/graph/kvcache.rs",
@@ -830,6 +825,7 @@
   },
   {
    "pages": [
+    "ch 16",
     "ch 18"
    ],
    "path": "src/graph/kvsession.rs",
@@ -849,14 +845,6 @@
     "ch 14"
    ],
    "path": "src/graph/mod.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "ch 17"
-   ],
-   "path": "src/graph/offload.rs",
    "resolved": true,
    "symbol": null
   },

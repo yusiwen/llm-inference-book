@@ -85,8 +85,8 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 | 15.1 | `15-fusion.svg` | P0 | flow | L4 | The rewrite and its orphan, with the measured ledger under it: before, the activation writes a temporary and the multiply reads it back (5 passes over the row); after, one node reads both operands and writes once (3 passes) - and the node that used to feed the multiply stays in the graph with no consumer, no buffer and no execution. The planned panel stopped at "three nodes folded into one"; the engine keeps the third node, so the figure shows that instead. |
 | 15.2 | `15-fusion-cost.svg` | P0 | scatter | L5 | Achieved bandwidth of the same 3-to-1 rewrite on two activations at four row counts, against this machine's single-core streaming copy rate (124.7 GB/s): silu sits at an eighth of the line (it is waiting on `expf`), relu sits on it (it is waiting on memory), which is why the same 40% byte reduction is worth 1.06x on one and 1.64x on the other. |
 | 16.1 | `16-assignment.svg` | P0 | graph | L3 | The assignment this machine produced, with the ladder it was chosen from: three registry ids, priority metal 300 > cuda 200 > cpu 100, cpu and metal registered and cuda not compiled into this build, and all 443 prefill nodes in one contiguous cpu run with zero cross-split edges. The planned two-boundary picture was replaced because this run has no boundary to draw - the figure prices a boundary instead (a 34x896 f32 residual stream is 121,856 B per crossing) and says so. |
-| 17.1 | `17-liveness.svg` | P0 | ledger | L2 | The liveness spans of a graph's buffers, and how overlapping spans share one arena instead of each getting its own allocation. |
-| 17.2 | `17-memory-ledger.svg` | P1 | bar | L5 | A memory ledger as stacked bars: resident weights, host-mapped weights, the activation arena, the KV cache and staging, predicted against observed. |
+| 17.1 | `17-liveness.svg` | P0 | ledger | L2 | The 36 largest transient buffers of the prefill graph, each drawn from the node that writes it to the last node that reads it, on the arena offset first fit gave them: 36 buffers land in 6 offsets, because a dead buffer's bytes are handed on. High-water 4.28 MiB against a 2.01 MiB live-set floor (2.13x), 428 of 443 allocations served from a dead buffer. |
+| 17.2 | `17-memory-ledger.svg` | P0 | bar | L5 | The ledger: weights 468.6 MiB, KV regions 48.0 MiB, activation arena 4.3 MiB, predicted resident 520.9 MiB, observed peak RSS 474.2 MiB. The prediction is 46.7 MiB *above* the observation, and that direction is the lesson - untouched pages are not resident. |
 | 18.1 | `18-cells-and-spans.svg` | P0 | grid | L2 | A cell-based cache holding two sequences as interleaved spans, one sharing a prefix with the other, and the same cache after defragmentation. |
 | 18.2 | `18-session-file.svg` | P1 | byte map | L5 | A saved KV session as a versioned file: version, checksum, per-layer extents, so an older engine refuses it instead of reinterpreting memory. |
 | 19.1 | `19-family-deltas.svg` | P0 | block | L3 | One dense transformer layer with the four places model families differ marked: head dimension, query/key norm, attention bias, tied output embedding. |
@@ -148,6 +148,6 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 | Quantity | Value | How |
 |---|---|---|
 | Planned figures | 51 | this file |
-| Drawn | 24 | `ls src/figures/*.svg \| wc -l` |
+| Drawn | 26 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

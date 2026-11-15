@@ -10,6 +10,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 <!-- provenance-index -->
 | Artifact | Instrument | What it measures | Machine | Runs | Statistic |
 |---|---|---|---|---|---|
+| `alloc` | `scripts/alloc.py` | runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the end, views extending their parent); charges the transient nodes to a first-fit arena and the `kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with `/usr/bin/time -l` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the busiest step, and the class-rounded total; the RSS is the OS's own number for the same run |
 | `attn` | `scripts/attn.c` | runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it | arm64, Darwin 27.2.0 | 5 | median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position |
 | `dequant-check` | `scripts/dequant-check.py` | decodes each block format back to f32 and compares it against a second decoder (gguf-py) on the same bytes | not machine-dependent | - | max relative error per format; the bit-exact counts are exhaustive over the blocks sampled |
 | `dispatch` | `scripts/dispatch.py` | runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised |
@@ -30,6 +31,18 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `vecops` | `scripts/vecops.c` | computes each vector op the way an engine writes it, reports the error against an f64 oracle, and times the op | Apple M4 Pro | 3 | median of three runs for timing; the errors are deterministic and identical across runs |
 
 The command behind each row, in full:
+
+### alloc
+
+`scripts/alloc.py` - runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the end, views extending their parent); charges the transient nodes to a first-fit arena and the `kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with `/usr/bin/time -l`.
+
+- **Machine**: {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}
+- **Runs**: per machine; bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the busiest step, and the class-rounded total; the RSS is the OS's own number for the same run
+- **Raw numbers**: `facts/alloc.json`
+
+```bash
+python3 scripts/alloc.py /private/tmp/mf17-target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf17 --out facts/alloc.json
+```
 
 ### attn
 
