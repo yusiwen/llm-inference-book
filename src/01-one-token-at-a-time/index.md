@@ -88,6 +88,20 @@ A loop that forgets any of the three still compiles. It even produces plausible 
 
 **The placeholder is part of the deliverable.** `forward` returns a `Vec<f32>` of vocabulary length. Make it return zeros, take the argmax, and you get id `0` forever - useless output and a perfect test. The loop is correct if it produces exactly `max_tokens` ids, stops on the stop id, and prints the positions it used. Every later chapter can then be judged against it: does the loop still behave identically when the placeholder is replaced by real arithmetic?
 
+The engine's whole surface is one method, and it says where the state lives:
+
+<!-- code: src/conversation.rs::Engine::forward@88ffa5d -->
+```rust
+impl Engine for GraphEngine<'_> {
+    fn forward(&mut self, tokens: &[u32], positions: &[usize], n_out: usize) -> Vec<f32> {
+        self.model
+            .forward_graph_cached(tokens, positions, n_out, self.n_ctx, &mut self.cache)
+    }
+```
+<!-- /code -->
+
+`tokens` and `positions` are separate arguments, and that separation is the book's first structural decision: ids in, ids out, with the position passed rather than inferred. `n_out` is how many rows of logits you want back (one for decode, many for a scoring pass), and the cache is reached through `&mut self.cache` rather than stored in the call. Chapter 9 rotates by `positions`, Chapter 10 masks by them, and Chapter 18 builds a whole subsystem on the fact that they are data.
+
 ### Lesson 2 · Prefill and decode are different jobs: one prompt, two regimes
 
 Here is the same weight matrix, used two ways.
@@ -206,6 +220,34 @@ Now the four that cannot be postponed, because each is a decision that is expens
 4. **An oracle before an optimization.** The scalar, obviously-correct version of every kernel comes first, and every faster version is checked against it. The order is not taste: an optimization without an oracle cannot be distinguished from a bug that makes numbers faster.
 
 All four are about correctness, and none is about speed. That is the chapter's parting claim, and the book's: the loop is small, the arithmetic is simple, and what actually constrains an inference engine is that the cheap version has to stay *right* while it gets fast.
+
+The engine is allowed to be lazy about many things, and this function is the list of things it is not:
+
+<!-- code: src/quantize.rs::can_decode@88ffa5d -->
+```rust
+pub fn can_decode(type_: GgmlType) -> bool {
+    matches!(
+        type_,
+        GgmlType::F32
+            | GgmlType::F16
+            | GgmlType::BF16
+            | GgmlType::Q8_0
+            | GgmlType::Q4_0
+            | GgmlType::Q4_1
+            | GgmlType::Q5_0
+            | GgmlType::Q5_1
+    )
+}
+
+/// Decode a source tensor's bytes into f32, row by row (`row_elems` elements).
+///
+/// The types this returns `Some` for are exactly the ones a source file may be
+/// re-quantized from: the plain float types and the legacy quants this module
+/// also encodes. K-quant inputs return `None` and the caller refuses loudly.
+```
+<!-- /code -->
+
+`can_decode` is a promise with a shape: the types a file may be re-quantized **from**, and nothing else. `decode_to_f32` returns `None` for anything outside that set, and the caller's contract is to refuse loudly - which is the difference between an engine that is lazy and one that is wrong. Note what is on the list: the plain float types and the legacy 32-value-block quants. The K-quants are absent not because they cannot be decoded but because this module does not decode them, and a guess in that direction would produce a file that parses and is nonsense.
 
 ## The two regimes
 

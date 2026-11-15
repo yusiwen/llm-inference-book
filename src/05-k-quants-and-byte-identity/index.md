@@ -83,19 +83,25 @@ Twelve bytes, sixteen fields:
 
 Sub-block 5's two numbers live in three different bytes: the low four bits of its scale at byte 9, the high two bits of its scale at byte 1, the low four bits of its min at byte 9 again, and the high two bits of its min at byte 5. If you write the unpacking from intuition you will get sub-blocks 0-3 right and 4-7 wrong, which is exactly the failure mode a real file hides: half the block decodes correctly, so the first spot-check passes.
 
-The code, with the asymmetry made explicit rather than clever:
+The function this lesson has been unpacking by hand, in the engine - and the asymmetry is the point:
 
+<!-- code: src/quantize.rs::get_scale_min_k4@88ffa5d -->
 ```rust
-fn scale_min(j: usize, q: &[u8; 12]) -> (u8, u8) {
+fn get_scale_min_k4(j: usize, q: &[u8; 12]) -> (u8, u8) {
     if j < 4 {
-        (q[j] & 0x3F, q[j + 4] & 0x3F)          // low six bits, straight out of the byte
+        (q[j] & 63, q[j + 4] & 63)
     } else {
-        // low four bits from the tail, high two bits from the TOP of an earlier byte
-        ((q[j + 4] & 0x0F) | ((q[j - 4] >> 6) << 4),
-         (q[j + 4] >> 4)      | ((q[j]     >> 6) << 4))
+        (
+            (q[j + 4] & 0xF) | ((q[j - 4] >> 6) << 4),
+            (q[j + 4] >> 4) | ((q[j] >> 6) << 4),
+        )
     }
 }
 ```
+<!-- /code -->
+
+`q[j] & 63` for the first four sub-blocks - six bits, straight out of the byte - then, for the rest, four bits from the tail byte and two from the **top** of an earlier one, shifted into place. The `j+4` and `j-4` are not a mistake: the tail bytes are indexed forward from the scales' fourth slot. This is the function the k-quant gate compares against the reference, and it sits twelve lines from where the files are written, so both directions use it.
+
 
 **Verified against the reference, on every bit pattern.** The packing is pure integer work, so there is no rounding to hide behind and the comparison can be exact. The test does not read a real file at all: it feeds 4,096 random twelve-byte planes to both implementations and compares all eight `(scale, min)` pairs on each:
 
@@ -149,6 +155,37 @@ Without `base_s`, the second half of every super-block uses the **first half's s
 That is the argument for randomised bytes, stated as a rule: **a decoder is not verified by the data you happen to have.** Random super-blocks exercise bit patterns a quantizer would never emit, and they cost nothing to generate.
 
 **Why pay 6.5625 bits for anything.** Because of where the tensor sits. In this file the Q6_K tensors are twelve `ffn_down` matrices - the ones that project the 4,864-wide feed-forward result back to the residual stream. Two reasons to spend extra bits exactly there: their row length is 4,864, which is the one width in this model that a 256-weight block fits, and their output is added straight into the residual stream, so their error is not averaged away by a later sum. That is the same argument as Chapter 4's Q8_0 output matrix, one layer earlier.
+
+The 6-bit unpack as a kernel sees it - the same four-way interleave, with two differences worth naming:
+
+<!-- code: src/quants/kquant.rs::dot_q6_k_q8_k_scalar@88ffa5d -->
+```rust
+// Decode to a[256] as the unsigned 0..63 code (interleaved, the same
+// element order the SIMD kernels see).
+let mut a = [0i8; 256];
+{
+    let mut a_off = 0usize;
+    let mut ql_off = 0usize;
+    let mut qh_off = 0usize;
+    for _ in 0..2 {
+        for l in 0..32 {
+            let ql0 = ql[ql_off + l] as i32;
+            let ql1 = ql[ql_off + l + 32] as i32;
+            let qh_b = qh[qh_off + l] as i32;
+            a[a_off + l + 0] = ((ql0 & 0x0F) | ((qh_b & 3) << 4)) as i8;
+            a[a_off + l + 32] = ((ql1 & 0x0F) | ((qh_b >> 2) & 3) << 4) as i8;
+            a[a_off + l + 64] = ((ql0 >> 4) | ((qh_b >> 4) & 3) << 4) as i8;
+            a[a_off + l + 96] = ((ql1 >> 4) | ((qh_b >> 6) & 3) << 4) as i8;
+        }
+        a_off += 128;
+        ql_off += 64;
+        qh_off += 32;
+    }
+}
+```
+<!-- /code -->
+
+First, the codes stay **unsigned** (0..63) here, where the dequantizer above subtracts 32: the kernel folds the centring into the per-lane scale so its inner loop is integer. Second, the scale comes from `sc[...]` per 16-weight group *after* the unpack, not before it, because an 8-lane dot cannot apply a per-group scale until the lanes are separated. The `a_off`/`ql_off`/`qh_off` counters are the interleave: sixteen bytes of `ql` and four of the 2-bit planes produce 128 weights, twice.
 
 ### Lesson 4 · Byte-identical quantization: why a tolerance gate is the wrong test for a file format
 

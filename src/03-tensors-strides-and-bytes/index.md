@@ -58,6 +58,22 @@ Two numbers from the file keep this honest. It holds **291 tensors, and only two
 
 That last point is worth writing down as an invariant, because Rust will make you express it: **a tensor borrows its bytes or owns them, and both must be expressible in the same type** without the arithmetic code knowing which.
 
+The engine's tensor is four fields and a name, and the stride unit is the thing to notice:
+
+<!-- code: src/tensor.rs::Tensor@88ffa5d -->
+```rust
+pub struct Tensor {
+    pub ttype: TensorType,
+    pub shape: [i64; 4],     // ne[0..3]: number of elements per dimension
+    pub strides: [usize; 4], // nb[0..3]: stride in bytes per dimension
+    pub data: TensorData,
+    pub name: String,
+}
+```
+<!-- /code -->
+
+`strides` is `nb[0..3]` - **bytes**, not elements - because that is what the file's tensor table computed in Chapter 2 and what every byte offset in the engine is written against. The view type sketched above keeps strides in elements instead, and the difference is deliberate: a view is arithmetic on a shape, while a file is a sequence of bytes already laid out. `row_bytes` is the single place the two meet, which is why it exists. Note also `name: String` - a production tensor carries its name because the graph builder matches nodes by it, and the debug dumps in Chapter 8 are only possible because it is there.
+
 ### Lesson 2 · Row-major strides, and the alignment GGML needs between rows
 
 Start with a shape and no quantization. A tensor of shape `[896, 151936]` in GGML's convention - `ne[0] = 896` is the *contiguous* dimension - stores row 0 in bytes `[0, 896 * bpe)`, row 1 immediately after it, and so on. The strides in elements are:
@@ -130,6 +146,20 @@ impl Tensor<'_> {
 
 Note what the function does *not* do: ask what the dtype means, or decode anything. It needs two integers per dtype, which is Chapter 4's table.
 
+The alignment the file needs is one expression, and the comment is the reference implementation's own:
+
+<!-- code: src/gguf.rs::ggml_pad@88ffa5d -->
+```rust
+pub fn ggml_pad(x: usize, n: usize) -> usize {
+    // ((x) + (n) - 1) & ~((n) - 1)
+    // Assumes n is power of 2
+    (x + n - 1) & !(n - 1)
+}
+```
+<!-- /code -->
+
+`(x + n - 1) & !(n - 1)`, valid only because `n` is a power of two - GGUF's default is 32, and the parser reads `general.alignment` to override it. This is the whole of the padding rule: a tensor's bytes start at a multiple of the alignment, so the reader can hand out pointers that every SIMD load in Chapter 7 requires, and the writer can produce files that other GGUF readers accept.
+
 ### Lesson 3 · Views, aliases and the lifetime rules that keep them sound in Rust
 
 A view is a tensor whose bytes are a slice of another tensor's bytes. That is the entire definition; if your implementation copies, it is a tensor and not a view, and the cost it hides is the reason this lesson exists.
@@ -184,6 +214,33 @@ assert_eq!(need, slice.len(), "view length disagrees with stride geometry");
 
 That assertion is the tensor equivalent of Chapter 2's tiling check: cheap, mechanical, and it catches the class of bug that otherwise surfaces as wrong numbers six chapters later.
 
+A borrowed tensor is a range plus the handle that keeps it alive, which is the answer to "who owns the mapping":
+
+<!-- code: src/tensor.rs::TensorData@88ffa5d -->
+```rust
+pub struct TensorData {
+    inner: TensorDataInner,
+}
+
+#[derive(Clone)]
+enum TensorDataInner {
+    /// A scratch/owned buffer. Test-only: production tensors are ranges of a
+    /// GGUF part; `Tensor::new`/`Tensor::from_data` build the scratch case.
+    #[cfg(test)]
+    Owned(Vec<u8>),
+    /// A range of a GGUF part's bytes, with the handle that keeps them alive —
+    /// a file mapping for a path load, an owned buffer for a bytes load (#797).
+    Borrowed {
+        bytes: crate::gguf::PartBytes,
+        off: usize,
+        len: usize,
+    },
+}
+```
+<!-- /code -->
+
+Two variants, and the one that copies is `#[cfg(test)]`: production tensors are **ranges of a GGUF part**, never copies, and `bytes: PartBytes` is what keeps the mapping alive while any view exists. That is why the lifetime rules above can collapse into a `Deref`:
+
 ### Lesson 4 · Bytes in, bytes out: why the engine keeps weights opaque until dispatch
 
 The loader in `myfer-file` knows three things about a weight: where it starts, how many bytes it has, and what type the file claims. It does **not** know how to read a value out of it. That separation is not fastidiousness; it is the only design that survives contact with a file like this one.
@@ -210,6 +267,26 @@ Three things this buys, in the order they matter:
 What it costs is the thing this chapter keeps insisting on: **every kernel must know the block layout of its dtype**, and every piece of code that computes an offset must use `row_bytes` rather than a value size. There is no type-level guarantee that a kernel's expected layout matches the tensor it is handed; the guarantee is a test that reads one row through the kernel and compares it against a scalar decode of the same bytes (Chapter 6) - the pattern the rest of the book uses.
 
 The reference engine's `src/tensor.rs` and `src/block.rs` are worth reading only *after* you have written your own: the interesting part is not that it stores bytes, it is which few places are allowed to look inside them.
+
+Bytes out is a slice, and it is all a weight tensor is allowed to be until dispatch:
+
+<!-- code: src/tensor.rs::Deref for TensorData@88ffa5d -->
+```rust
+impl std::ops::Deref for TensorData {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        match &self.inner {
+            #[cfg(test)]
+            TensorDataInner::Owned(bytes) => bytes,
+            TensorDataInner::Borrowed { bytes, off, len } => &bytes.as_slice()[*off..*off + *len],
+        }
+    }
+}
+```
+<!-- /code -->
+
+`&bytes.as_slice()[*off..*off + *len]` - the tensor is a window, and the type system's work is done once the window is valid. Nothing here knows whether the bytes are f32, Q4_0 or Q6_K; that is decided at dispatch by `ttype`, in Chapter 6's `cpu_quant_matmul`. The `#[cfg(test)]` arm is the one that copies, and it is compiled out of a release build - the same discipline Chapter 10's test-only helpers used.
 
 ### Lesson 5 · Four-dimensional shapes are a story about batches and heads, not a data layout
 

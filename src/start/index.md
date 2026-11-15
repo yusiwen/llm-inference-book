@@ -81,6 +81,27 @@ Write down your own version of that table in your notes, and - this is the part 
 
 If you have only a laptop, you are not locked out: Part 5 becomes reading, and the book tells you at each step which claims you cannot check yourself. What you must not do is run a CUDA chapter's numbers on a CPU and call the result a comparison.
 
+Every experiment in this book that needs a particular code path turns it on with an environment variable, and the engine has one place where those variables are read - env set, branch forced, no rebuild:
+
+<!-- code: src/config.rs::Config::from_env@88ffa5d -->
+```rust
+fuse_qkv: !std::env::var("MINFER_NO_FUSE_QKV").map_or(false, |v| v == "1"),
+fuse_ffn: !std::env::var("MINFER_NO_FUSE_FFN").map_or(false, |v| v == "1"),
+ffn_composition: std::env::var("MINFER_FFN_COMPOSITION").ok(),
+fused_q8_kv: !std::env::var("MINFER_NO_FUSED_Q8_KV").map_or(false, |v| v == "1"),
+split_attn: !std::env::var("MINFER_NO_SPLIT_ATTN").map_or(false, |v| v == "1"),
+rebuild_trace: std::env::var("MINFER_REBUILD_TRACE").map_or(false, |v| v == "1"),
+kv_cache_type: std::env::var("MINFER_CACHE_TYPE").ok(),
+gpu_layers: std::env::var("MINFER_GPU_LAYERS").ok(),
+gpu_mem: std::env::var("MINFER_GPU_MEM").ok(),
+kv_defrag: !std::env::var("MINFER_NO_KV_DEFRAG").map_or(false, |v| v == "1"),
+cuda_graph: !std::env::var("MINFER_NO_CUDA_GRAPH").map_or(false, |v| v == "1"),
+prefill_capture: !std::env::var("MINFER_NO_PREFILL_CAPTURE")
+```
+<!-- /code -->
+
+That is the whole mechanism: `MINFER_NO_X=1` disables `X`, and the ones without a `NO_` prefix take a value (`MINFER_CACHE_TYPE=q8_0`). Chapter 7's AVX2 kernels, Chapter 10's fused Q8 KV read path and Chapter 18's defragmentation all have an A/B switch in this block, which is what lets a reader on a machine without the feature reproduce the book's numbers by forcing the path they do have.
+
 ### Lesson 3 · Get a model: one small file for iteration, one 7B file for the numbers
 
 Two files, and they have different jobs.
@@ -139,6 +160,28 @@ cp -R starter ~/myfer && cd ~/myfer
 cargo build && cargo test     # six crates, no dependencies, six tests, offline
 git init -b main && git add -A && git commit -m "S0: the workspace"
 ```
+
+The tree's manifest is the model, and the version pin is part of it:
+
+<!-- code: Cargo.toml::package@88ffa5d -->
+```toml
+[package]
+name = "minfer"
+version = "0.0.9"
+edition = "2021"
+description = "A minimal local LLM inference engine built from scratch in Rust"
+license = "MIT"
+repository = "https://github.com/yusiwen/minfer"
+readme = "README.md"
+keywords = ["llm", "inference", "gguf", "quantized", "cpu"]
+categories = ["science", "algorithms", "hardware-support"]
+# The pinned toolchain is 1.97.1 (rust-toolchain.toml); say so for consumers
+# instead of letting them discover it.
+rust-version = "1.97"
+```
+<!-- /code -->
+
+Three lines matter here more than they look. `edition = "2021"` and `rust-version = "1.97"` are the language baseline the whole book assumes - `let ... else`, `OnceLock`, `std::arch::asm!` and inline `target_feature` all came from that era of the toolchain, and a reader on an older one will hit errors that look like book bugs. And `license`/`repository` are there because the **code is quoted** in this book at a pinned commit: an MIT licence and a public repository are what make the quotations legal and checkable.
 
 ### Lesson 5 · The notes file: four sections that every later chapter writes into
 

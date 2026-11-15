@@ -1,0 +1,149 @@
+[package]
+name = "minfer"
+version = "0.0.9"
+edition = "2021"
+description = "A minimal local LLM inference engine built from scratch in Rust"
+license = "MIT"
+repository = "https://github.com/yusiwen/minfer"
+readme = "README.md"
+keywords = ["llm", "inference", "gguf", "quantized", "cpu"]
+categories = ["science", "algorithms", "hardware-support"]
+# The pinned toolchain is 1.97.1 (rust-toolchain.toml); say so for consumers
+# instead of letting them discover it.
+rust-version = "1.97"
+# Keep the published crate source-only: the book, the rest of the document tree
+# and the research experiments are repository material. Two files travel beyond
+# the source, and each has a consumer:
+#
+# - the CUDA diagnostic example, the one `[[example]]` entry a manifest names;
+# - `docs/GGUF-TOOLING.md`, which `src/quantize/tests.rs` compiles in with
+#   `include_str!` to hold the document and the CLI's refusal text together —
+#   without it the published tarball's own test suite cannot be built (#818).
+#
+# `viz/` does not travel: the visualizer moved to `crates/minfer-cli` (#805).
+include = [
+    "/src/**",
+    "/tests/**",
+    "/examples/**",
+    "/experiments/cuda/cuda_graph_rust/cuda_graph_diag.rs",
+    "/docs/GGUF-TOOLING.md",
+    "/build.rs",
+    "/Cargo.toml",
+    "/README.md",
+    "/LICENSE",
+]
+
+
+# Phase 2 (#805): the application layer lives in its own package. The engine stays
+# at the repository root, because every documentation anchor into `src/...` would
+# otherwise have to move (1,190 anchors, measured 2026-11-09).
+#
+# `default-members` is the one line that keeps `cargo build --release` producing
+# `target/release/minfer`: a non-virtual workspace defaults to the root package
+# alone, so the CLI member must be named explicitly for a plain build to include
+# it (W2 adds it; W1 proves the root-only form still works).
+[workspace]
+members = ["crates/minfer-cli"]
+default-members = [".", "crates/minfer-cli"]
+resolver = "2"
+
+[dependencies]
+rand = "0.8"
+regex = "1"
+half = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+# `preserve_order` is a render contract, not a convenience (#597): a `tools`
+# entry reaches the prompt through the template's `| tojson`, and transformers
+# renders the client's own key order. minijinja's default `ValueMap` is a
+# `BTreeMap`, which would sort the keys the render path just preserved.
+# (`serde_json`'s matching feature is deliberately NOT enabled: the JSON-Schema
+# grammar compiler iterates a schema's `map`, and its generated grammar depends
+# on that order — a render-only concern must not move the grammar.)
+minijinja = { version = "2", default-features = false, features = ["builtins", "serde", "preserve_order"] }
+
+# `time` + `signal` are F8's (#51): the bounded graceful drain needs
+# `tokio::time::timeout` and the SIGINT/SIGTERM handlers. Both are platform-neutral
+# (no new crate, no new dependency), so the macOS and CUDA builds are unaffected.
+tokio = { version = "1", optional = true, features = ["sync"] }
+
+# Test-only. `AsyncReadExt`/`AsyncWriteExt` are what F8's `/metrics` test drives a
+# real HTTP/1.1 request with; the production `tokio` dependency stays without
+# `io-util`, and cargo unifies the feature for the test build only.
+#
+# `sha2` is test-only for the same reason, and is #205's whole point: the F6
+# fixture manifest (`tests/fixtures/f6-fixtures.json`) records each cached reference's
+# content hash, and the gate that consumes a reference verifies it before
+# comparing (`src/tooling/tests/f6_fixtures.rs`). Hashing is not something to
+# hand-write in a test module, and the production dependency graph — which
+# `cargo build --release` and the `deny(warnings)` gate both cover — does not
+# grow by it.
+[dev-dependencies]
+tokio = { version = "1", features = ["io-util"] }
+sha2 = "0.10"
+
+[package.metadata.docs.rs]
+# The facade and the tiers, with the app-layer features a reader of the docs
+# needs to see the full surface. `metal` is deliberately absent: it needs a macOS
+# target, and docs.rs builds on Linux (the cfg sites are all `target_os = "macos"`,
+# so the feature is inert there anyway).
+features = ["observe"]
+
+[features]
+# Phase 2 (#805) turned the feature fences into a package boundary, so the four
+# names that only selected which modules of THIS package were compiled — `cli`,
+# `server`, `tooling`, `viz` — are gone (ADR-0082). The binary is
+# `crates/minfer-cli`, and a consumer builds the engine with
+# `default-features = false` (ADR-0079), whose dependency graph is now the
+# published contract.
+default = ["metal"]
+# The macOS Metal backend (#777). Compiled only on macOS, and only with this
+# feature: every site that reaches the backend is
+# `cfg(all(target_os = "macos", feature = "metal"))`, and build.rs compiles the
+# metallib only when the feature is on. Off macOS the feature is inert (its
+# dependencies are target-filtered), so `default` can list it unconditionally.
+# A consumer that wants an engine without the Metal toolchain builds with
+# `default-features = false`.
+metal = [
+    "dep:objc2",
+    "dep:objc2-metal",
+    "dep:objc2-foundation",
+    "dep:block2",
+    "dep:dispatch2",
+]
+# `live`/`trace` observation hooks. Off in a consumer build, where the engine
+# core must not need tokio (S2). A host that wants the visualizer or the trace
+# export turns it on; the CLI turns it on for every build.
+observe = ["dep:tokio", "tokio/sync"]
+
+# Phase 2 (#805): the test-only observers (`testfail::checked` and friends, the
+# grammar's state counters, `FmaContract::Off`) are `cfg(test)` in this package
+# and invisible to a dependent package's tests. This feature is the one switch
+# that turns them on for such a build; nothing in production enables it, and the
+# CLI's `[dev-dependencies]` is its only user.
+test-hooks = []
+
+cuda = []
+# llama.cpp-style choice of how the CUDA runtime is linked: with `cuda_static`
+# the cudart archive (libcudart_static.a) is linked statically so the resulting
+# binary has NO `libcudart.so` NEEDED dependency — it only needs the NVIDIA
+# driver (libcuda.so.1, dlopen'd lazily at runtime) + libstdc++ at runtime.
+# Without it (default) `-lcudart` is a shared link and the binary requires a
+# CUDA toolkit runtime to be present (see build.rs). Must be combined with
+# `cuda`. Mirrors llama.cpp's `GGML_STATIC`.
+cuda_static = ["cuda"]
+debug_dump = []
+
+[[example]]
+name = "cuda_graph_diag"
+path = "experiments/cuda/cuda_graph_rust/cuda_graph_diag.rs"
+required-features = ["cuda"]
+
+# Optional behind `metal` (#777): a metal-less macOS build resolves and compiles
+# none of these, so it needs no Apple SDK at all.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2-metal = { version = "0.3", optional = true }
+block2 = { version = "0.6", optional = true }
+objc2-foundation = { version = "0.3", optional = true }
+objc2 = { version = "0.6", optional = true }
+dispatch2 = { version = "0.3", optional = true }

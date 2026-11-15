@@ -119,6 +119,38 @@ Fourteen keys that decide everything from the shape of the graph to where genera
 
 **Cost.** Parsing those 26 entries - including 303,323 strings - takes 0.16 s in Python on the M4 Pro (measured; `time python3 scripts/gguf-inspect.py FILE`), and most of it is decoding strings, not arithmetic. Keep that number in mind for Lesson 4: it is larger than any other cost on the load path except the page faults.
 
+The header, in the order the bytes arrive, with the refusals that make it a format rather than a convention:
+
+<!-- code: src/gguf.rs::read_header@88ffa5d -->
+```rust
+fn read_header(gr: &mut GgufReader<'_>) -> ParseResult<(u32, i64, i64)> {
+    let magic: Vec<u8> = gr.read_vec::<u8>(4).map_err(|e| header_refusal(&e))?;
+    if magic != GGUF_MAGIC {
+        let shown: String = magic
+            .iter()
+            .map(|&b| if b.is_ascii_graphic() { b as char } else { '?' })
+            .collect();
+        return Err(format!(
+            "GGUF: invalid magic characters: '{shown}', expected 'GGUF'"
+        ));
+    }
+
+    let version = gr.read_val::<u32>().map_err(|e| header_refusal(&e))?;
+    if version == 0 {
+        return Err(format!("GGUF: bad GGUF version: {version}"));
+    }
+    // A version whose low half is zero was written by a host with the opposite byte
+    // order (gguf.cpp lines 490-500).
+    if (version & 0x0000FFFF) == 0 {
+        return Err(format!(
+            "GGUF: failed to load model: this GGUF file version {version} is extremely large, is there a mismatch between the host and model endianness?"
+        ));
+    }
+```
+<!-- /code -->
+
+Three of those branches are the lesson. The magic is compared as bytes and the failure **prints what it found** (with non-printable bytes replaced by `?`), which is the difference between `invalid magic` and `invalid magic characters: 'GGML', expected 'GGUF'` - the second tells you the file is an old-format model. The zero-version check is the endianness trap: a header written on the opposite-endian host reads as a huge, half-zero version number, and the message names that hypothesis instead of calling the file corrupt. And the `version > GGUF_VERSION` branch is the one that keeps a newer file from being misparsed by an older reader.
+
 ### Lesson 3 · The tensor table: name, dimensions, dtype, offset, and the alignment that makes zero-copy possible
 
 After the metadata comes one record per tensor. Each record is a name, a dimension count, the dimensions, a type tag, and an offset:
@@ -208,6 +240,25 @@ Six and a fifth bits per parameter, in a file whose name says 4.5 - and, if you 
 
 One more, because it explains the file's own size label. The 291 tensors add up to 630,167,424 parameters, and `general.size_label` says `630M`. But the model card for Qwen2.5-0.5B counts 494,032,768. The difference is exactly 136,134,656 = 896 x 151,936: the file stores the vocabulary matrix twice, once as `token_embd.weight` and once as `output.weight`, at different precisions. A model whose embeddings are tied in training is untied in the file. Neither count is a lie; they are counts of different things, and **the only parameter count that matters is the one belonging to the bytes you are going to read.**
 
+The tensor table's last two fields are the two that make zero-copy possible, and they are computed, not stored:
+
+<!-- code: src/gguf.rs::read_tensor_info@88ffa5d -->
+```rust
+// Byte offsets (gguf.cpp lines 728-732).
+t.nb[0] = type_size;
+t.nb[1] = t.nb[0] * (t.ne[0] / blck_size) as usize;
+for j in 2..GGML_MAX_DIMS {
+    t.nb[j] = t.nb[j - 1] * t.ne[j - 1] as usize;
+}
+
+// Offset within the part's data section (gguf.cpp lines 738-739).
+t.offset = gr.read_val::<u64>()?;
+info.push(t);
+```
+<!-- /code -->
+
+`nb[0]` is the size of one block, not one element: `type_size` is the bytes per 32 (or 256) values, and `nb[1]` multiplies it by the number of blocks in the contiguous dimension. The loop above then makes every later stride a multiplication - no per-type table, no special case. And `offset` is read, not derived, because only the writer knows where the alignment padding landed.
+
 ### Lesson 4 · Memory-mapping, and what a page fault costs compared with a read
 
 An engine has two ways to get the weights in front of its kernels.
@@ -235,6 +286,31 @@ Three readings, three conclusions.
 What mapping costs instead of time: **address space** (harmless on 64-bit, where 485 MB is a rounding error), **predictable-ish faults at unpredictable moments** (the first token pays them; Chapter 20 is where that shows up as a latency spike), and **a contract with the loader**: the file must not change under the mapping, or your process takes SIGBUS instead of an error. The reference engine's `MmapFile` in `src/gguf.rs` is the small type that owns that contract, and the reason it exists rather than a `Vec<u8>` is the three numbers above.
 
 One practical consequence worth writing into your loader now: **map, do not read, and fault lazily.** Then the memory your process reports at startup is a few megabytes, and the numbers you record in your notes are about the machine rather than about your allocator.
+
+A mapping is a pointer, a length, and the file handle that keeps it alive:
+
+<!-- code: src/gguf.rs::MmapFile@88ffa5d -->
+```rust
+pub struct MmapFile {
+    ptr: *mut u8,
+    len: usize,
+    _file: std::fs::File, // keeps the fd alive for the mapping's lifetime
+    /// [#745]: flipped by `Drop`. It exists so a gate can assert that dropping the
+    /// last handle really unmapped the file — "the mapping is gone" is otherwise
+    /// only observable through `/proc/self/maps`, which no macOS test can read.
+    alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+
+// [#745]: a read-only file mapping is safe to share between threads — the pages are
+// immutable, and `munmap` happens only when the last `Arc<MmapFile>` goes. Without
+// this, `Tensor` (which carries a handle) would stop being `Send`, and `ModelDef`
+// requires `Send + Sync`.
+unsafe impl Send for MmapFile {}
+unsafe impl Sync for MmapFile {}
+```
+<!-- /code -->
+
+The fields are unremarkable; the `unsafe impl Send`/`Sync` below them is the load-bearing part, and the comment says why: a **read-only** mapping is immutable, so sharing it across threads is safe, and `munmap` happens only when the last handle drops. Without that reasoning, `Tensor` (which carries a handle) would stop being `Send`, and the engine requires `Send + Sync` from its model definition - a lifetime decision made by an `unsafe impl` and a comment, which is what Chapter 3's aliasing rules are about.
 
 ### Lesson 5 · Split files, and refusing a file instead of guessing
 
@@ -273,6 +349,33 @@ Two more that are judgement calls rather than corruption:
 - **Unknown architecture** (`general.architecture = "mamba"`): parse everything, then refuse at graph construction with the architecture name in the message. The distinction matters because the file is still readable, and a reader diagnosing a bad download benefits from the table printing before the refusal.
 
 That is the chapter's contract in one sentence: **parse faithfully, assert the layout's arithmetic, and name the field when you stop.** The temptation to be forgiving - to pad a short read with zeros, to round an odd alignment, to skip a metadata type you do not know - produces an engine that runs and lies, which is the failure mode the rest of this book is built to avoid.
+
+Split files are named, not detected by content, and the parser is correspondingly literal:
+
+<!-- code: src/gguf.rs::split_file_info@88ffa5d -->
+```rust
+pub fn split_file_info(name: &str) -> Option<(String, usize, usize)> {
+    let stem = name.strip_suffix(".gguf")?;
+    let dash = stem.rfind("-of-")?;
+    let idx_part = &stem[..dash];
+    let count_str = &stem[dash + 4..];
+    let idx_dash = idx_part.rfind('-')?;
+    let prefix = &idx_part[..idx_dash];
+    let idx_num = &idx_part[idx_dash + 1..];
+    if idx_num.len() != 5 || count_str.len() != 5 {
+        return None;
+    }
+    let idx: usize = idx_num.parse().ok()?;
+    let count: usize = count_str.parse().ok()?;
+    if idx == 0 || count == 0 || idx > count {
+        return None;
+    }
+    Some((prefix.to_string(), idx - 1, count))
+}
+```
+<!-- /code -->
+
+`-of-` is the marker, both indices are exactly five digits, and `idx == 0 || count == 0 || idx > count` is refused. The five-digit requirement is what makes the ordering parseable without a directory listing: `model-00001-of-00004.gguf` sorts correctly as a string. Note what the function returns on failure - `None`, not a guess - and that the caller treats a lone part as an error rather than a one-part model.
 
 ## The container, field by field
 

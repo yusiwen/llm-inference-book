@@ -84,15 +84,41 @@ d      f16      2 B    the scale, chosen from the block's largest weight
 qs     u8[16]  16 B    32 nibbles: byte j holds weight j in its low nibble and weight j+16 in its high nibble
 ```
 
-and the reconstruction is two operations per weight:
+The engine's dequantizer, and the Q4_0 arm is the whole of this lesson:
 
+<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
 ```rust
-for j in 0..16 {
-    let b = qs[j];
-    w[j]      = d * ((b & 0x0F) as f32 - 8.0);   // low  nibble -> weight j
-    w[j + 16] = d * ((b >> 4)   as f32 - 8.0);   // high nibble -> weight j + 16
+GgmlType::Q4_0 => {
+    let d = f16_at(b, 0);
+    (0..32)
+        .map(|j| {
+            let q = if j < 16 {
+                (b[2 + j] & 0x0F) as i32 - 8
+            } else {
+                (b[2 + j - 16] >> 4) as i32 - 8
+            };
+            d * q as f32
+        })
+        .collect()
+}
+GgmlType::Q4_1 => {
+    let d = f16_at(b, 0);
+    let m = f16_at(b, 2);
+    (0..32)
+        .map(|j| {
+            let q = if j < 16 {
+                (b[4 + j] & 0x0F) as f32
+            } else {
+                (b[4 + j - 16] >> 4) as f32
+            };
+            d * q + m
+        })
+        .collect()
 }
 ```
+<!-- /code -->
+
+Watch where the nibble index goes: for `j >= 16` the byte is `b[2 + j - 16]` - the *same* sixteen bytes read again with a shift, not the next byte. The `- 8` centres the unsigned nibble. Q4_1 is the same shape with `d * q + m` and no centring, because its quanta are unsigned and its minimum is explicit: exactly the trade this lesson's table prices. Both arms are four lines and a `collect`, with no branch inside the map beyond the `j < 16` split the compiler hoists.
 
 Three details in those four lines carry the format, and each is a trap.
 
@@ -124,17 +150,30 @@ Every element count and byte count in that table was checked twice: by this book
 
 Q5_0 asks for one more bit per weight and pays 4 bytes per block for it: 22 bytes instead of 18, 5.5 bits per weight instead of 4.5. The mechanism is the part of the legacy formats that is genuinely clever and genuinely easy to get wrong.
 
-The nibbles stay where they are - 16 bytes, 32 low nibbles - and the 33rd bit of every weight goes into a separate plane: `qh`, 4 bytes, one bit per weight. A weight is assembled from two places:
+Q5_0, where the high bit lives in a plane of its own:
 
+<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
 ```rust
-let qh = u32::from_le_bytes(qh_bytes);           // 32 high bits, one per weight
-for j in 0..16 {
-    let hi_lo = ((qh >> j) << 4) & 0x10;          // weight j      <- bit j
-    let hi_hi = (qh >> (j + 12)) & 0x10;          // weight j + 16 <- bit j + 16
-    w[j]      = d * (((qs[j] & 0x0F) | hi_lo) as f32 - 16.0);
-    w[j + 16] = d * (((qs[j] >> 4)   | hi_hi) as f32 - 16.0);
+GgmlType::Q5_0 => {
+    let d = f16_at(b, 0);
+    let qh = u32::from_le_bytes([b[2], b[3], b[4], b[5]]);
+    (0..32)
+        .map(|j| {
+            let lo = if j < 16 {
+                (b[6 + j] & 0x0F) as u32
+            } else {
+                (b[6 + j - 16] >> 4) as u32
+            };
+            let hi = (qh >> j) & 1;
+            d * (((lo | (hi << 4)) as i32) - 16) as f32
+        })
+        .collect()
 }
 ```
+<!-- /code -->
+
+`qh` is read **before** the loop and indexed by `j`, so the high bit for weight `j` is bit `j` of a 32-bit word the block carries separately from its sixteen nibble bytes. The reconstruction is `(lo | (hi << 4)) - 16`: five bits, centred, range -16..15 where Q4_0 had -8..7. Q5_1 is the same with `+ m` in place of `- 16` - which is the whole difference between a format with a minimum and one without.
+
 
 Read the shift arithmetic carefully, because both lines look wrong at first. `(qh >> j) << 4 & 0x10` moves bit `j` of `qh` into position 4, which is where the fifth bit of a nibble belongs. `(qh >> (j + 12)) & 0x10` takes bit `j + 16` and leaves it *in* position 4 - no shift left, because the 16 has to be subtracted back out. The asymmetry between the two lines is the whole trick, and it exists because 32 bits have to address two sets of 16 nibbles living in the same 16 bytes.
 
