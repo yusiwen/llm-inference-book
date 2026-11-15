@@ -17,9 +17,14 @@ echo
 echo "== 2. English only: nothing outside ASCII and Latin-1, apart from the allowlist =="
 # LICENSE is excluded: it is the Creative Commons legal code, verbatim. Its curly quotes are the
 # licence's own typography, and editing them to satisfy a prose rule is not ours to do.
+# reference/pinned/ is excluded for the same reason at one remove: those are minfer sources copied verbatim
+# at the baseline, and the whole point of the copy is that it is byte-identical to upstream. Its comments
+# carry characters this book's prose may not (`\u{2265}`, `\u{2466}`), and "fixing" them would quietly break
+# `scripts/codecheck.py`, which compares those bytes to the quotes in `src/`.
 allowlist='—–…→↔►▲─│┌┐└┘✅⚠️❌≈γλδπθβτ'
 if rg -n --hidden "[^\x00-\x7F\x{A1}-\x{AC}\x{AE}-\x{FF}${allowlist}]" \
-     -g '!book/**' -g '!result/**' -g '!.direnv/**' -g '!.git/**' -g '!mathjax/**' -g '!LICENSE' . ; then
+     -g '!book/**' -g '!result/**' -g '!.direnv/**' -g '!.git/**' -g '!mathjax/**' -g '!LICENSE' \
+     -g '!reference/pinned/**' . ; then
   echo "FAIL: character outside ASCII and Latin-1 (and not on the allowlist)" >&2
   exit 1
 fi
@@ -117,6 +122,14 @@ echo "== 15. the provenance index matches the artifacts =="
 # machine and statistic. This step keeps the appendix page honest: it lists all of them, in full, and it is
 # generated from the artifacts rather than typed.
 python3 scripts/provenance.py --check
+
+echo
+echo "== 16. every quoted line of minfer code matches the pinned source =="
+# A quoted line is a claim like a number is. The sources are vendored under reference/pinned/<commit>/ so
+# this runs without a minfer checkout; a baseline bump means re-reading and re-quoting, and the vendor step
+# says which files to re-copy. What it cannot check: whether the excerpt is the right passage, or whether an
+# elision hides the line that contradicts the prose. That is review, and AGENTS.md says so.
+python3 scripts/codecheck.py --check
 
 echo
 echo "all checks passed"

@@ -132,6 +132,25 @@ different obligation, and it is not a weaker one: every claim is labelled `my ju
 via `path::symbol`, or to a cited source, or to a run recorded in `runs/`. What they must not do is borrow
 the authority of a measured number they do not have.
 
+## Quoted minfer code is a claim
+
+A chapter that quotes the engine is making a checkable claim, the same way a table of measurements is. So:
+
+- **Quote, never retype.** Copy the lines out of the file at the pinned baseline, fence them as `rust`, and
+  wrap them in `<!-- code: path::symbol@<commit> -->` / `<!-- /code -->`. The gate (step 16,
+  `scripts/codecheck.py`) checks every line against `reference/pinned/<commit>/`, as an in-order subsequence
+  after trimming indentation - a changed token fails, a re-indent does not. Dedent a deep block to fit the
+  column; that is not an edit.
+- **Elide with `// ...` alone on its line**, and say in the prose what the elision skipped. An elision is the
+  one thing the gate cannot police: it can hide the line that would have contradicted the sentence above it.
+- **Name the baseline in the lead-in** and let `## Reading` carry the file list. The reader should be able to
+  `git show` the excerpt without leaving the page.
+- **Say when a quote is test-only.** `#[cfg(test)]` is usually a deliberate choice, not a gap - the simple
+  reference form kept out of production so nobody can call it there. Quote it, and explain the limitation that
+  keeps it out of the release build; otherwise a reader greps the engine and finds nothing.
+- **Bumping the baseline re-opens every quote.** `python3 scripts/codecheck.py --vendor` re-copies the quoted
+  files at the new commit; `--check` then fails on whatever minfer moved, which is the point.
+
 ## Formulas, figures and monospace
 
 Three carriers, and the choice between them is a rule rather than a taste. A block that looks like a
