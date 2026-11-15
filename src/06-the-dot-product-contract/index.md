@@ -61,14 +61,34 @@ The activation side is small by comparison: 896 floats per row, and each is reus
 
 The policy is one sentence: take the f32 activation row, and for every 32 values find the largest magnitude, divide by 127, and round into signed bytes. That is a Q8_0 row - the same block format Chapter 4 decoded, except that it never exists on disk.
 
+The engine's quantizer is that policy in code, and three details in it are this lesson:
+
+<!-- code: src/quants/avx2.rs::quantize_scalar@88ffa5d -->
 ```rust
-// once per activation row, then reused by every weight row of the matrix
-for block in act.chunks_mut(32) {
-    let amax = block.iter().fold(0.0f32, |m, v| m.max(v.abs()));
-    let d = amax / 127.0;                       // f16 in the format, f32 in registers here
-    for v in block { *v = (*v / d).round().clamp(-127.0, 127.0); }
+pub(super) fn quantize_scalar(x: &[f32], y: &mut [u8], k: usize) {
+    let nb = k / 32;
+    for i in 0..nb {
+        let mut am = 0.0f32;
+        for j in 0..32 {
+            am = am.max(x[i * 32 + j].abs());
+        }
+        let d = am / 127.0f32;
+        let id = if d != 0.0 { 1.0f32 / d } else { 0.0f32 };
+        let db = half::f16::from_f32(d).to_bits().to_le_bytes();
+        let yo = i * Q8B;
+        y[yo] = db[0];
+        y[yo + 1] = db[1];
+        for j in 0..32 {
+            y[yo + 2 + j] = (x[i * 32 + j] * id).round_ties_even().clamp(-128.0, 127.0) as i8 as u8;
+        }
+    }
 }
 ```
+<!-- /code -->
+
+`am / 127`, not `/ 128`: the scale maps the largest magnitude onto the symmetric range the byte can hold without a separate zero point. `round_ties_even`, not `round`: the reference rounds half to even, while half-away-from-zero differs on exactly the values that land on .5 - one ulp of the quantizer, and enough to break a bitwise comparison against the reference's output. The `d != 0.0` branch is the one that saves you: an all-zero block gets a zero scale and zero quanta instead of a `NaN` from zero times `inf`.
+
+And the subtle one this lesson's error table does not show: the quanta are computed against `1/d` in f32, while the **stored** scale is `f16(d)`. Dequantizing multiplies by `f16(d)`, so the round trip carries an extra relative error of up to $2^{-11}$ that the quantizer itself never sees. That is a ledger entry, and Chapter 9 is where it gets counted.
 
 **What it costs.** Quantizing a real activation vector and decoding it back:
 
@@ -141,6 +161,30 @@ Which is why the engine's two vector paths do different things and both are corr
 
 **And the 16-bit path is worth having anyway**: 1.63x faster than i32 in the scalar benchmark, because half the accumulator traffic. It is legal for Q4_0, which is the format most weights in the world are stored in. It is illegal for the rest, and the dispatch has to know which is which - which is Lesson 4.
 
+The engine's own version of those three lines, and it is shorter than the sketch because it needs no part names:
+
+<!-- code: src/quants/dot_q8_0.rs::dot_q8_0_q8_0_scalar@88ffa5d -->
+```rust
+fn dot_q8_0_q8_0_scalar(x: &[u8], y: &[u8], nb: usize) -> f32 {
+    let mut s = 0.0f32;
+    for ib in 0..nb {
+        let xb = &x[ib * Q8B..];
+        let yb = &y[ib * Q8B..];
+        let dx = block::fp16_to_f32(u16::from_le_bytes([xb[0], xb[1]]));
+        let dy = block::fp16_to_f32(u16::from_le_bytes([yb[0], yb[1]]));
+        let mut si = 0i32;
+        for j in 0..32 {
+            si += (xb[2 + j] as i8 as i32) * (yb[2 + j] as i8 as i32);
+        }
+        s += si as f32 * dx * dy;
+    }
+    s
+}
+```
+<!-- /code -->
+
+`i32` is this lesson's accumulator table in code, and the scale lands **once per block, at the end** - two multiplies for 32 values, not 32 multiplies and a rounding each.
+
 ### Lesson 4 · The dispatch contract: dtype pair in, kernel out, and the refusal rule
 
 A kernel is not a function of a tensor; it is a function of a **pair** of tensors. The same weight bytes need different code depending on what the activations are, and the same is true in reverse. Here is the table this book's engine keeps, with what this chapter measured in the last column:
@@ -158,6 +202,38 @@ Two rules follow from that table, and both are enforced in code rather than in a
 **Rule one: the pair determines the kernel, and the table is exhaustive.** `(Q4_K, Q8_0)` is not in it - and it is not a valid pair, because a Q8_0 activation row has a 32-value scale and a Q4_K super-block has 256-value scales; pairing them would apply the wrong scale to 224 of every 256 weights. A dispatch table that silently *widens* to a supported pair is a bug factory: it will produce plausible numbers with a scale mismatch that no accuracy test catches, because the model is at its least surprising when the error is systematic.
 
 **Rule two: an unsupported pair refuses, naming the pair.** Not a fallback, not a warning on stderr, not "slower but correct". In the engine this book studies the dispatch returns an error carrying both dtypes; the tests assert on the error text. The reason a silent CPU fallback is worse than a crash is arithmetic: a fallback turns a *coverage* failure (you did not implement this pair, and you know it) into a *correctness* failure (you ran something that computes a different function, and nothing tells you). Chapter 16 will show the same rule at a bigger scale, when a graph gets split across devices.
+
+The dispatch contract as the engine writes it:
+
+<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul_f32@88ffa5d -->
+```rust
+pub fn cpu_quant_matmul_f32(
+    w: &Tensor,
+    x: &[f32],
+    out: &mut [f32],
+    od: usize,
+    id: usize,
+    nt: usize,
+) {
+    match w.ttype {
+        TensorType::Q4_K | TensorType::Q5_K | TensorType::Q6_K => {
+            let n_super = id / 256;
+            let mut qb = vec![0u8; nt * n_super * Q8KB];
+            crate::quants::quantize_row_q8_k_buf(x, nt, id, &mut qb);
+            cpu_quant_matmul(w, &qb, out, od, id, nt)
+        }
+        _ => {
+            let nbe = id / 32;
+            let mut qb = vec![0u8; nt * nbe * Q8B];
+            crate::quants::quantize_row_q8_0_buf(x, nt, id, &mut qb);
+            cpu_quant_matmul(w, &qb, out, od, id, nt)
+        }
+    }
+}
+```
+<!-- /code -->
+
+The match is on the **weight's** dtype, and it decides the *activation* format as well as the kernel: the K-quants quantize activations to Q8_K (256-element blocks carrying precomputed block sums, so the dots never re-reduce the activations), and the simple types keep Q8_0. That is the contract - a dtype pair in, a kernel out - and it has a second half that is easy to miss: choosing the weight format silently chooses the activation format too, and the two must agree block for block or every offset after the first is wrong.
 
 ### Lesson 5 · A scalar reference you can trust: slow, obvious, and the oracle for every kernel after it
 
@@ -196,6 +272,33 @@ $$
 </div>
 
 Those are the numbers a scalar engine gets, and they are the reason the next two chapters exist: **9x** from using the lanes (Chapter 7) and roughly **8x** more from using the cores (Chapter 8) is the difference between 2.5 tok/s and 150 tok/s. Nothing in that chain changes the answer to within 7.7e-04 of the norm product - which is the contract this chapter spent its words on.
+
+The oracle itself - the most obvious code in the engine, and the definition every fast kernel is checked against:
+
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_scalar@88ffa5d -->
+```rust
+fn dot_q4_0_q8_0_scalar(x: &[u8], y: &[u8], nb: usize) -> f32 {
+    let mut s = 0.0f32;
+    for ib in 0..nb {
+        let xb = &x[ib * Q4B..];
+        let yb = &y[ib * Q8B..];
+        let dx = block::fp16_to_f32(u16::from_le_bytes([xb[0], xb[1]]));
+        let dy = block::fp16_to_f32(u16::from_le_bytes([yb[0], yb[1]]));
+        let mut si = 0i32;
+        for j in 0..16 {
+            let v0 = (xb[2 + j] & 0x0F) as i8 - 8;
+            let v1 = (xb[2 + j] >> 4) as i8 - 8;
+            si += (v0 as i32) * (yb[2 + j] as i8 as i32);
+            si += (v1 as i32) * (yb[2 + j + 16] as i8 as i32);
+        }
+        s += si as f32 * dx * dy;
+    }
+    s
+}
+```
+<!-- /code -->
+
+The second nibble's partner is **sixteen positions later** (`yb[2 + j + 16]`), not the next byte: that is the interleaved layout Figure 4.1 drew, and the reason a scalar loop that reads `j + 1` produces plausible, wrong numbers.
 
 ## The contract
 

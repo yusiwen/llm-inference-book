@@ -79,6 +79,23 @@ at the end:  sum(acc_vec)                                    (one fold, 28 block
 
 The measurement that proves this matters is in the table at the top: `neon-sdot` folds per block and gets 3.78x; `neon-acc` keeps a float vector and gets 4.33x. Same instructions, same 32 weights per iteration, 14 per cent apart, and the difference is one horizontal add that moved out of the loop.
 
+The one reduction no lane-count argument can avoid, in the engine's own three lines:
+
+<!-- code: src/quants/avx2.rs::hsum_float_8@88ffa5d -->
+```rust
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx")]
+#[inline]
+pub(super) unsafe fn hsum_float_8(x: __m256) -> f32 {
+    let x128 = _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
+    let x128 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+    _mm_cvtss_f32(_mm_add_ss(x128, _mm_movehdup_ps(x128)))
+}
+```
+<!-- /code -->
+
+Three shuffles, called once per row rather than once per block - which is why every dot product in the engine accumulates into a vector and reduces at the end.
+
 ### Lesson 2 · AVX2 in practice: nibble unpacking, FMA, and the formats that fit
 
 AVX2's integer dot product for our shape is two instructions wide, plus the unpack:
@@ -109,6 +126,37 @@ AVX2's coverage is wider than its reputation: `maddubs` covers Q4_0 (after the s
 
 **One more thing about AVX2 that matters for the dispatch**: `_mm256_maddubs_epi16` and `_mm256_fmadd_ps` need `avx2` and `fma`. On a CPU without FMA the same code cannot be run at all, which is why the function carries `#[target_feature(enable = "avx2,fma")]` and the call site must be guarded by runtime detection.
 
+Verbatim, the same four steps with the engine's identifiers:
+
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_avx2@88ffa5d -->
+```rust
+unsafe fn dot_q4_0_q8_0_avx2(x: &[u8], y: &[u8], nb: usize) -> f32 {
+    use core::arch::x86_64::*;
+    let xb = x.as_ptr();
+    let yb = y.as_ptr();
+    let mut acc = _mm256_setzero_ps();
+    for ib in 0..nb {
+        let xp = xb.add(ib * Q4B);
+        let yp = yb.add(ib * Q8B);
+        let xd = f16_to_f32_bits(*xp.cast::<u16>());
+        let yd = f16_to_f32_bits(*yp.cast::<u16>());
+        let d = _mm256_set1_ps(xd * yd);
+        let tmp = _mm_loadu_si128(xp.add(2) as *const __m128i);
+        let bytes = _mm256_set_m128i(_mm_srli_epi16(tmp, 4), tmp);
+        let mut qx = _mm256_and_si256(bytes, _mm256_set1_epi8(0xF));
+        qx = _mm256_sub_epi8(qx, _mm256_set1_epi8(8));
+        let qy = _mm256_loadu_si256(yp.add(2) as *const __m256i);
+        let ax = _mm256_sign_epi8(qx, qx);
+        let sy = _mm256_sign_epi8(qy, qx);
+        let dot = _mm256_maddubs_epi16(ax, sy);
+        let q = _mm256_cvtepi32_ps(_mm256_madd_epi16(_mm256_set1_epi16(1), dot));
+        acc = _mm256_fmadd_ps(d, q, acc);
+    }
+    hsum_float_8(acc)
+}
+```
+<!-- /code -->
+
 ### Lesson 3 · NEON and SDOT: the integer dot product ARM gives you for free
 
 NEON's answer is one instruction, and it is a better fit for this problem than x86's:
@@ -138,6 +186,41 @@ the same SDOT kernel, two versions of one helper:
 **The horizontal add that moved out of the loop.** With the fold kept inside the block loop, the kernel gets 3.78x over scalar; with a vector accumulator and one fold at the end, 4.33x. Both are correct; the second one is what the reference engines do, and the reason is Lesson 1's third point.
 
 **Which formats NEON covers.** Q4_0, Q5_0 and Q8_0 are all `SDOT`-shaped, and the K-quants are the awkward case for a different reason than on x86: their 256-weight super-block gives eight times more weights per iteration, which is *good* for a kernel that pays per-block overhead - but the 6-bit scale plane has to be unpacked first. This chapter implements Q4_0 only, and the coverage table says so.
+
+Verbatim, the same instruction the sketch above calls `vdotq_s32` - which the stable toolchain will not let the engine call:
+
+<!-- code: src/quants/neon.rs::sdot_vec@88ffa5d -->
+```rust
+/// Accumulate 16 lanes of int8 × int8 into a scalar int32 with SDOT:
+/// one `sdot v.4s, a.16b, b.16b` computes 4 independent 4-element dot
+/// products (16 MACs) into an int32 accumulator — the llama.cpp Apple
+/// Silicon pattern. std::arch's `vdotq_s32` is unstable, so the
+/// instruction is emitted via stable inline asm. int32 accumulation is
+/// exact, so the result equals the scalar kernel's sequential i32 sum
+/// (bit-exact). Only called when `is_aarch64_feature_detected!("dotprod")`.
+#[target_feature(enable = "dotprod")]
+pub(super) unsafe fn dot16(a: int8x16_t, b: int8x16_t) -> i32 {
+    vaddvq_s32(sdot_vec(vdupq_n_s32(0), a, b))
+}
+
+/// Raw SDOT accumulate (no horizontal reduce): 4 lanes × 4-element dot
+/// products (16 MACs) added to `acc`.
+#[target_feature(enable = "dotprod")]
+pub(super) unsafe fn sdot_vec(acc: int32x4_t, a: int8x16_t, b: int8x16_t) -> int32x4_t {
+    let mut acc = acc;
+    std::arch::asm!(
+        "sdot {acc:v}.4s, {a:v}.16b, {b:v}.16b",
+        acc = inout(vreg) acc,
+        a = in(vreg) a,
+        b = in(vreg) b,
+        options(nomem, nostack),
+    );
+    acc
+}
+```
+<!-- /code -->
+
+The `asm!` is the only difference from the sketch above: `std::arch` would not stabilise `vdotq_s32`, so the engine writes the instruction itself, and `#[target_feature]` keeps it from being called on a CPU without `dotprod`.
 
 ### Lesson 4 · Dispatch: compile-time selection, the fallback that must stay correct, and why the widest ISA may lose
 
@@ -171,6 +254,31 @@ If your engine cannot answer "which kernel just ran, on this machine, for this d
 
 That last point is the general lesson and it is uncomfortable: **at 32 weights per block you are not vectorising a big loop, you are vectorising a small loop with a large prologue.** Which is exactly why the formats in Chapter 5 moved to 256-weight super-blocks, and why Chapter 8's block-over-rows layout is the next real win.
 
+Verbatim, the same shape with both mechanisms in it:
+
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0@88ffa5d -->
+```rust
+#[inline]
+pub fn dot_q4_0_q8_0(q4: &[u8], q8: &[u8]) -> f32 {
+    let nb = q8.len() / Q8B;
+    debug_assert!(q4.len() >= nb * Q4B);
+    #[cfg(target_arch = "x86_64")]
+    {
+        if avx2_enabled() {
+            return unsafe { dot_q4_0_q8_0_avx2(q4, q8, nb) };
+        }
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        if neon_enabled() {
+            return unsafe { dot_q4_0_q8_0_neon(q4, q8, nb) };
+        }
+    }
+    dot_q4_0_q8_0_scalar(q4, q8, nb)
+}
+```
+<!-- /code -->
+
 ### Lesson 5 · Proving a fast path: the identity test, the tolerance class, then the timer
 
 The order is not negotiable: identity first, timer second. A fast wrong answer is the most expensive bug in this book because it is *invisible* - the model still produces text, the accuracy tests still pass, and the only symptom is that the output is different from the reference in a way nobody is measuring.
@@ -199,6 +307,38 @@ Chapter 7's harness, scalar kernel          97.8 ns/row
 That is not noise, and no amount of repetition makes it go away; it is what happens when the code around the loop changes - alignment, inlining, what else is in the binary. The rule that follows is the one this book keeps relearning: **a speedup is a property of a harness, not of a kernel.** Quote the command, quote the baseline, and never divide a Chapter 7 number by a Chapter 6 number.
 
 Which is why every speedup in this chapter is computed inside one program, against one baseline, on one dataset, with the run range printed beside it.
+
+The engine's correctness gate for a fast path, and it makes its claim about **bits**:
+
+<!-- code: src/quants/avx2.rs::avx2_family@88ffa5d -->
+```rust
+// ============================================================
+// K-quant AVX2/FMA kernels (Q4_K / Q5_K / Q6_K × Q8_K) — bit-exact with
+// the scalar kernels: the int8×int8 products widen to i32 and accumulate
+// exactly (integer arithmetic is associative), and the per-superblock float
+// arithmetic is kept in the scalar kernel's order (multiply then add — rustc
+// does not contract to FMA by default, so the AVX2 result is bitwise-identical
+// to the scalar reference, not merely within a tolerance). MINFER_NO_AVX2=1
+// forces the scalar path for A/B, the x86 counterpart of MINFER_NO_NEON.
+// ============================================================
+```
+<!-- /code -->
+
+<!-- code: src/quants/avx2_correctness.rs::assert_bits@88ffa5d -->
+```rust
+fn assert_bits(what: &str, offset: usize, got: f32, expected: f32) {
+    assert_eq!(
+        got.to_bits(),
+        expected.to_bits(),
+        "{what} superblock offset {offset}: got {got:?} ({:#010x}) != scalar {expected:?} ({:#010x})",
+        got.to_bits(),
+        expected.to_bits()
+    );
+}
+```
+<!-- /code -->
+
+`to_bits()` rather than `==`, because `-0.0 == 0.0` and a `NaN` never equals itself - and the failure message prints both in hex with the superblock offset, so a failure names where the two diverged.
 
 ## Coverage by instruction set
 

@@ -127,6 +127,39 @@ For this file's first embedding row the RMS is `0.0154`, so the mean square is a
 
 Both f32 variants are inside the ledger's 1e-6 bound, so for an 896-wide vector an engine may accumulate in f32 and be done. The reference engine goes further and sums in **f64** anyway, and after this table you can see the argument is not accuracy: the f64 sum is *order-independent* to well below the f32 noise, so the same kernel produces the same bits on a machine with four lanes and a machine with eight. That is a property an identity gate can use, whereas "3.6e-07 versus 6.2e-07" is a difference you would otherwise have to explain in every comparison.
 
+The reference implementation: three lines of arithmetic and two decisions.
+
+<!-- code: src/vec_ops/rms_norm.rs::rms_norm_f32@88ffa5d -->
+```rust
+pub fn rms_norm_f32(n: usize, y: &mut [f32], x: &[f32], eps: f32) {
+    debug_assert!(y.len() >= n && x.len() >= n);
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") {
+            unsafe { rms_norm_f32_avx2(n, y, x, eps) };
+            return;
+        }
+    }
+
+    // Scalar fallback
+    let mut sum_sq = 0.0f64;
+    for i in 0..n {
+        sum_sq += (x[i] as f64) * (x[i] as f64);
+    }
+    let mean = (sum_sq / n as f64) as f32;
+    let scale = 1.0 / (mean + eps).sqrt();
+
+    if y.as_ptr() != x.as_ptr() {
+        vec_cpy_f32(n, y, x);
+    }
+    vec_scale_f32(n, y, scale);
+}
+```
+<!-- /code -->
+
+`sum_sq` is **f64** while `x` is f32 - the ledger's "accumulate wide, return narrow". The mean is narrowed to f32 once (`as f32`), the reciprocal square root is taken in f32, and the output stays f32. That single cast is the whole point of the lesson: summing 896 squared values in f32 accumulates a relative error that grows with the row length, summing them in f64 does not, and the per-element cost is one widening multiply-add that the compiler handles well. Note also where `eps` goes: added to the **mean**, after the division, not to the sum - which is why the file's `1e-6` is compared against a mean of order one, and why this book quotes the f32 truth of it (`9.999999974752427e-07`) rather than the decimal the file writes.
+
 ### Lesson 2 · RoPE: pairs, rotations and positions as data rather than structure
 
 Rotary position embedding rotates the query and key vectors by an angle proportional to their position. Nothing is stored per position: the position *is* the angle. For a head dimension $h_d$, pair index $d < h_d/2$, and position $p$, the angle is
@@ -167,6 +200,33 @@ same (q, k, positions), scored under the two pairings:
 Seven per cent on every score in every head in every layer is not a garbled answer. It is a model that produces fluent, slightly-wrong text - the failure class this book keeps warning about, and the reason the reference engine keeps the RoPE table (ADR-0074: the Llama-3 frequency table is *read from the file*, not recomputed) and `rope_inv_freq` in one place, so the CPU reference and the device kernels cannot drift apart.
 
 **Positions as data.** The other half of RoPE is that `pos` is an argument, not a memory layout. That is what makes KV-cache reuse possible (Chapter 11): a cached key does not have to be stored rotated, because a caller that knows its position can rotate on read. It also makes a *re-rope* a legitimate operation - rotating a cached key by a different position when a batch is reordered - and the reference engine's `RopeParams` struct exists precisely so a caller cannot pass the frequency base without also passing the scale and the table.
+
+The frequency, in the one place the reference and the device kernels share:
+
+<!-- code: src/vec_ops/rope.rs::rope_inv_freq@88ffa5d -->
+```rust
+/// The inverse frequency a RoPE kernel uses, in **one** place so the CPU
+/// reference and the issue's gates cannot drift from the kernels:
+/// unscaled models keep today's `freq_scale / base^(2d/hd)`, and a table divides
+/// it per pair. The device kernels (`rope.metal`, `common.cuh`) mirror this
+/// expression line for line.
+pub fn rope_inv_freq(
+    freq_base: f32,
+    freq_scale: f32,
+    freqs: Option<&RopeFreqs>,
+    d: usize,
+    hd: usize,
+) -> f32 {
+    let unscaled = freq_scale / freq_base.powf((2 * d) as f32 / hd as f32);
+    match freqs {
+        Some(f) if !f.is_empty() => unscaled / f.at(d),
+        _ => unscaled,
+    }
+}
+```
+<!-- /code -->
+
+The table is computed once per call - at most 64 entries - which is why RoPE measured cheap in this chapter; and the comment is there because `rope.metal` and `common.cuh` mirror this expression line for line.
 
 ### Lesson 3 · Softmax: the max subtraction that is not optional, and its cost on a long row
 
@@ -213,6 +273,40 @@ With the subtraction the largest exponent is $\exp(0)=1$, so the largest term is
 
 That also names the fix, and it is measured: a degree-5 polynomial with the `2^k` trick does the same `exp` in **0.61 ns** - 1.9x faster than libm at a max relative error of `1.1e-07`, below f32's own resolution. Every serious engine has one of these, for exactly this reason. The two passes over the row then become the next target, and that is the online-softmax computation in the reading list: one pass carrying a running maximum and a running sum, which is what you need anyway when the row arrives as a stream of attention blocks you have not finished computing.
 
+The softmax, where the two things that matter are a parameter and an accumulator's type:
+
+<!-- code: src/vec_ops/softmax.rs::vec_soft_max_f32@88ffa5d -->
+```rust
+pub fn vec_soft_max_f32(n: usize, y: &mut [f32], x: &[f32], max: f32) -> f64 {
+    debug_assert!(y.len() >= n && x.len() >= n);
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            return unsafe { vec_soft_max_f32_avx2(n, y, x, max) };
+        }
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        if neon_vec_enabled() {
+            return unsafe { vec_soft_max_f32_neon(n, y, x, max) };
+        }
+    }
+
+    // Scalar fallback
+    let mut sum = 0.0f64;
+    for i in 0..n {
+        let val = (x[i] - max).exp();
+        y[i] = val;
+        sum += val as f64;
+    }
+    sum
+}
+```
+<!-- /code -->
+
+`max` is a parameter because the caller still has the scores in registers, and `sum` is f64 because the normalisation is accumulated once - the structural version of the two numbers this chapter measured.
+
 ### Lesson 4 · SiLU, gating, and the elementwise ops that fuse into one pass
 
 SiLU is the activation in a Llama-style feed-forward block:
@@ -246,6 +340,33 @@ fused:    dst[i]  = silu(gate[i]) * up[i]        read n, read n, write n - once
 The unfused version materialises a whole intermediate tensor. At 4,864 floats that is 19 KB - it fits in L1, which is why the difference is invisible in a microbenchmark and *visible* in a real engine: the intermediate is not one tensor, it is one per layer per token, and in a batched prefill it is `n_tokens x 19 KB`. The reference engine's `vec_swiglu_f32` is the fused form, and its comment makes the property that allows the fusion explicit - *same formula, same per-element order, bit-identical to the pair* - which is the property that makes introducing it safe at all. An optimisation that changes the bits is a new kernel and needs its own identity test.
 
 The general rule: **fuse when the intermediate has no other reader, and decide that at the graph level so the scheduler can see it** (Chapter 16). A kernel that internally decides to fuse cannot be scheduled, profiled, or compared against anything.
+
+SiLU and SwiGLU sit next to each other in the file because the second is the first plus a multiply:
+
+<!-- code: src/vec_ops/silu.rs::vec_swiglu_f32@88ffa5d -->
+```rust
+pub fn vec_swiglu_f32(n: usize, dst: &mut [f32], gate: &[f32], up: &[f32]) {
+    debug_assert!(dst.len() >= n && gate.len() >= n && up.len() >= n);
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            unsafe { vec_swiglu_f32_avx2(n, dst, gate, up) };
+            return;
+        }
+    }
+
+    // Scalar fallback (same formula as vec_silu_f32 + vec_mul_f32; the multiply
+    // is exact, so composing it here stays bit-identical to the AVX2 mul path
+    // on machines that have AVX2 but not FMA).
+    for i in 0..n {
+        dst[i] = (gate[i] / (1.0 + (-gate[i]).exp())) * up[i];
+    }
+}
+```
+<!-- /code -->
+
+The `up` multiply is exact, so composing it here is bit-identical to SiLU-then-multiply: a fusion, not an approximation, and one pass over 4,864 elements instead of three.
 
 ### Lesson 5 · The precision ledger: f32 activations, f16 / bf16 weights, and the ops that must not narrow
 
@@ -283,6 +404,38 @@ Verdict: **agree within 1e-6**.
 <!-- /facts -->
 
 Read the RoPE row carefully, because it shows the limit of this method: the witness re-implements the **half-split pairing**, because that is what the C kernel claims to do. Two implementations that agree about a wrong pairing agree perfectly. That is why the pairing itself is tested against a golden vector from a known engine - or, in the reader's case, against the reference implementation's own output - and never against a second implementation of your own.
+
+The normalisation the ledger lists as "must not narrow", in its fused form:
+
+<!-- code: src/vec_ops/rms_norm.rs::rms_norm_fused_f32@88ffa5d -->
+```rust
+pub fn rms_norm_fused_f32(n: usize, y: &mut [f32], x: &[f32], w: &[f32], eps: f32) {
+    debug_assert!(y.len() >= n && x.len() >= n && w.len() >= n);
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        if is_x86_feature_detected!("avx2") && is_x86_feature_detected!("fma") {
+            unsafe { rms_norm_fused_f32_avx2(n, y, x, w, eps) };
+            return;
+        }
+    }
+
+    // Scalar fallback
+    let mut sum_sq = 0.0f64;
+    for i in 0..n {
+        sum_sq += (x[i] as f64) * (x[i] as f64);
+    }
+    let mean = (sum_sq / n as f64) as f32;
+    let scale = 1.0 / (mean + eps).sqrt();
+
+    for i in 0..n {
+        y[i] = x[i] * scale * w[i];
+    }
+}
+```
+<!-- /code -->
+
+`sum_sq` is f64 here too, and the gain is applied inside the per-element loop: two multiplies instead of three traversals of 896 elements, 24 times a token.
 
 ## Project
 

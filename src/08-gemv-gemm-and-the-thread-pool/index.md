@@ -114,17 +114,45 @@ Two caveats a careful reader will want, stated here rather than buried:
 - **The weight-throughput column can exceed the streaming number.** The Mac pass reports 216 GB/s at one token against a 198 GB/s streaming measurement. That is not a contradiction: the streaming figure was measured on a 1 GiB array where nothing fits in cache, and this pass is 76.6 MB repeated five times, so part of it is served from cache. The NUC reports 54.0 GB/s against a 45.1 GB/s streaming figure for the same reason. Read both as "saturated", not as "peak".
 - **The token sweep is one matmul, not a model.** `token_embd` is 76.6 MB and 896 wide; a model is two dozen layers of these plus attention. The *ratio* is a property of the format and the machine, so the shape of the result carries over; the absolute per-token milliseconds do not.
 
+The loop every kernel on this machine is a variant of:
+
+<!-- code: src/kernel/pool.rs::mm_rows@88ffa5d -->
+```rust
+pub(super) unsafe fn mm_rows(job: &MmJob, r0: usize, r1: usize) {
+    let od = job.od;
+    let id = job.id;
+    let nt = job.nt;
+    match job.ttype {
+        TensorType::Q4_0 => {
+            let nb = id / 32;
+            let ws = nb * Q4B;
+            let rowb = nb * Q8B;
+            for o in r0..r1 {
+                let wrow = std::slice::from_raw_parts(job.w.add(o * ws), ws);
+                for t in 0..nt {
+                    let xrow = std::slice::from_raw_parts(job.x.add(t * rowb), rowb);
+                    *job.out.add(t * od + o) = crate::quants::dot_q4_0_q8_0(wrow, xrow);
+                }
+            }
+        }
+```
+<!-- /code -->
+
+`nt` decides the regime: with one token this is decode's GEMV, with 1,024 the same row is read once and dotted 1,024 times, which is prefill's GEMM. The function does not know which one it is in.
+
 ### Lesson 2 · Row splitting and the false-sharing traps between worker threads
 
 The unit of work is a **row range**, because the weight row is the one thing in this computation that no two workers need to share:
 
+<!-- code: src/kernel/pool.rs::chunk@88ffa5d -->
 ```rust
-fn chunk(parts: usize, idx: usize, total: usize) -> (usize, usize) {
+pub(super) fn chunk(parts: usize, idx: usize, total: usize) -> (usize, usize) {
     let a = total * idx / parts;
     let b = total * (idx + 1) / parts;
     (a, b)
 }
 ```
+<!-- /code -->
 
 That is the reference engine's split, and the multiplication before the division matters: `total * idx / parts` distributes the remainder across the later chunks instead of giving every worker a floor and leaving `total % parts` rows unassigned. With 151,936 rows over eight workers every chunk gets 18,992 rows exactly, but seven workers leave a remainder, and `total / parts` alone would silently drop it - a matmul that is wrong only for some thread counts, which is the worst kind.
 
@@ -170,6 +198,43 @@ gate    a mutex the caller holds across submit -> wait
 **The main thread is a participant.** With eight hired workers the split is into nine chunks: waiting costs as much as working, so the caller does the last range itself instead of blocking. This is why the pool's thread count is *workers + 1* everywhere in the code, and why a benchmark comparing "eight threads" against a pool has to compare the same participation count or it is measuring the difference in workers.
 
 **The gate exists because a pool is global and a job is stack-local.** The descriptor carries raw pointers into a caller's buffers, and the caller returns as soon as its own range is done and the counter reaches `n`. Two concurrent submitters would clobber `job` and share `done`, so one caller could observe completion of the *other's* work and return while its own buffers die under late workers - undefined behaviour, not just a wrong answer. The mutex makes submission single-file and workers never take it, so there is no deadlock. That is the difference between a pool that passes tests and a pool that is correct; a reader building their own should copy the reasoning, not the code.
+
+The pool is a submission, a counter and a spin:
+
+<!-- code: src/kernel/pool.rs::par_for@88ffa5d -->
+```rust
+/// Parallel-for over `total` tasks using the persistent pool: `f(ctx, start,
+/// end)` is called once per contiguous chunk (one per worker + the main
+/// thread). SAFETY: `ctx` must stay valid for the call; `f` must only write
+/// outputs indexed by its own range.
+pub fn par_for(total: usize, ctx: *const (), f: unsafe fn(*const (), usize, usize)) {
+    let threads = cpu_threads();
+    if threads <= 1 || total < 2 {
+        unsafe { (f)(ctx, 0, total) };
+        return;
+    }
+    let pool = get_pool(threads - 1);
+    let _gate = pool.gate.lock().unwrap();
+    *pool.job.lock().unwrap() = PoolJob::ParFor(ParForJob { total, ctx, f });
+    pool.gen.fetch_add(1, Ordering::SeqCst);
+    let (r0, r1) = chunk(pool.n + 1, pool.n, total);
+    unsafe { (f)(ctx, r0, r1) };
+    let mut spins = 0usize;
+    while pool.done.load(Ordering::SeqCst) < pool.n {
+        spins += 1;
+        if spins >= 8_000 {
+            spins = 0;
+            std::thread::yield_now();
+        } else {
+            std::hint::spin_loop();
+        }
+    }
+    pool.done.store(0, Ordering::SeqCst);
+}
+```
+<!-- /code -->
+
+One atomic counter publishes the job, `done` counts completions, the caller takes the last chunk for itself, and the spin gives up after 8,000 iterations to `yield_now()` - the difference between burning a core and letting the OS run the worker that must finish first.
 
 ### Lesson 4 · The bound on a queue, and what happens when a consumer lags
 
@@ -232,6 +297,27 @@ The Mac's tenth thread is **slower** than its eighth (156 GB/s against 174, rang
 - On the NUC sixteen threads are eight cores with simultaneous multithreading: the hyperthreads share load and store units, so a compute-heavy kernel gains nothing and pays a little in shared-cache pressure.
 
 A thread count is therefore a **measured** parameter with a shape, not a constant inherited from `nproc`. The reference engine reads the P-core count on macOS (`hw.perflevel0.logicalcpu`) precisely because the E-cores measurably hurt matmul throughput, and that choice is the same finding from the other direction: more threads is a hypothesis, and this table is the test.
+
+The threshold below which the pool is not worth waking:
+
+<!-- code: src/kernel/pool.rs::MIN_PARALLEL_MACS@88ffa5d -->
+```rust
+pub(crate) const MIN_PARALLEL_MACS: usize = 1 << 20; // 1M MACs
+```
+<!-- /code -->
+
+<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul@88ffa5d -->
+```rust
+let threads = cpu_threads();
+let macs = od.saturating_mul(id).saturating_mul(nt);
+if threads <= 1 || od < 2 || macs < MIN_PARALLEL_MACS {
+    unsafe { mm_rows(&job, 0, od) };
+    return;
+}
+```
+<!-- /code -->
+
+One million multiply-accumulates, and three ways to be too small: one thread, one output row - where splitting means splitting a *reduction*, which changes the accumulation order for nothing - or too little work to pay for the wake-up.
 
 ## Shapes and kernels
 
