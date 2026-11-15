@@ -82,7 +82,8 @@ A figure is a claim. Until a chapter measures something, every number in a figur
 |---|---|---|---|---|---|
 | 14.1 | `14-two-passes.svg` | P0 | panel | L2 | The op histogram of the two graph types, measured from the engine's trace: prefill 443 nodes and decode 440, with the entire difference being three nodes - one input and two `get_rows` for the tail-row gather. The planned imperative-versus-graph panel was replaced because the imperative path is deleted from this tree; a panel of the after against a remembered before would be a drawing, and this is arithmetic from the graph. |
 | 14.2 | `14-graph-reuse.svg` | P1 | timeline | L4 | One run as a timeline: step 0 executes the prefill graph built once at 0.5 ms, steps 1-7 execute the same decode graph built once at 0.4 ms, and the KV cell count rises from 34 to 41 underneath a topology row that never changes again. |
-| 15.1 | `15-fusion.svg` | P0 | flow | L4 | Three separate elementwise nodes folded into one pass: three reads and three writes of the same buffer become one of each. |
+| 15.1 | `15-fusion.svg` | P0 | flow | L4 | The rewrite and its orphan, with the measured ledger under it: before, the activation writes a temporary and the multiply reads it back (5 passes over the row); after, one node reads both operands and writes once (3 passes) - and the node that used to feed the multiply stays in the graph with no consumer, no buffer and no execution. The planned panel stopped at "three nodes folded into one"; the engine keeps the third node, so the figure shows that instead. |
+| 15.2 | `15-fusion-cost.svg` | P0 | scatter | L5 | Achieved bandwidth of the same 3-to-1 rewrite on two activations at four row counts, against this machine's single-core streaming copy rate (124.7 GB/s): silu sits at an eighth of the line (it is waiting on `expf`), relu sits on it (it is waiting on memory), which is why the same 40% byte reduction is worth 1.06x on one and 1.64x on the other. |
 | 16.1 | `16-assignment.svg` | P0 | graph | L3 | A graph coloured by device with two split boundaries, and the cross-device copy each boundary costs. |
 | 17.1 | `17-liveness.svg` | P0 | ledger | L2 | The liveness spans of a graph's buffers, and how overlapping spans share one arena instead of each getting its own allocation. |
 | 17.2 | `17-memory-ledger.svg` | P1 | bar | L5 | A memory ledger as stacked bars: resident weights, host-mapped weights, the activation arena, the KV cache and staging, predicted against observed. |
@@ -146,7 +147,7 @@ Then, because the build cannot see any of it: open the page, switch every shippe
 
 | Quantity | Value | How |
 |---|---|---|
-| Planned figures | 50 | this file |
-| Drawn | 21 | `ls src/figures/*.svg \| wc -l` |
+| Planned figures | 51 | this file |
+| Drawn | 23 | `ls src/figures/*.svg \| wc -l` |
 | Pages that will carry at least one figure | 30 | every page in the table above |
 | Chapters with no figure | 0 | the five-lesson chapters were checked one by one; a chapter only appears here where its shape is the lesson |

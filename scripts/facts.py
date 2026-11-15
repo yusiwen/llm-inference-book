@@ -667,6 +667,15 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "fusion": ("scripts/fuse.py",
+               "runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads "
+               "the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles "
+               "and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four "
+               "row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64",
+               "node counts and the set of executed node ids from one trace; timings are the median of nine "
+               "runs of the same kernel; output equality is compared byte for byte, and the numpy witness "
+               "agrees within float32 rounding",
+               ),
     "graph": ("scripts/graph.py",
               "runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, "
               "the shapes, the edges and the per-node statistics out of the trace the visualizer consumes",
@@ -1236,6 +1245,82 @@ def render_smp_grammar(f):
 
 
 
+def render_fs_vocab(f):
+    """Chapter 15: how big the vocabulary is, and how small the model's use of it is."""
+    v = f["vocab"]
+    used = sorted({op for phase in f["structure"].values() for op in phase["graph_ops"]})
+    out = ["| Quantity | Count |", "|---|---|"]
+    out.append(f"| `Op` variants | {v['op_variants']} |")
+    out.append(f"| ... carrying a payload | {v['payload_variants']} |")
+    out.append(f"| ... unit variants | {v['unit_variants']} |")
+    out.append(f"| `FusedOp` variants (fusion targets) | {v['fused_op_variants']} |")
+    out.append(f"| Variants no supported architecture emits | {len(v['never_emitted'])} "
+               f"({', '.join('`' + x + '`' for x in v['never_emitted'])}) |")
+    out.append(f"| Variants this model's graph uses | {len(used)} |")
+    return out
+
+
+def render_fs_structure(f):
+    """Chapter 15: the rewrite, and what it leaves behind, per graph type."""
+    out = ["| | Prefill graph | Decode graph |", "|---|---|---|"]
+    pre, dec = f["structure"]["prefill"], f["structure"]["decode"]
+    out.append(f"| Nodes | {pre['nodes']} | {dec['nodes']} |")
+    out.append(f"| `mul` nodes | {pre['mul']} | {dec['mul']} |")
+    out.append(f"| `swiglu` nodes (rewrite output) | {pre['swiglu']} | {dec['swiglu']} |")
+    out.append(f"| `silu` nodes left in the graph | {pre['silu']} | {dec['silu']} |")
+    out.append(f"| ... of those, executed | {pre['silu_run']} | {dec['silu_run']} |")
+    out.append(f"| Nodes recorded by the per-node trace | {pre['recorded']} | {dec['recorded']} |")
+    out.append(f"| Nodes not recorded | {', '.join(f'{k} {v}' for k, v in pre['not_recorded'].items())} "
+               f"| {', '.join(f'{k} {v}' for k, v in dec['not_recorded'].items())} |")
+    return out
+
+
+def render_fs_kernel(f):
+    """Chapter 15: the same 3-to-1 rewrite, measured on two activations at four row counts."""
+    out = ["| Activation | Rows | Three nodes | One node | Speedup | Output identical |",
+           "|---|---|---|---|---|---|"]
+    for act in f["kernel"]["acts"]:
+        for r in act["rows"]:
+            # the relu kernel at one row finishes inside the clock's resolution: there is no rate to
+            # divide, so the cell says so instead of printing a ratio computed from a zero
+            sp = f"{r['us_three'] / r['us_one']:.2f}x" if r["us_one"] else "n/a"
+            out.append(f"| `{act['act']}` | {r['rows']:,} | {r['us_three']:,.0f} us "
+                       f"({r['gbs_three']:.1f} GB/s) | {r['us_one']:,.0f} us "
+                       f"({r['gbs_one']:.1f} GB/s) | {sp} | "
+                       f"{'yes' if r['identical'] else '**no**'} |")
+    return out
+
+
+def render_fs_bill(f):
+    """Chapter 15: the byte bill, and the machine's own streaming rate to read it against."""
+    b = f["kernel"]["bill"]
+    bw = f["kernel"]["bandwidth"]["1"]
+    out = ["| Quantity | Bytes |", "|---|---|"]
+    out.append(f"| Three nodes, one row | {b['per_row_bytes_three']:,} |")
+    out.append(f"| One node, one row | {b['per_row_bytes_one']:,} |")
+    out.append(f"| Saved per row | {b['saved_per_row']:,} ({b['saved_fraction']:.0%}) |")
+    out.append(f"| Saved per token, 24 layers | {b['per_token_saved']:,} |")
+    out.append(f"| This machine, one core, streaming copy | {bw['copy']:.1f} GB/s |")
+    return out
+
+
+def render_fs_witness(f):
+    """Chapter 15: the numpy recomputation behind the C samples."""
+    w = f["kernel"]["witness"]
+    return [f"| {w['agree']}/{w['checked']} sampled outputs | recomputed in f64 from the same seed |",
+            "|---|---|",
+            f"| Agreement | {w['agree']}/{w['checked']} within float32 rounding |",
+            f"| Worst relative difference | {w['worst_relative']:.2e} |"]
+
+
+def render_fs_tests(f):
+    """Chapter 15: the engine's own fusion tests, run on this machine."""
+    out = ["| Test | Result |", "|---|---|"]
+    for name in f["tests"]["run"]:
+        out.append(f"| `{name}` | {'ok' if name not in f['tests']['failed'] else '**FAILED**'} |")
+    return out
+
+
 def render_gr_shape(f):
     """Chapter 14: what the two graph types are made of."""
     pre, dec = f["shape"]["prefill"], f["shape"]["decode"]
@@ -1325,6 +1410,12 @@ def render_gr_trace(f):
 
 
 BLOCKS = {
+    "fs-vocab": render_fs_vocab,
+    "fs-structure": render_fs_structure,
+    "fs-kernel": render_fs_kernel,
+    "fs-bill": render_fs_bill,
+    "fs-witness": render_fs_witness,
+    "fs-tests": render_fs_tests,
     "tok-vocab": render_tok_vocab,
     "tok-fixtures": render_tok_fixtures,
     "tok-columns": render_tok_columns,

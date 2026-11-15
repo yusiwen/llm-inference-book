@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 424" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="Achieved bandwidth of the same three-to-one rewrite, measured. Both silu forms reach only 6 to 17 gigabytes per second, far below this machine's single-core streaming copy rate of 124.7 gigabytes per second, which means those kernels wait on the exponential rather than on memory. Both relu forms sit at 97 to 132 gigabytes per second, right at the line, so for relu the traffic reduction is visible as time: 1.64 to 1.72 times faster.">
+  <style>
+    .f-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .f-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .f-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .f-n   { fill: var(--fg, #dce6f0); font-size: 11px; font-weight: 600; }
+    .f-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .55; }
+    .fig-a-peak { stroke: #8f7ad1; stroke-width: 1.4; stroke-dasharray: 6 4; }
+    .fig-a-silu { stroke: #4d86b8; stroke-width: 2.2; fill: none; }
+    .fig-a-relu { stroke: #b8703f; stroke-width: 2.2; fill: none; }
+    .fig-a-dot-s { fill: #4d86b8; stroke: var(--quote-border, #4a6577); }
+    .fig-a-dot-r { fill: #b8703f; stroke: var(--quote-border, #4a6577); }
+  </style>
+  <text class="f-cap" x="24" y="24">WHERE THE FUSION'S 40% OF TRAFFIC GOES</text>
+  <text class="f-s" x="24" y="44">achieved bandwidth of the same rewrite, four row counts, median of nine runs</text>
+  <line class="f-rule" x1="110" y1="330" x2="700" y2="330"/>
+  <line class="f-rule" x1="110" y1="90" x2="110" y2="330"/>
+  <line class="f-rule" x1="105" y1="330.0" x2="700" y2="330.0" opacity=".18"/>
+  <text class="f-m" x="100" y="334.0" text-anchor="end">0</text>
+  <line class="f-rule" x1="105" y1="270.0" x2="700" y2="270.0" opacity=".18"/>
+  <text class="f-m" x="100" y="274.0" text-anchor="end">35</text>
+  <line class="f-rule" x1="105" y1="210.0" x2="700" y2="210.0" opacity=".18"/>
+  <text class="f-m" x="100" y="214.0" text-anchor="end">70</text>
+  <line class="f-rule" x1="105" y1="150.0" x2="700" y2="150.0" opacity=".18"/>
+  <text class="f-m" x="100" y="154.0" text-anchor="end">105</text>
+  <line class="f-rule" x1="105" y1="90.0" x2="700" y2="90.0" opacity=".18"/>
+  <text class="f-m" x="100" y="94.0" text-anchor="end">140</text>
+  <text class="f-m" x="24" y="76">GB/s</text>
+  <text class="f-m" x="110.0" y="348" text-anchor="middle">1 rows</text>
+  <text class="f-m" x="306.7" y="348" text-anchor="middle">34 rows</text>
+  <text class="f-m" x="503.3" y="348" text-anchor="middle">512 rows</text>
+  <text class="f-m" x="700.0" y="348" text-anchor="middle">4,096 rows</text>
+  <line class="fig-a-peak" x1="110" y1="113.5" x2="700" y2="113.5"/>
+  <text class="f-m" x="696" y="106.5" text-anchor="end">this machine, one core, streaming copy 126.3 GB/s</text>
+  <circle class="fig-a-dot-s" cx="110.0" cy="318.9" r="3"/>
+  <circle class="fig-a-dot-s" cx="306.7" cy="316.9" r="3"/>
+  <circle class="fig-a-dot-s" cx="503.3" cy="303.0" r="3"/>
+  <circle class="fig-a-dot-s" cx="700.0" cy="300.7" r="3"/>
+  <path class="fig-a-silu" d="M110.0 318.9 L306.7 316.9 L503.3 303.0 L700.0 300.7" style="stroke-dasharray: none"/>
+  <circle class="fig-a-dot-s" cx="110.0" cy="322.9" r="3"/>
+  <circle class="fig-a-dot-s" cx="306.7" cy="321.6" r="3"/>
+  <circle class="fig-a-dot-s" cx="503.3" cy="312.5" r="3"/>
+  <circle class="fig-a-dot-s" cx="700.0" cy="311.3" r="3"/>
+  <path class="fig-a-silu" d="M110.0 322.9 L306.7 321.6 L503.3 312.5 L700.0 311.3" style="stroke-dasharray: 8 5"/>
+  <circle class="fig-a-dot-r" cx="306.7" cy="127.5" r="3"/>
+  <circle class="fig-a-dot-r" cx="503.3" cy="122.2" r="3"/>
+  <circle class="fig-a-dot-r" cx="700.0" cy="124.5" r="3"/>
+  <path class="fig-a-relu" d="M306.7 127.5 L503.3 122.2 L700.0 124.5" style="stroke-dasharray: none"/>
+  <circle class="fig-a-dot-r" cx="306.7" cy="129.9" r="3"/>
+  <circle class="fig-a-dot-r" cx="503.3" cy="123.4" r="3"/>
+  <circle class="fig-a-dot-r" cx="700.0" cy="128.2" r="3"/>
+  <path class="fig-a-relu" d="M306.7 129.9 L503.3 123.4 L700.0 128.2" style="stroke-dasharray: 8 5"/>
+  <path class="fig-a-silu" d="M470 62 L500 62"/><text class="f-m" x="508" y="66">silu</text>
+  <path class="fig-a-relu" d="M560 62 L590 62"/><text class="f-m" x="598" y="66">relu</text>
+  <text class="f-m" x="470" y="80">solid: three nodes, dashed: one node</text>
+  <line class="f-rule" x1="24" y1="364" x2="786" y2="364"/>
+  <text class="f-s" x="24" y="384">silu never reaches the line: its kernels wait on expf, so removing 40% of the traffic buys 1.06x.</text>
+  <text class="f-s" x="24" y="402">relu sits on the line: it is waiting on memory, and the same rewrite buys 1.64x.</text>
+</svg>

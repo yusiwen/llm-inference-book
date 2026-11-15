@@ -466,7 +466,7 @@ did not expect. None of those three sentences could be written about a function.
 |---|---|---|---|
 | device choice | the call site: a kernel was called on a device because that is where the code called it | a per-node `backend` field, filled by `assign_backends` | the same graph can run with a different assignment, and the assignment is inspectable (measured: every node in this run is `cpu`) |
 | buffer lifetime | stack locals inside the function, freed when it returned | liveness over node ids, owned by the allocator, with `view` nodes aliasing their parent | buffers can be reused across steps and across nodes, and a reshape costs no copy |
-| fusion | writing the fused kernel call instead of the two calls | a pass over nodes with a shared input, gated on the assigned backend | fusion becomes an option you can A/B (on this CPU-only run the two fusion flags are no-ops: no node carries a device) |
+| fusion | writing the fused kernel call instead of the two calls | a pass over nodes with a shared input, gated on the assigned backend | the rewrite becomes a property of the graph instead of a call site - and it is applied on CPU too: the 443-node graph measured above is already fused (no `mul` nodes, 24 `swiglu`, and 24 orphaned `silu` nodes the scheduler skips). Chapter 15 measures what that is worth |
 | reuse across steps | impossible: the function is the computation | structural equality over `GraphParams`, with the graph kept in a cache | two builds in an eight-step run instead of eight |
 | inspection | a stack trace, if you were unlucky | the JSON export and the per-node trace | the topology, the shapes, the stats and the token in one artifact |
 

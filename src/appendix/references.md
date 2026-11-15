@@ -22,8 +22,8 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 
 | Key | Work | Checked | Used in |
 |---|---|---|---|
-| `[roofline]` | Williams, Waterman and Patterson, *Roofline: an insightful visual performance model for multicore architectures* (CACM, 2009) - no arXiv ID (journal paper) | no arXiv ID | 1 |
-| `[scaling-inference]` | Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102 | arXiv API | 1, 8, 14, 17, 20 |
+| `[roofline]` | Williams, Waterman and Patterson, *Roofline: an insightful visual performance model for multicore architectures* (CACM, 2009) - no arXiv ID (journal paper) | no arXiv ID | 1, 15 |
+| `[scaling-inference]` | Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102 | arXiv API | 1, 8, 14, 15, 17, 20 |
 | `[kbit]` | Dettmers and Zettlemoyer, *The case for 4-bit precision: k-bit Inference Scaling Laws* (2022) - arXiv:2212.09720 | arXiv API | 4, 5 |
 | `[gqa]` | Ainslie et al., *GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints* (2023) - arXiv:2305.13245 | arXiv API | 10 |
 | `[fa2]` | Dao, *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning* (2023) - arXiv:2307.08691 | arXiv API | 25 |

@@ -1,7 +1,7 @@
 {
  "baseline": {
   "commit": "88ffa5d89905053729de4d814e4a368ac3f63af5",
-  "ref": "88ffa5d89905053729de4d814e4a368ac3f63af5"
+  "ref": "88ffa5d"
  },
  "citations": [
   {
@@ -436,14 +436,6 @@
   },
   {
    "pages": [
-    "ch 15"
-   ],
-   "path": "docs/inference_e2e_walkthrough/06-assign-fusion.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "ch 17"
    ],
    "path": "docs/inference_e2e_walkthrough/07-allocator-liveness-kv.md",
@@ -746,6 +738,7 @@
   },
   {
    "pages": [
+    "ch 15",
     "ch 16"
    ],
    "path": "src/graph/backend.rs",
@@ -798,6 +791,14 @@
     "ch 15"
    ],
    "path": "src/graph/fusion.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 15"
+   ],
+   "path": "src/graph/fusion/tests.rs",
    "resolved": true,
    "symbol": null
   },
@@ -863,14 +864,6 @@
    "pages": [
     "ch 15"
    ],
-   "path": "src/graph/op_matrix.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "ch 15"
-   ],
    "path": "src/graph/ops.rs",
    "resolved": true,
    "symbol": null
@@ -893,6 +886,7 @@
   },
   {
    "pages": [
+    "ch 15",
     "ch 16",
     "ch 8"
    ],
@@ -1228,5 +1222,5 @@
   "step_records": 110,
   "tests": 749
  },
- "generated": "2026-11-13"
+ "generated": "2026-11-15"
 }
