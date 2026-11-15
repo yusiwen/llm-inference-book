@@ -1,0 +1,216 @@
+{
+ "artifact": "dispatch",
+ "engine": {
+  "version": "minfer v0.0.9",
+  "baseline": "88ffa5d",
+  "binary": "minfer",
+  "prompt": "The capital of France is",
+  "steps": 3
+ },
+ "registry": {
+  "n_backends": 3,
+  "names": [
+   "cpu",
+   "metal",
+   "cuda"
+  ],
+  "priority": {
+   "metal": 300,
+   "cuda": 200,
+   "cpu": 100
+  },
+  "ids": {
+   "cpu": 0,
+   "metal": 1,
+   "cuda": 2
+  }
+ },
+ "doc_matrix": [
+  {
+   "op": "Input, KvcacheLoad, View/Reshape/Permute",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "Add, Mul, Silu",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "RmsNorm, QkNorm",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "MatMul",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "GetRows (embedding, tail rows)",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "View with offset != 0 or a partial window (D1)",
+   "cpu": "yes",
+   "metal": "no",
+   "cuda": "yes"
+  },
+  {
+   "op": "Attn",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "Attn with explicit_span (a window that starts at a non-zero cell, or s",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "KvcacheStore",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "SwiGLU (fused)",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "RoPE non-interleaved",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "RoPE llama3 scaling",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "RoPE interleaved",
+   "cpu": "yes",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "FusedQKV (decode)",
+   "cpu": "no",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "FusedFFN (decode)",
+   "cpu": "no",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "FusedQkvNorm (Qwen3 decode)",
+   "cpu": "no",
+   "metal": "yes",
+   "cuda": "yes"
+  },
+  {
+   "op": "QkvBiasRopeStore (mixed-quant decode)",
+   "cpu": "no",
+   "metal": "no",
+   "cuda": "yes"
+  },
+  {
+   "op": "Scale, Softmax, BatchMatMul",
+   "cpu": "yes",
+   "metal": "no",
+   "cuda": "no"
+  }
+ ],
+ "support_tests": {
+  "run": [
+   "graph::op_matrix::every_op_has_a_matrix_decision",
+   "graph::op_matrix::matrix_cases_match_their_reference",
+   "graph::op_matrix::support_table_matches_support_matrix_doc"
+  ],
+  "failed": [],
+  "count": 3,
+  "skip_mentions": 0,
+  "result_lines": 15
+ },
+ "refusals": [
+  {
+   "case": "unknown name",
+   "args": "--backend foo",
+   "exit": 1,
+   "message": "Error: unknown backend 'foo'; known backends are: cpu, metal, cuda"
+  },
+  {
+   "case": "known but not compiled",
+   "args": "--backend cuda",
+   "exit": 1,
+   "message": "Error: backend 'cuda' is known but not compiled into this build: the CUDA backend is compiled only with --features cuda"
+  },
+  {
+   "case": "compiled but unavailable",
+   "args": "--backend metal",
+   "exit": 1,
+   "message": "Error: backend 'metal' is compiled in but not available on this machine: no Metal device, or MPS is unavailable (MINFER_DISABLE_MPS)"
+  }
+ ],
+ "assignment": {
+  "prefill": {
+   "nodes": 443,
+   "backend_histogram": {
+    "cpu": 443
+   },
+   "splits": 1,
+   "cross_split_edges": 0,
+   "backend_field_kind": "name"
+  },
+  "decode": {
+   "nodes": 440,
+   "backend_histogram": {
+    "cpu": 440
+   },
+   "splits": 1,
+   "cross_split_edges": 0,
+   "backend_field_kind": "name"
+  }
+ },
+ "shapes": {
+  "n_tokens": 34,
+  "n_embd": 896,
+  "boundary_bytes_f32": 121856,
+  "boundary_bytes_f16": 60928
+ },
+ "machine": {
+  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "python": "3.15.2"
+ },
+ "invocation": "python3 scripts/dispatch.py /private/tmp/mf16-target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf16 --out facts/dispatch.json",
+ "summary": {
+  "backends_in_id_space": 3,
+  "priority_order": [
+   "metal",
+   "cuda",
+   "cpu"
+  ],
+  "doc_rows": 18,
+  "cpu_yes_rows": 14,
+  "metal_no_rows": 3,
+  "splits": 1,
+  "cross_split_edges": 0,
+  "refusals_recorded": 3,
+  "all_refused": true
+ }
+}

@@ -136,7 +136,15 @@ topology does not.
 explicit_span }` is a promise about which input a backend must read, and the next lesson is about what
 happens when a backend cannot keep it.
 
-<!-- facts: fs-vocab -->
+<!-- facts: fusion.fs-vocab -->
+| Quantity | Count |
+|---|---|
+| `Op` variants | 23 |
+| ... carrying a payload | 15 |
+| ... unit variants | 8 |
+| `FusedOp` variants (fusion targets) | 1 |
+| Variants no supported architecture emits | 2 (`Scale`, `Softmax`) |
+| Variants this model's graph uses | 11 |
 <!-- /facts -->
 
 23 variants, 15 of them carrying a payload, and one fusion target:
@@ -307,7 +315,16 @@ the ids are the edges. The consequences are lesson 4.
 So the rewrite happened. Whether it happened is not a matter of reading the pass; it is a matter of reading
 the graph the engine actually executed, which its per-node trace hands over:
 
-<!-- facts: fs-structure -->
+<!-- facts: fusion.fs-structure -->
+| | Prefill graph | Decode graph |
+|---|---|---|
+| Nodes | 443 | 440 |
+| `mul` nodes | 0 | 0 |
+| `swiglu` nodes (rewrite output) | 24 | 24 |
+| `silu` nodes left in the graph | 24 | 24 |
+| ... of those, executed | 0 | 0 |
+| Nodes recorded by the per-node trace | 371 | 368 |
+| Nodes not recorded | kvcache_load 24, kvcache_store 24, silu 24 | kvcache_load 24, kvcache_store 24, silu 24 |
 <!-- /facts -->
 
 Read the `mul` row and the `swiglu` row together. There is no `mul` node in either graph type and there are
@@ -340,7 +357,14 @@ enters the traced node loop - which is worth knowing before you read a missing r
 
 The byte count is the reason to do this at all, and it is arithmetic rather than measurement:
 
-<!-- facts: fs-bill -->
+<!-- facts: fusion.fs-bill -->
+| Quantity | Bytes |
+|---|---|
+| Three nodes, one row | 97,280 |
+| One node, one row | 58,368 |
+| Saved per row | 38,912 (40%) |
+| Saved per token, 24 layers | 933,888 |
+| This machine, one core, streaming copy | 126.3 GB/s |
 <!-- /facts -->
 
 97,280 bytes per row become 58,368, which is 40% of the traffic for one FFN activation, 933,888 bytes saved
@@ -355,7 +379,17 @@ depends on what the kernel was waiting for, so the instrument measures the same 
 which needs an exponential per element, and once on `relu`, which needs a compare. Both are activations with
 the same signature and the same three-node-to-one-node shape.
 
-<!-- facts: fs-kernel -->
+<!-- facts: fusion.fs-kernel -->
+| Activation | Rows | Three nodes | One node | Speedup | Output identical |
+|---|---|---|---|---|---|
+| `silu` | 1 | 15 us (6.5 GB/s) | 14 us (4.2 GB/s) | 1.07x | yes |
+| `silu` | 34 | 433 us (7.6 GB/s) | 405 us (4.9 GB/s) | 1.07x | yes |
+| `silu` | 512 | 3,165 us (15.7 GB/s) | 2,927 us (10.2 GB/s) | 1.08x | yes |
+| `silu` | 4,096 | 23,276 us (17.1 GB/s) | 21,871 us (10.9 GB/s) | 1.06x | yes |
+| `relu` | 1 | 1 us (0.0 GB/s) | 0 us (0.0 GB/s) | n/a | yes |
+| `relu` | 34 | 28 us (118.1 GB/s) | 17 us (116.7 GB/s) | 1.65x | yes |
+| `relu` | 512 | 411 us (121.2 GB/s) | 248 us (120.5 GB/s) | 1.66x | yes |
+| `relu` | 4,096 | 3,324 us (119.9 GB/s) | 2,031 us (117.7 GB/s) | 1.64x | yes |
 <!-- /facts -->
 
 At 4096 rows the fused form is **1.06x** faster on silu and **1.64x** faster on relu. Same rewrite, same
@@ -432,7 +466,11 @@ author: one more arm that can refuse.
 identical output. This chapter's instrument asserts exactly that, and the witness behind it recomputes the
 same values in f64:
 
-<!-- facts: fs-witness -->
+<!-- facts: fusion.fs-witness -->
+| 8/8 sampled outputs | recomputed in f64 from the same seed |
+|---|---|
+| Agreement | 8/8 within float32 rounding |
+| Worst relative difference | 9.91e-08 |
 <!-- /facts -->
 
 A fusion that changes the answer by a few bits is admissible only if your identity gate says so, and you must
@@ -465,7 +503,14 @@ it.
 - decisions: `docs/COMPUTE-GRAPH-DESIGN.md` §5 (the IR and fusion), §5.4 (why `BatchMatMul` needs multi-output)
 - tests: `src/graph/fusion/tests.rs` - two tests, one per branch of the guard; run on this machine for this chapter:
 
-<!-- facts: fs-tests -->
+<!-- facts: fusion.fs-tests -->
+| Test | Result |
+|---|---|
+| `graph::fusion::tests::swiglu_fusion_applies_when_backend_supports` | ok |
+| `graph::fusion::tests::swiglu_fusion_skipped_when_backend_does_not_support` | ok |
+| `graph::metal_backend::tests::fusion_shape::metal_fused_ffn_refuses_nt_other_than_one` | ok |
+| `graph::metal_backend::tests::fusion_shape::metal_fused_qkv_norm_refuses_nt_other_than_one` | ok |
+| `graph::metal_backend::tests::fusion_shape::metal_fused_qkv_refuses_nt_other_than_one` | ok |
 <!-- /facts -->
 
 - [tvm] Chen et al., *TVM: An Automated End-to-End Optimizing Compiler for Deep Learning* (2018) - arXiv:1802.04799

@@ -667,6 +667,14 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "dispatch": ("scripts/dispatch.py",
+                 "runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records "
+                 "each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend "
+                 "assignment out of the per-node trace of a real run; the registry ids, names and priorities are "
+                 "parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md`",
+                 "counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the "
+                 "refusals are exit codes and messages, compared as values, not summarised",
+                 ),
     "fusion": ("scripts/fuse.py",
                "runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads "
                "the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles "
@@ -1321,6 +1329,65 @@ def render_fs_tests(f):
     return out
 
 
+def render_ds_registry(f):
+    """Chapter 16: one id space, two orders."""
+    r = f["registry"]
+    out = ["| Backend | Registry id | Assignment priority |", "|---|---|---|"]
+    for name in r["names"]:
+        out.append(f"| `{name}` | {r['ids'].get(name, '?')} | {r['priority'].get(name, 'not compiled in')} |")
+    out.append("")
+    out.append(f"Backend ids in the space: **{r['n_backends']}**. The id order is the on-disk tag order; "
+               f"the assignment order is priority, and the two are deliberately not the same.")
+    return out
+
+
+def render_ds_matrix(f):
+    """Chapter 16: the documented op-by-backend contract, and which columns this machine can check."""
+    out = ["| Operator | CPU | Metal | CUDA |", "|---|---|---|---|"]
+    for row in f["doc_matrix"]:
+        mark = lambda v: "yes" if v == "yes" else "no" if v == "no" else "?"
+        out.append(f"| `{row['op']}` | {mark(row['cpu'])} | {mark(row['metal'])} | {mark(row['cuda'])} |")
+    rows = len(f["doc_matrix"])
+    yes = f["summary"]["cpu_yes_rows"]
+    out.append("")
+    out.append(f"{rows} documented rows; {yes} accept the op on CPU, "
+               f"{rows - yes} refuse it. `supports_op` is what decides, and the engine's own test "
+               f"`support_table_matches_support_matrix_doc` fails when a column drifts from this table.")
+    return out
+
+
+def render_ds_assignment(f):
+    """Chapter 16: what the assignment pass produced on this machine."""
+    out = ["| | Prefill graph | Decode graph |", "|---|---|---|"]
+    pre, dec = f["assignment"]["prefill"], f["assignment"]["decode"]
+    out.append(f"| Nodes | {pre['nodes']} | {dec['nodes']} |")
+    out.append(f"| Backends assigned | {', '.join(f'{k}: {v}' for k, v in pre['backend_histogram'].items())} "
+               f"| {', '.join(f'{k}: {v}' for k, v in dec['backend_histogram'].items())} |")
+    out.append(f"| Contiguous same-backend splits | {pre['splits']} | {dec['splits']} |")
+    out.append(f"| Cross-split edges (each one a copy) | {pre['cross_split_edges']} | "
+               f"{dec['cross_split_edges']} |")
+    out.append(f"| How the dump names a backend | a {pre['backend_field_kind']}, not an id | "
+               f"a {dec['backend_field_kind']}, not an id |")
+    return out
+
+
+def render_ds_refusals(f):
+    """Chapter 16: three refusals, three messages, all of them errors."""
+    out = ["| Case | Command | Exit | Message |", "|---|---|---|---|"]
+    for r in f["refusals"]:
+        msg = r["message"].replace("|", "\\|")
+        out.append(f"| {r['case']} | `{r['args']}` | {r['exit']} | {msg} |")
+    return out
+
+
+def render_ds_tests(f):
+    """Chapter 16: the engine's op-support contract tests, run on this machine."""
+    out = ["| Test | Result |", "|---|---|"]
+    for name in f["support_tests"]["run"]:
+        out.append(f"| `{name}` | {'ok' if name not in f['support_tests']['failed'] else '**FAILED**'} |")
+    return out
+
+
 def render_gr_shape(f):
     """Chapter 14: what the two graph types are made of."""
     pre, dec = f["shape"]["prefill"], f["shape"]["decode"]
@@ -1410,6 +1477,11 @@ def render_gr_trace(f):
 
 
 BLOCKS = {
+    "ds-registry": render_ds_registry,
+    "ds-matrix": render_ds_matrix,
+    "ds-assignment": render_ds_assignment,
+    "ds-refusals": render_ds_refusals,
+    "ds-tests": render_ds_tests,
     "fs-vocab": render_fs_vocab,
     "fs-structure": render_fs_structure,
     "fs-kernel": render_fs_kernel,
@@ -1539,6 +1611,34 @@ def render(write):
     return changed
 
 
+def unparsed():
+    """Every `<!-- facts: ... -->` marker that this script will never render, with the reason.
+
+    The renderer is a substitution over `MARKER`; a marker that does not parse, or that names a block
+    nobody registered, is left in the page *as an HTML comment* - invisible to the reader, invisible to
+    `--check` (which only walks the markers it could parse), and green in the gate. Two chapters shipped
+    that way before this function existed.
+    """
+    bad = []
+    for page in pages():
+        text = page.read_text()
+        for i, line in enumerate(text.split("\n"), 1):
+            if "<!-- facts:" not in line:
+                continue
+            m = MARKER.search(line)
+            if not m:
+                bad.append(f"{page.relative_to(ROOT)}:{i}: `{line.strip()}` does not parse as "
+                           f"`<!-- facts: <artifact>.<block> -->`")
+                continue
+            name, block = m.group("name"), m.group("block")
+            if block not in BLOCKS:
+                bad.append(f"{page.relative_to(ROOT)}:{i}: no renderer registered for block "
+                           f"`{block}` (add it to BLOCKS in scripts/facts.py)")
+            elif not (FACTS / f"{name}.json").exists():
+                bad.append(f"{page.relative_to(ROOT)}:{i}: there is no artifact `facts/{name}.json`")
+    return bad
+
+
 def check():
     findings = []
     used, seen = set(), 0
@@ -1646,6 +1746,8 @@ def check():
             if rep.get("verdict") != "agree":
                 bad = rep.get("disagreements", [])[:3]
                 findings.append(f"reference/gguf-crosscheck.json: verdict is '{rep.get('verdict')}': {bad}")
+
+    findings += unparsed()
 
     for finding in findings:
         print(f"[E] {finding}")
