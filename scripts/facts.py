@@ -667,6 +667,15 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "loop": ("scripts/loop.py",
+             "runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds "
+             "per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one "
+             "`--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT "
+             "mid-decode, and drives a context overflow against `--n-ctx 32`",
+             "medians of three runs for the two rates; graph builds and their milliseconds are counts the "
+             "engine narrated; the session header is read as `<8s7I` from the file on disk; the overflow and "
+             "cancellation rows are exit codes and messages compared as values",
+             ),
     "family": ("scripts/family.py",
                "runs the binary with its per-node trace on one real file and counts the nodes by op kind, "
                "slices one transformer layer out of the graph, runs three byte-patched copies of the same "
@@ -1665,6 +1674,92 @@ def render_fam_deltas(f):
     return out
 
 
+def render_loop_cost(f):
+    """Chapter 20: the loop's own cost, from the engine's printed stats and its own timing split."""
+    d = f["decode"]
+    t = d["timed"]
+    build_pre, build_dec = f["prefill"]["build_ms"][0], f["prefill"]["build_ms"][1]
+    out = ["| Phase | Per token | What it is |", "|---|---|---|",
+           f"| Prefill, {f['prefill']['median_tokens']} tokens in one graph | "
+           f"**{f['prefill_ms_per_token']:.2f} ms** | one forward over the whole prompt |",
+           f"| Decode, steady | **{d['ms_per_token']:.2f} ms** | one forward over one token, re-reading the "
+           f"weights |",
+           f"| of which: the forward pass | {t['forward_ms']:.2f} ms ({t['forward_pct']:.1f}%) | the model's "
+           f"arithmetic and memory traffic |",
+           f"| of which: the sampler | {t['sample_ms']:.2f} ms ({t['sample_pct']:.1f}%) | top-k, top-p, the "
+           f"penalties, one token |",
+           f"| Graph build, once per shape | {build_pre:.1f} / {build_dec:.1f} ms | build + backend assign + "
+           f"alloc, for the prompt shape then the decode shape |"]
+    out.append("")
+    out.append(f"Two numbers to keep. The build is **{build_dec / t['forward_ms'] * 100:.1f}% of one decode "
+               f"step** even though it happens once, so it cannot be what makes a decode step slow - a graph "
+               f"that never got reused would cost 24 builds for 24 tokens, which is "
+               f"{24 * build_dec:.1f} ms of {24 * d['ms_per_token']:.0f} ms. And the sampler is "
+               f"**{t['sample_pct']:.1f}%**: a decode step on this engine is the forward pass, and optimising "
+               f"the sampler is optimising noise.")
+    return out
+
+
+def render_loop_runs(f):
+    """Chapter 20: two shapes, two builds - the reuse claim as a count, three runs each."""
+    out = ["| Run | Shapes built | Build cost | Prefill | Decode |", "|---|---|---|---|---|"]
+    pre = f["prefill"]
+    dec = f["decode"]
+    out.append(f"| prefill-only, {pre['median_tokens']} prompt tokens, `-n 1` | "
+               f"{', '.join(f'nt={b['nt']}' for b in pre['runs'][0]['builds'])} "
+               f"| {pre['runs'][0]['builds'][0]['ms']} / {pre['runs'][0]['builds'][1]['ms']} ms "
+               f"| {pre['median_tok_s']:.1f} tok/s | - |")
+    for i, r in enumerate(dec["runs"], 1):
+        shapes = ", ".join(f"nt={b['nt']}" for b in r["builds"])
+        costs = " / ".join(f"{b['ms']} ms" for b in r["builds"])
+        out.append(f"| run {i}: {r['nums']['prefill']['n']} prompt + {dec['median_tokens']} generated | "
+                   f"{shapes} | {costs} | {r['nums']['prefill']['tok_s']:.1f} tok/s "
+                   f"| {r['nums']['generated']['tok_s']:.1f} tok/s |")
+    out.append("")
+    out.append(f"Every run builds **exactly two graphs**, whether it generates one token or twenty-four: the "
+               f"prompt's shape and the decode shape. That is the reuse cache working - "
+               f"{dec['median_tokens']} decode steps, one build for decode - and it is why the second "
+               f"rebuild's `nt=1` is the interesting line: the shape of a step that repeats.")
+    return out
+
+
+def render_loop_turns(f):
+    """Chapter 20: what the second turn of a conversation re-reads, and what it kept."""
+    m = f["multi_turn"]
+    h = m["header"]
+    out = ["| Turn | Prefilled | Generated | Reply |", "|---|---|---|---|"]
+    for i, t in enumerate(m["turns"], 1):
+        out.append(f"| {i}: \"{t['prompt']}\" | **{t['prefill_tokens']} tokens** | {t['generated_tokens']} "
+                   f"| {t['reply']} |")
+    out.append("")
+    out.append(f"The second turn prefilled **{m['turns'][1]['prefill_tokens']} tokens**, not the "
+               f"{m['turns'][0]['prefill_tokens'] + m['turns'][0]['generated_tokens'] + m['turns'][1]['prefill_tokens']} "
+               f"of history it inherited: the prefix is append-only and the KV was resumed from the file. The "
+               f"cache that makes that possible is `{m['kv_bytes']:,} B` on disk, whose header reads "
+               f"`{h['magic']}` version {h['version']}, flags {h['flags']} (f32), backend tag {h['backend_tag']}, "
+               f"{h['n_layer']} layers, `n_ctx` {h['n_ctx']}, `n_embd` {h['n_embd']}, `row_elems` "
+               f"{h['row_elems']} - the same 36 bytes Chapter 18's byte map predicted.")
+    return out
+
+
+def render_loop_stops(f):
+    """Chapter 20: the four ways this loop ends, each with the evidence that it ended that way."""
+    s, o, i = f["stop_reason"], f["overflow"], f["interrupt"]
+    out = ["| Stop | Exit | Evidence |", "|---|---|---|",
+           f"| the model chose its end-of-generation token | 0 | `Generated:` line in every ordinary run |",
+           f"| `n_predict` reached | 0 | `{s['cnv_note']}` - printed by the conversation frontend |",
+           f"| cancelled (SIGINT) | {i['exit']} | `{i['note'].replace(chr(0x2014), '-')}` |",
+           f"| context overflow | {o['exit']} | `{o['panic'][-1]}` |"]
+    out.append("")
+    out.append(f"Exit {i['exit']} is 128 + SIGINT, and it is a *decision*: the CLI prints its summary, says "
+               f"how many of the requested tokens it produced (with an em dash the book prints as a hyphen, "
+               f"because its figures and pages are ASCII), and exits with the shell's cancellation code "
+               f"so a script can tell a cancelled run from a finished one. Exit {o['exit']} is Rust's panic "
+               f"code, and it is not a decision the loop made - it is the KV region's own assertion firing, "
+               f"because the prompt filled the region exactly and the first generated token had nowhere to go.")
+    return out
+
+
 def render_ds_registry(f):
     """Chapter 16: one id space, two orders."""
     r = f["registry"]
@@ -1883,6 +1978,10 @@ BLOCKS = {
     "fam-refusals": render_fam_refusals,
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
+    "loop-cost": render_loop_cost,
+    "loop-runs": render_loop_runs,
+    "loop-turns": render_loop_turns,
+    "loop-stops": render_loop_stops,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
     "gr-trace": render_gr_trace,

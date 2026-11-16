@@ -31,6 +31,18 @@ def strip_fences(text):
     return re.sub(r"^```.*?^```", "", text, flags=re.M | re.S)
 
 
+def unfenced(text):
+    """The text with fenced code blocks removed (prose checks must not read quoted source)."""
+    out, in_fence = [], False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            out.append(line)
+    return "\n".join(out)
+
+
 def h2s(text):
     return [m.group(1).strip() for m in re.finditer(r"^## (.+)$", strip_fences(text), re.M)]
 
@@ -59,8 +71,10 @@ def main(root_arg="."):
         if seen != sorted(seen, key=required.index):
             hard.append(f"{rel}: sections out of order: {' > '.join(seen)}")
 
-        # 2. relative links
-        for m in re.finditer(r"\]\(([^)#]+?)(?:#[^)]*)?\)", text):
+        # 2. relative links. Fenced code blocks are removed first: a quoted `[`x`](y)` inside a
+        #    ```rust block is source text the book is showing, not a link it is making - and a
+        #    verbatim excerpt cannot be edited to satisfy a link check.
+        for m in re.finditer(r"\]\(([^)#]+?)(?:#[^)]*)?\)", unfenced(text)):
             target = m.group(1)
             if target.startswith(("http://", "https://", "mailto:")):
                 continue

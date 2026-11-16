@@ -24,6 +24,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `graph` | `scripts/graph.py` | runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, the shapes, the edges and the per-node statistics out of the trace the visualizer consumes | arm64, Darwin 27.2.0 | per machine | a structural comparison of two node sequences (equal or not), and node counts read one run at a time; nothing here is averaged |
 | `kquant-check` | `scripts/kquant-check.py` | decodes K-quant super-blocks from adversarial random bytes, from real weights, and from the format's own packing | not machine-dependent | - | bit-exact comparisons, exhaustive over the blocks sampled |
+| `loop` | `scripts/loop.py` | runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one `--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT mid-decode, and drives a context overflow against `--n-ctx 32` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | medians of three runs for the two rates; graph builds and their milliseconds are counts the engine narrated; the session header is read as `<8s7I` from the file on disk; the overflow and cancellation rows are exit codes and messages compared as values |
 | `sampler` | `scripts/smp.py` | runs the engine's CLI on the model, keeps the logits it dumps, and replays the deterministic part of the sampler pipeline (penalties, top-k, top-p, temperature) in Python so the engine's own token stream can be reproduced from the engine's own logits | arm64, Darwin 27.2.0 | per machine | byte equality between the replay and the engine's text; the funnel, mass and entropy figures are computed from those logits, one step at a time, never averaged |
 | `template` | `scripts/tmpl.py` | renders the model's own `tokenizer.chat_template` (read out of the GGUF) with Jinja2, and compares every case byte for byte with the reference renderer's committed output (HuggingFace `transformers` 5.17.0 `apply_chat_template`); the token counts come from the Chapter 11 tokenizer on the same bytes | arm64, Darwin 27.2.0 | per machine | byte equality on every case; a byte or token count that differs is a failure, not a statistic |
 | `threadbench` | `scripts/threadbench.c` | sweeps thread count, batch size, spawn-per-call against a pool, and two write layouts on one matrix | Apple M4 Pro (arm64) and 11th Gen Intel(R) Core(TM) i7-11700B @ 3.20GHz (x86_64) | per machine | median of the runs per machine, with the range where the runs disagree |
@@ -200,6 +201,18 @@ python3 scripts/graph.py <engine binary> ~/.cache/myfer/qwen2.5-0.5b-instruct-q4
 
 ```bash
 uv run --with gguf python scripts/kquant-check.py --real facts/gguf-qwen2.5-0.5b.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --real facts/gguf-qwen2.5-0.5b-q4_0.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf
+```
+
+### loop
+
+`scripts/loop.py` - runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one `--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT mid-decode, and drives a context overflow against `--n-ctx 32`.
+
+- **Machine**: {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}
+- **Runs**: per machine; medians of three runs for the two rates; graph builds and their milliseconds are counts the engine narrated; the session header is read as `<8s7I` from the file on disk; the overflow and cancellation rows are exit codes and messages compared as values
+- **Raw numbers**: `facts/loop.json`
+
+```bash
+(no command recorded)
 ```
 
 ### sampler

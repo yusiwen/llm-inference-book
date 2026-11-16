@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 420" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The generation loop. Prompt tokens are prefilled by one graph built for the prompt's shape, the last logits are sampled, and the token is appended to the cache. The first decode step builds a second graph for the shape of one token, and every later step reuses it. The loop ends on an end-of-generation token, on n_predict, or on cancellation between tokens, and the context limit is an assertion in the builder.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-a-step { fill: #4d86b8; fill-opacity: .3; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-build { fill: #8f7ad1; fill-opacity: .3; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-kv { fill: #3f7f76; fill-opacity: .3; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-end { fill: #8a6a10; fill-opacity: .25; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-link { stroke: var(--quote-border, #4a6577); stroke-width: 1.2; opacity: .85; }
+    .g-loop { stroke: var(--quote-border, #4a6577); stroke-width: 1.2; stroke-dasharray: 5 4; opacity: .85; fill: none; }
+  </style>
+  <text class="g-cap" x="24" y="24">THE LOOP: TWO SHAPES, ONE OF THEM REPEATED</text>
+  <text class="g-s" x="24" y="44">measured on a 0.5B model: a prompt token 4.94 ms, a generated token 12.61 ms, a build 0.4 to 0.6 ms</text>
+  <rect x="30" y="64" width="150" height="34" rx="2" class="fig-a-step"/>
+  <text class="g-m" x="38" y="86">prompt tokens</text>
+  <line class="g-link" x1="180" y1="81" x2="208" y2="81"/>
+  <rect x="208" y="64" width="120" height="34" rx="2" class="fig-a-build"/>
+  <text class="g-m" x="216" y="80">build nt=N</text>
+  <text class="g-m" x="216" y="94">0.6 ms</text>
+  <line class="g-link" x1="328" y1="81" x2="356" y2="81"/>
+  <rect x="356" y="64" width="150" height="34" rx="2" class="fig-a-step"/>
+  <text class="g-m" x="364" y="80">prefill: one pass</text>
+  <text class="g-m" x="364" y="94">4.94 ms per token</text>
+  <line class="g-link" x1="506" y1="81" x2="534" y2="81"/>
+  <rect x="534" y="64" width="110" height="34" rx="2" class="fig-a-step"/>
+  <text class="g-m" x="542" y="80">sample</text>
+  <text class="g-m" x="542" y="94">0.08 ms</text>
+  <line class="g-link" x1="644" y1="81" x2="672" y2="81"/>
+  <rect x="672" y="64" width="110" height="34" rx="2" class="fig-a-kv"/>
+  <text class="g-m" x="680" y="80">append</text>
+  <text class="g-m" x="680" y="94">to the KV</text>
+  <line class="g-link" x1="727" y1="98" x2="727" y2="132"/>
+  <rect x="650" y="132" width="132" height="44" rx="2" class="fig-a-end"/>
+  <text class="g-m" x="658" y="150">done? EOG, n_predict,</text>
+  <text class="g-m" x="658" y="166">cancelled between tokens</text>
+  <line class="g-link" x1="650" y1="154" x2="612" y2="154"/>
+  <text class="g-m" x="560" y="150">no: one more step</text>
+  <line class="g-link" x1="612" y1="154" x2="612" y2="196"/>
+  <rect x="470" y="196" width="200" height="34" rx="2" class="fig-a-build"/>
+  <text class="g-m" x="478" y="212">build nt=1, once</text>
+  <text class="g-m" x="478" y="226">0.4 ms, then reused</text>
+  <line class="g-link" x1="470" y1="213" x2="420" y2="213"/>
+  <rect x="250" y="196" width="170" height="34" rx="2" class="fig-a-step"/>
+  <text class="g-m" x="258" y="212">decode: one token</text>
+  <text class="g-m" x="258" y="226">12.61 ms, 99.2% forward</text>
+  <path class="g-loop" d="M250 213 L204 213 L204 118 L300 118 L356 118 L356 98"/>
+  <text class="g-m" x="212" y="112">the same graph, new input data</text>
+  <rect x="30" y="260" width="752" height="52" rx="2" class="fig-a-kv"/>
+  <text class="g-m" x="38" y="278">the cache, underneath all of it: one region per layer, written by prefill and by every decode step,</text>
+  <text class="g-m" x="38" y="294">never rebuilt by either. 96.0 MiB at 4k (Chapter 10); 101,058,161 B on disk with the history (Chapter 18).</text>
+  <line class="g-link" x1="356" y1="230" x2="356" y2="260"/>
+  <line class="g-link" x1="727" y1="176" x2="727" y2="260"/>
+  <text class="g-m" x="30" y="336">what the loop must get right, and nothing else: which parameters change (rebuild) and which do not (reuse),</text>
+  <text class="g-m" x="30" y="354">which stop reason fired (a record, not a string), and what the cache holds after an interruption.</text>
+  <text class="g-m" x="30" y="378">a 24-token generation builds two graphs. a 1-token generation builds two graphs. that equality is the test.</text>
+  <text class="g-m" x="30" y="400">and a context overflow is not a stop the loop performs: it is an assertion in the builder, exit 101.</text>
+</svg>

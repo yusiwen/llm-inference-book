@@ -474,6 +474,14 @@
   },
   {
    "pages": [
+    "ch 20"
+   ],
+   "path": "docs/inference_e2e_walkthrough/13-decode-loop-graph-reuse.md",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
     "ch 21"
    ],
    "path": "docs/inference_e2e_walkthrough/14-metal-backend.md",
@@ -525,7 +533,8 @@
   },
   {
    "pages": [
-    "appendix/home"
+    "appendix/home",
+    "ch 20"
    ],
    "path": "src/cuda",
    "resolved": true,
@@ -709,7 +718,8 @@
    "pages": [
     "appendix/home",
     "ch 16",
-    "ch 17"
+    "ch 17",
+    "ch 19"
    ],
    "path": "src/graph/alloc.rs",
    "resolved": true,
@@ -834,6 +844,7 @@
   },
   {
    "pages": [
+    "ch 20",
     "ch 21"
    ],
    "path": "src/graph/metal_backend.rs",
@@ -850,7 +861,8 @@
   },
   {
    "pages": [
-    "ch 15"
+    "ch 15",
+    "ch 19"
    ],
    "path": "src/graph/ops.rs",
    "resolved": true,
@@ -866,7 +878,8 @@
   },
   {
    "pages": [
-    "ch 16"
+    "ch 16",
+    "ch 19"
    ],
    "path": "src/graph/registry.rs",
    "resolved": true,
@@ -925,7 +938,8 @@
   },
   {
    "pages": [
-    "appendix/home"
+    "appendix/home",
+    "ch 20"
    ],
    "path": "src/metal",
    "resolved": true,
@@ -949,7 +963,8 @@
   },
   {
    "pages": [
-    "appendix/home"
+    "appendix/home",
+    "ch 19"
    ],
    "path": "src/models/qwen2",
    "resolved": true,
@@ -965,7 +980,8 @@
   },
   {
    "pages": [
-    "appendix/home"
+    "appendix/home",
+    "ch 19"
    ],
    "path": "src/models/qwen3",
    "resolved": true,

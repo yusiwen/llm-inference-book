@@ -97,6 +97,11 @@ def collect(root):
             p, sym = m.group(1).rstrip("/"), m.group(2)
             if BOOK_OWN.search(p) or "..." in p or "*" in p:
                 continue  # the book's own tree, or a pattern rather than a citation
+            # A citation is a file or a directory. A last segment with no extension and no trailing
+            # slash is prose that happens to look like a path - `examples/main` inside a quoted
+            # llama.cpp comment, for one - and it is not a claim about this repository.
+            if not p.endswith("/") and "." not in p.rsplit("/", 1)[-1]:
+                continue
             found.setdefault((p, sym), set()).add(label)
     return found
 
