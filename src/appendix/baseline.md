@@ -1,30 +1,30 @@
 # The minfer Baseline
 
-> - **Status**: written - the mechanism is in place and exercised; one baseline is recorded so far.
+> - **Status**: written - the mechanism is in place and exercised; two baselines are recorded so far.
 > - **Rule of this book**: a sentence about what minfer *currently* does is dated by the baseline below. A sentence about what an engine *must* do is not.
 
-minfer is not finished, and pretending otherwise would make this book wrong within a month. It also moves fast: **1369 commits in the last 90 days** and 96 in the last week, measured at the baseline with
+minfer is not finished, and pretending otherwise would make this book wrong within a month. It also moves fast: **1364 commits in the last 90 days** and 35 in the last week, measured at the baseline with
 
 ```bash
-git -C <minfer> rev-list --count --since="90 days ago" HEAD   # 1369
-ls docs/adr/[0-9]*.md | wc -l                                 # 82, all added in that window
+git -C <minfer> rev-list --count --since="90 days ago" HEAD   # 1364
+ls docs/adr/[0-9]*.md | wc -l                                 # 83, all added in that window
 ```
 
-Of the **141 distinct minfer paths this book cites** (142 citations including one symbol-qualified duplicate), 107 - 76 per cent - were touched in the last 30 days, and 140 (99 per cent) in the last 90 (`git -C <minfer> log --since="30 days ago" --oneline -- <path>` per citation). Chasing `master` would mean rewriting citations every week and never finishing a chapter. So the book pins a baseline and moves it deliberately.
+Of the **139 distinct minfer paths this book cites** (143 citations), 103 - 74 per cent - were touched in the last 30 days, and 138 (99 per cent) in the last 90 (`git -C <minfer> log --since="30 days ago" --oneline -- <path>` per citation). Chasing `master` would mean rewriting citations every week and never finishing a chapter. So the book pins a baseline and moves it deliberately.
 
 ## The pinned baseline
 
 | Field | Value |
 |---|---|
-| Commit | `88ffa5d89905053729de4d814e4a368ac3f63af5` |
-| Describe | `v0.0.9-118-g88ffa5d` |
-| Date | 2026-11-11 |
-| Why this one | q4_K / q6_K MMQ default-on, CUDA Graph replay and KV sessions all present; the tree the outline, the reference index and the CUDA audit were verified against |
+| Commit | `e8445913064e2871ee3edb1582cb8af49e1c8cbd` |
+| Describe | `v0.0.9-134-ge844591` |
+| Date | 2026-11-16 |
+| Why this one | the KV prefix-sharing contract stopped being a comment and became an invariant (a live share pins its donor's run, a compaction cannot place a run over one, and the store refuses to write a lent prefix); the six measurement tests the KV chapter is built on landed in the same window |
 | Recorded in | [`minfer.lock`](https://github.com/yusiwen/llm-inference-book/blob/main/minfer.lock) - the only file that holds the hash |
 
 ```bash
 git clone https://github.com/yusiwen/minfer && cd minfer
-git checkout 88ffa5d89905053729de4d814e4a368ac3f63af5
+git checkout e8445913064e2871ee3edb1582cb8af49e1c8cbd
 cargo build --release                 # CPU + Metal on macOS
 cargo build --release --features cuda # on an NVIDIA machine
 ```
@@ -84,6 +84,7 @@ One row per move. Never edit an old row: the ledger is a log, and a log that get
 | # | Baseline | Describe | Date | Why | What the book had to change |
 |---|---|---|---|---|---|
 | 1 | `88ffa5d` | `v0.0.9-118` | 2026-11-11 | initial baseline: the tree the outline, the reference index and the CUDA audit were written against | - |
+| 2 | `e844591` | `v0.0.9-134` | 2026-11-16 | prefix sharing stopped being a comment and became an enforced invariant (a live share pins its donor's run, a compaction cannot place a run over one, the store refuses to write a lent prefix), and the six `measure:` tests the KV chapter is built on landed | no citation moved (the drift report found 0); the counts above and on [Measurements](measurements.md) were re-derived |
 
 ## The rule this page exists for
 

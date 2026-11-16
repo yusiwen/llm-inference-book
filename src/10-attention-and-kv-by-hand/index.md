@@ -50,7 +50,7 @@ $d$ is the head dimension - 64 here - and the scale is not decoration: a dot of 
 
 The function that computes it is one signature, and the signature is the shape contract:
 
-<!-- code: src/graph/cpu_backend.rs::cpu_gqa_attn_runs@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::cpu_gqa_attn_runs@e844591 -->
 ```rust
 /// GQA attention over each query's **list of `(cell, len)` runs** (C8b S2), with
 /// `off[t]..off[t + 1]` naming query `t`'s runs — the union of the runs is the
@@ -78,7 +78,7 @@ Seven parameters are geometry and the rest is data. Read them against this model
 
 Then the body, reduced to the three steps of the formula - and note that all three are Chapter 9's operators:
 
-<!-- code: src/graph/cpu_backend.rs::attn_heads@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::attn_heads@e844591 -->
 ```rust
                 let ks = kv * c.nkt + hk * c.hd_kv;
                 let s = crate::vec_ops::vec_dot_f32(
@@ -130,7 +130,7 @@ A decoder may not look forward. At prefill the whole prompt arrives at once, so 
 
 The mask itself is three lines in the engine, and they are test-only on purpose:
 
-<!-- code: src/graph/cpu_backend.rs::causal_span@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::causal_span@e844591 -->
 ```rust
 /// The causal span for a single sequence, in the `attn_span` layout E1 defines:
 /// token `t` may see the cells `[0, pos[t] + 1)`. Test/reference helper — the
@@ -164,7 +164,7 @@ The reason is in the last line: the query's own position carries **0.24 per cent
 
 The production kernel writes this down where it counts. This is a comment in `attn_heads`, immediately above the softmax:
 
-<!-- code: src/graph/cpu_backend.rs::attn_heads@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::attn_heads@e844591 -->
 ```rust
 // Softmax and accumulate over the token's OWN window `[lo, hi)`, the
 // one the span input names, rather than over a batch-wide range.
@@ -207,7 +207,7 @@ Both compile, both run, both produce finite numbers, and the second is a differe
 
 The engine's own lines, and they do two jobs at once:
 
-<!-- code: src/graph/cpu_backend.rs::attn_heads@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::attn_heads@e844591 -->
 ```rust
 unsafe fn attn_heads(ctx: *const (), h0: usize, h1: usize) {
     let c = &*(ctx as *const AttnCtx);
@@ -236,7 +236,7 @@ Why it matters is the cache, and the cache is what turns long context into a mem
 
 The engine computes the same table at load time, in two functions - and the book's numbers are their arithmetic done by hand:
 
-<!-- code: src/graph/kvformat.rs::KvFormat::row_elems@88ffa5d -->
+<!-- code: src/graph/kvformat.rs::KvFormat::row_elems@e844591 -->
 ```rust
 /// f32 words one cell occupies in the allocator's pool.
 ///
@@ -255,7 +255,7 @@ pub fn row_elems(self, nkt: usize) -> usize {
 ```
 <!-- /code -->
 
-<!-- code: src/graph/kvcache.rs::KvCache::region_bytes@88ffa5d -->
+<!-- code: src/graph/kvcache.rs::KvCache::region_bytes@e844591 -->
 ```rust
 /// Bytes the persistent KV regions occupy (`elems * 4` per region), summed over
 /// layers — the footprint C4 measures a packed region against.
@@ -282,7 +282,7 @@ Prefill and decode compute the same function with different shapes, and the shap
 
 Both arrive at the same kernel through one function, and it is where "a position, not a structure" meets a graph:
 
-<!-- code: src/graph/cpu_backend.rs::decode_window@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::decode_window@e844591 -->
 ```rust
 /// Decode a query-window input into `(cell, len)` runs plus per-query offsets.
 ///
@@ -318,7 +318,7 @@ The input's **length** decides which layout it is - `2 * nt` values is one `(lo,
 
 The dispatch, meanwhile, is four lines - the one place this chapter meets Chapter 8:
 
-<!-- code: src/graph/cpu_backend.rs::cpu_gqa_attn_runs@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::cpu_gqa_attn_runs@e844591 -->
 ```rust
     unsafe { attn_heads(&ctx as *const _ as *const (), 0, nh) };
     return Ok(());
@@ -354,7 +354,7 @@ The cache turns a computation into a data structure, and the data structure has 
 
 The signature is the argument, made concrete:
 
-<!-- code: src/graph/cpu_backend.rs::cpu_rope@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::cpu_rope@e844591 -->
 ```rust
 /// RoPE per-head (same math as forward.rs's apply_rope).
 ///
@@ -381,7 +381,7 @@ pub(crate) fn cpu_rope(
 
 Positions become cells in one function, and its doc comment is the chapter's claim in the author's own words:
 
-<!-- code: src/graph/kvcache.rs::KvCache::cells_for@88ffa5d -->
+<!-- code: src/graph/kvcache.rs::KvCache::cells_for@e844591 -->
 ```rust
 /// True while `cell == pos` for every live row, i.e. while a backend may
 /// keep indexing the arena with the raw positions input.
@@ -416,7 +416,7 @@ Today the body is the identity plus a bounds check - `cells.push(p as u32)` - an
 
 **The format is a gate, and it reaches all the way into the kernel.** A packed Q8_0 cache computes the same attention with a different read:
 
-<!-- code: src/graph/cpu_backend.rs::attn_heads_q8@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::attn_heads_q8@e844591 -->
 ```rust
 let kbytes = kvformat::region_bytes(ka);
 let block_bytes = (c.hd_kv / kvformat::Q8_0_BLOCK) * kvformat::Q8_0_BLOCK_BYTES;

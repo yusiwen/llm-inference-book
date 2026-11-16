@@ -93,7 +93,7 @@ The nucleus cut itself - the engine's own words for it are in the doc comment ab
 chapter elides because it contains a `less-than-or-equal` sign this book's character gate refuses; the sentence
 it sits in says the survivor set is at most `k` entries:
 
-<!-- code: src/sampler.rs::apply_top_p@88ffa5d -->
+<!-- code: src/sampler.rs::apply_top_p@e844591 -->
 ```rust
 pub fn apply_top_p(logits: &mut [f32], p: f32) {
     if p <= 0.0 || p >= 1.0 {
@@ -178,7 +178,7 @@ Which is the subject of the next lesson.
 
 The five stages are not a set, they are a sequence, and the engine writes the sequence down in one place:
 
-<!-- code: src/sampler.rs::sample_with_config_grammar@88ffa5d -->
+<!-- code: src/sampler.rs::sample_with_config_grammar@e844591 -->
 ```rust
 /// The complete pipeline, grammar-aware (F2, #47):
 ///
@@ -264,7 +264,7 @@ cannot be made to respect a top-k, and a bug report that says "greedy ignores my
 
 The draw is the only stage that consumes randomness, and it is one comparison per candidate:
 
-<!-- code: src/sampler.rs::sample_temperature@88ffa5d -->
+<!-- code: src/sampler.rs::sample_temperature@e844591 -->
 ```rust
 pub fn sample_temperature<R: Rng>(logits: &mut [f32], temp: f32, rng: &mut R) -> SampledToken {
     if temp < 1e-6 {
@@ -370,7 +370,7 @@ A run ends when the model emits an end-of-sequence token, or when the text it ha
 of the caller's stop strings. The second condition is a byte problem, not a token problem, and the engine handles
 it as bytes:
 
-<!-- code: src/sampler.rs::match_stop_suffix@88ffa5d -->
+<!-- code: src/sampler.rs::match_stop_suffix@e844591 -->
 ```rust
 /// Byte-wise suffix match of `buf` against any stop string in `stops`.
 ///
@@ -431,7 +431,7 @@ The grammar is compiled into an automaton over the vocabulary, and at each decod
 a **bit mask**: one bit per vocabulary entry, set if that token would keep the output on a path to a valid
 string. The sampler applies it as one more stage, with the same `-inf` convention every other stage uses:
 
-<!-- code: src/sampler.rs::apply_token_mask@88ffa5d -->
+<!-- code: src/sampler.rs::apply_token_mask@e844591 -->
 ```rust
 /// Mask the logits to the allowed tokens (`-inf` elsewhere, the same convention
 /// `apply_top_k`/`apply_min_p` use, so every downstream survivor test keeps
@@ -490,7 +490,7 @@ parser will not crash, and it cannot tell you that the answer is right. Every sy
 
 A grammar is also a program with limits, and the engine bounds its own:
 
-<!-- code: src/grammar.rs::MAX_STACK_DEPTH@88ffa5d -->
+<!-- code: src/grammar.rs::MAX_STACK_DEPTH@e844591 -->
 ```rust
 /// Bound on the automaton's call-stack depth. A stack that grows past it means a
 /// rule that recurses without consuming input (left recursion), which a pushdown

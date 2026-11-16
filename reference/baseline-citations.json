@@ -1,7 +1,7 @@
 {
  "baseline": {
-  "commit": "88ffa5d89905053729de4d814e4a368ac3f63af5",
-  "ref": "88ffa5d"
+  "commit": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
+  "ref": "e844591"
  },
  "citations": [
   {
@@ -1204,11 +1204,11 @@
   }
  ],
  "counts": {
-  "adrs": 82,
+  "adrs": 83,
   "cuda_kernels": 108,
-  "rust_lines": 107726,
+  "rust_lines": 109035,
   "step_records": 110,
-  "tests": 749
+  "tests": 758
  },
- "generated": "2026-11-15"
+ "generated": "2026-11-16"
 }

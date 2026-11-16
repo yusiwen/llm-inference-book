@@ -1664,6 +1664,15 @@ impl GraphAllocator {
         self.kv.seq_slot(seq)
     }
 
+    /// #833: the leading cells of `seq`'s run a live share points into (0 when it is
+    /// not a donor) — the write side of C8b's read-in-place share.
+    ///
+    /// `KvCache::shared_from` is the authority; this is the application layer's way to
+    /// ask it before it places a request on a slot.
+    pub fn kv_shared_from(&self, seq: super::kvcache::SeqId) -> usize {
+        self.kv.shared_from(seq)
+    }
+
     /// Arena capacity in rows (`n_ctx`), 0 before allocation.
     pub fn kv_n_ctx(&self) -> usize {
         self.kv.n_ctx()
@@ -1701,6 +1710,29 @@ impl GraphAllocator {
         for (seq, from, to) in batch.groups() {
             if let Some(t) = batch.positions[from..to].iter().copied().min() {
                 self.kv_private_row_for(seq, t)?;
+            }
+        }
+        // #837: the store's own backstop. The placement layer refuses to put a prompt on
+        // a slot that lends its prefix (BatchEngine's `slot_takes_prompt`), but a caller
+        // that reaches this fill another way — speculative decoding, a new server path, a
+        // test driving the allocator — would otherwise overwrite a live share silently.
+        // `shared_from` is 0 for a sharer and for the classic single-sequence path, so
+        // this only fires for a **donor** writing the rows it lends. One lookup and one
+        // minimum per sequence group, no per-token cost; the copy-on-write above is what
+        // makes the sharer's own store legal.
+        for (seq, from, to) in batch.groups() {
+            let lent = self.kv.shared_from(seq);
+            if lent == 0 {
+                continue;
+            }
+            if let Some(&p) = batch.positions[from..to].iter().min() {
+                if p < lent {
+                    return Err(format!(
+                        "sequence {seq} writes position {p}, inside the {lent} row(s) it lends \
+                         to another sequence (#837): the placement layer must move this \
+                         request to another slot"
+                    ));
+                }
             }
         }
         for (seq, from, to) in batch.groups() {

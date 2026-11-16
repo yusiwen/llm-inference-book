@@ -83,7 +83,7 @@ the template language, and it is the same in every engine that renders these fil
 
 The engine's render call is the whole interface in one place:
 
-<!-- code: src/template.rs::render_at@88ffa5d -->
+<!-- code: src/template.rs::render_at@e844591 -->
 ```rust
 /// The one render core: `template` (`None` = the ChatML fallback) plus the
 /// `tools` context value, as of one fixed instant.
@@ -206,7 +206,7 @@ If your language has a Jinja library, use it. Writing a template engine is a mon
 nobody will thank you for. The engine this book studies uses `minijinja`, and the interesting part is everything
 it had to add *around* that library, which is exactly the part a template test suite will catch:
 
-<!-- code: src/template.rs::SUPPORTED_STR_METHODS@88ffa5d -->
+<!-- code: src/template.rs::SUPPORTED_STR_METHODS@e844591 -->
 ```rust
 /// The Python `str` methods the unknown-method hook implements. Listed in the
 /// refusal message so an unsupported template tells the reader what *is*
@@ -240,7 +240,7 @@ written for another language does not necessarily have them. The list is not a w
 templates in this engine's fixture corpus actually reach, and every one of them is defined by CPython, not by
 Jinja. Two examples show why that matters:
 
-<!-- code: src/template.rs::py_title@88ffa5d -->
+<!-- code: src/template.rs::py_title@e844591 -->
 ```rust
 /// CPython `str.title`: a letter is upper-cased when it follows a non-cased
 /// character, lower-cased otherwise.
@@ -265,7 +265,7 @@ and an apostrophe is a non-cased character. So the greeting `don't stop` becomes
 Any renderer that implements "capitalise the first letter of each word" produces a different string, in a place
 nobody thinks to look - a system prompt assembled from user text.
 
-<!-- code: src/template.rs::py_split@88ffa5d -->
+<!-- code: src/template.rs::py_split@e844591 -->
 ```rust
 /// CPython `str.split` / `str.rsplit`.
 fn py_split(recv: &str, args: &[PyArg], from_right: bool) -> Result<PyValue, String> {
@@ -352,7 +352,7 @@ Nothing about that is inferable from a flag name. It is in the template, and the
 The engine side of this lesson is not the rendering - it is knowing that the reasoning branch exists at load
 time, before any request. That is what its load-time canary is for:
 
-<!-- code: src/template.rs::validate@88ffa5d -->
+<!-- code: src/template.rs::validate@e844591 -->
 ```rust
 /// Compile the template and render a canary conversation through it.
 ///
@@ -420,7 +420,7 @@ table joins them differently. Same length, different ids: a byte-count test cann
 
 The engine reproduces CPython's separators explicitly, with a comment naming the failure:
 
-<!-- code: src/template.rs::PyJsonFormatter@88ffa5d -->
+<!-- code: src/template.rs::PyJsonFormatter@e844591 -->
 ```rust
 /// Python's `json.dumps` separators for `indent=None`: `", "` and `": "`.
 ///
@@ -583,7 +583,7 @@ indexing into nothing fails because Python cannot subscript a value that is not 
 
 The engine's resolver is a single function, and its contract is the rule in one sentence:
 
-<!-- code: src/template.rs::resolve_template@88ffa5d -->
+<!-- code: src/template.rs::resolve_template@e844591 -->
 ```rust
 /// The single place that decides which template a run uses.
 ///
@@ -619,7 +619,7 @@ Three properties, each doing work:
 That third property is paired with a constant, so four different entry points cannot word the notice
 differently:
 
-<!-- code: src/template.rs::CHATML_NOTICE@88ffa5d -->
+<!-- code: src/template.rs::CHATML_NOTICE@e844591 -->
 ```rust
 /// The one-line notice a caller prints when a run has no template at all.
 ///

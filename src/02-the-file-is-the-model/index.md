@@ -58,7 +58,7 @@ Two properties of that layout are worth naming before the details, because every
 
 The container has to carry exactly five facts about each tensor, and the engine's own struct is that list:
 
-<!-- code: src/gguf.rs::GgufTensorInfo@88ffa5d -->
+<!-- code: src/gguf.rs::GgufTensorInfo@e844591 -->
 ```rust
 #[derive(Clone)]
 pub struct GgufTensorInfo {
@@ -147,7 +147,7 @@ Fourteen keys that decide everything from the shape of the graph to where genera
 
 The header, in the order the bytes arrive, with the refusals that make it a format rather than a convention:
 
-<!-- code: src/gguf.rs::read_header@88ffa5d -->
+<!-- code: src/gguf.rs::read_header@e844591 -->
 ```rust
 fn read_header(gr: &mut GgufReader<'_>) -> ParseResult<(u32, i64, i64)> {
     let magic: Vec<u8> = gr.read_vec::<u8>(4).map_err(|e| header_refusal(&e))?;
@@ -268,7 +268,7 @@ One more, because it explains the file's own size label. The 291 tensors add up 
 
 The tensor table's last two fields are the two that make zero-copy possible, and they are computed, not stored:
 
-<!-- code: src/gguf.rs::read_tensor_info@88ffa5d -->
+<!-- code: src/gguf.rs::read_tensor_info@e844591 -->
 ```rust
 // Byte offsets (gguf.cpp lines 728-732).
 t.nb[0] = type_size;
@@ -315,7 +315,7 @@ One practical consequence worth writing into your loader now: **map, do not read
 
 A mapping is a pointer, a length, and the file handle that keeps it alive:
 
-<!-- code: src/gguf.rs::MmapFile@88ffa5d -->
+<!-- code: src/gguf.rs::MmapFile@e844591 -->
 ```rust
 pub struct MmapFile {
     ptr: *mut u8,
@@ -378,7 +378,7 @@ That is the chapter's contract in one sentence: **parse faithfully, assert the l
 
 Split files are named, not detected by content, and the parser is correspondingly literal:
 
-<!-- code: src/gguf.rs::split_file_info@88ffa5d -->
+<!-- code: src/gguf.rs::split_file_info@e844591 -->
 ```rust
 pub fn split_file_info(name: &str) -> Option<(String, usize, usize)> {
     let stem = name.strip_suffix(".gguf")?;

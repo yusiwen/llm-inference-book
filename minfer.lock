@@ -9,16 +9,16 @@
 # report says so and the measurements page is updated.
 
 [baseline]
-commit = "88ffa5d89905053729de4d814e4a368ac3f63af5"
-short  = "88ffa5d"
-describe = "v0.0.9-118-g88ffa5d"
-date   = "2026-11-11"
-note   = "q4_K/q6_K MMQ default-on, CUDA Graph replay, kv sessions; the tree the outline and the CUDA audit were verified against"
+commit = "e8445913064e2871ee3edb1582cb8af49e1c8cbd"
+short  = "e844591"
+describe = "v0.0.9-134-ge844591"
+date   = "2026-11-16"
+note   = "the KV sharing contract (a live share pins its donor's run, a store may not write a lent prefix) and the six measurement tests chapter 18 is built on"
 
 [counts]
 # re-derived at the baseline by scripts/minfer-drift.py
-adrs = 82
+adrs = 83
 step_records = 110
 cuda_kernels = 108
-rust_lines = 107726
-tests = 749
+rust_lines = 109035
+tests = 758

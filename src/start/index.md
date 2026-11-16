@@ -85,7 +85,7 @@ If you have only a laptop, you are not locked out: Part 5 becomes reading, and t
 
 Every experiment in this book that needs a particular code path turns it on with an environment variable, and the engine has one place where those variables are read - env set, branch forced, no rebuild:
 
-<!-- code: src/config.rs::Config::from_env@88ffa5d -->
+<!-- code: src/config.rs::Config::from_env@e844591 -->
 ```rust
 fuse_qkv: !std::env::var("MINFER_NO_FUSE_QKV").map_or(false, |v| v == "1"),
 fuse_ffn: !std::env::var("MINFER_NO_FUSE_FFN").map_or(false, |v| v == "1"),
@@ -167,7 +167,7 @@ git init -b main && git add -A && git commit -m "S0: the workspace"
 
 The tree's manifest is the model, and the version pin is part of it:
 
-<!-- code: Cargo.toml::package@88ffa5d -->
+<!-- code: Cargo.toml::package@e844591 -->
 ```toml
 [package]
 name = "minfer"

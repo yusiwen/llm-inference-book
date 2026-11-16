@@ -45,7 +45,7 @@ same way, and the difference between them is the whole of lesson 5.
 An op is an enum, and the payload is the part that makes two nodes with the same op *different*. Read the
 vocabulary this engine settled on, with the doc comments that explain the variants it does not emit:
 
-<!-- code: src/graph/ops.rs::Op@88ffa5d -->
+<!-- code: src/graph/ops.rs::Op@e844591 -->
 ```rust
 /// Operator type. Implements full `PartialEq` (payloads included) so debug
 /// builds can verify graph-rebuild structural identity; the production graph
@@ -149,7 +149,7 @@ happens when a backend cannot keep it.
 
 23 variants, 15 of them carrying a payload, and one fusion target:
 
-<!-- code: src/graph/ops.rs::FusedOp@88ffa5d -->
+<!-- code: src/graph/ops.rs::FusedOp@e844591 -->
 ```rust
 /// Fused-op capability tag: drives the fusion pass (Phase 4) — a fusion is only
 /// applied when the target backend reports `supports_fused(FusedOp)`.
@@ -175,7 +175,7 @@ lesson 5 is about why the tag list is short rather than about why it should have
 A node carries more than an op. It carries a shape, a dtype, a backend assignment, and - the part this lesson
 is about - a set of questions a backend has to answer about it. Those questions are the trait:
 
-<!-- code: src/graph/backend.rs::Backend@88ffa5d -->
+<!-- code: src/graph/backend.rs::Backend@e844591 -->
 ```rust
 pub trait Backend: Send + Sync {
     /// Op support by (op, dtype). `supports_fused` gates the fusion pass
@@ -209,7 +209,7 @@ step 300.
 
 That is also why the CPU backend's answer matters for this chapter: it claims the `SwiGLU` fusion,
 
-<!-- code: src/graph/cpu_backend.rs::supports_fused@88ffa5d -->
+<!-- code: src/graph/cpu_backend.rs::supports_fused@e844591 -->
 ```rust
 /// F4: the fusion-pass capability, as a free function (see [`supports_op`]).
 pub fn supports_fused(fused: &FusedOp) -> bool {
@@ -232,7 +232,7 @@ payoff can be measured at all.
 The pass is one method and one rule, and reading it is the best way to see how much of a compiler fits in a
 hundred lines:
 
-<!-- code: src/graph/fusion.rs::FusionPass::fuse_swiglu@88ffa5d -->
+<!-- code: src/graph/fusion.rs::FusionPass::fuse_swiglu@e844591 -->
 ```rust
     /// Pattern: `Mul(Silu(X), Y)` → `SwiGLU(X, Y)`.
     /// Gate: backend supports `FusedOp::SwiGLU`.
@@ -334,7 +334,7 @@ recorded as executed: none.
 
 That is the mechanism, and it lives in the scheduler rather than in the fusion pass:
 
-<!-- code: src/graph/scheduler.rs::node_buffer@88ffa5d -->
+<!-- code: src/graph/scheduler.rs::node_buffer@e844591 -->
 ```rust
                 // dead nodes (no consumers, not outputs) get no buffer — the
                 // fusion pass can orphan them (e.g. silu folded into SwiGLU);
@@ -430,7 +430,7 @@ builders refuse any batch except one, which is why the engine's own tests includ
 fusion tests - a rewrite that widens the set of shapes a graph can express is a rewrite that narrows what a
 kernel accepts. Here is one of those refusals, in the Metal backend's own execute path:
 
-<!-- code: src/graph/metal_backend.rs::Op::FusedFFN@88ffa5d -->
+<!-- code: src/graph/metal_backend.rs::Op::FusedFFN@e844591 -->
 ```rust
             Op::FusedFFN => {
                 // #39: the fused FFN kernel is decode-only, and `debug_assert!`

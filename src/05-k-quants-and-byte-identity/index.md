@@ -71,7 +71,7 @@ Where the super-block earns its place is not the median block at all - it is the
 
 Every size in this chapter's arithmetic, as the engine declares them:
 
-<!-- code: src/block.rs::Q4B@88ffa5d -->
+<!-- code: src/block.rs::Q4B@e844591 -->
 ```rust
 pub const Q4B: usize = 18; // sizeof(block_q4_0)
 pub const Q41B: usize = 20; // sizeof(block_q4_1)
@@ -104,7 +104,7 @@ Sub-block 5's two numbers live in three different bytes: the low four bits of it
 
 The function this lesson has been unpacking by hand, in the engine - and the asymmetry is the point:
 
-<!-- code: src/quantize.rs::get_scale_min_k4@88ffa5d -->
+<!-- code: src/quantize.rs::get_scale_min_k4@e844591 -->
 ```rust
 fn get_scale_min_k4(j: usize, q: &[u8; 12]) -> (u8, u8) {
     if j < 4 {
@@ -177,7 +177,7 @@ That is the argument for randomised bytes, stated as a rule: **a decoder is not 
 
 The 6-bit unpack as a kernel sees it - the same four-way interleave, with two differences worth naming:
 
-<!-- code: src/quants/kquant.rs::dot_q6_k_q8_k_scalar@88ffa5d -->
+<!-- code: src/quants/kquant.rs::dot_q6_k_q8_k_scalar@e844591 -->
 ```rust
 // Decode to a[256] as the unsigned 0..63 code (interleaved, the same
 // element order the SIMD kernels see).
@@ -241,7 +241,7 @@ Do not weaken the test when it fails. The interesting failures all look like "th
 
 The mechanism that makes byte-identity possible, and the reason a tolerance gate would have missed it:
 
-<!-- code: src/quantize.rs::nearest_int_mul@88ffa5d -->
+<!-- code: src/quantize.rs::nearest_int_mul@e844591 -->
 ```rust
 /// `nearest_int(a * b)`: `-ffp-contract=fast` folds the magic constant into the
 /// product's FMA. The production object emits `fmadd s0, a, b, #12582912.0`
@@ -320,7 +320,7 @@ This is why Lesson 4's byte identity is not pedantry. Byte identity is the *only
 
 What the metadata actually records, from the encoder's side:
 
-<!-- code: src/quantize.rs::QuantTarget::file_type@88ffa5d -->
+<!-- code: src/quantize.rs::QuantTarget::file_type@e844591 -->
 ```rust
 /// llama.cpp's `llama_ftype` value for `general.file_type`.
 ///

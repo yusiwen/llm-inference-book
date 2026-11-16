@@ -129,7 +129,7 @@ Both f32 variants are inside the ledger's 1e-6 bound, so for an 896-wide vector 
 
 The reference implementation: three lines of arithmetic and two decisions.
 
-<!-- code: src/vec_ops/rms_norm.rs::rms_norm_f32@88ffa5d -->
+<!-- code: src/vec_ops/rms_norm.rs::rms_norm_f32@e844591 -->
 ```rust
 pub fn rms_norm_f32(n: usize, y: &mut [f32], x: &[f32], eps: f32) {
     debug_assert!(y.len() >= n && x.len() >= n);
@@ -203,7 +203,7 @@ Seven per cent on every score in every head in every layer is not a garbled answ
 
 The frequency, in the one place the reference and the device kernels share:
 
-<!-- code: src/vec_ops/rope.rs::rope_inv_freq@88ffa5d -->
+<!-- code: src/vec_ops/rope.rs::rope_inv_freq@e844591 -->
 ```rust
 /// The inverse frequency a RoPE kernel uses, in **one** place so the CPU
 /// reference and the issue's gates cannot drift from the kernels:
@@ -275,7 +275,7 @@ That also names the fix, and it is measured: a degree-5 polynomial with the `2^k
 
 The softmax, where the two things that matter are a parameter and an accumulator's type:
 
-<!-- code: src/vec_ops/softmax.rs::vec_soft_max_f32@88ffa5d -->
+<!-- code: src/vec_ops/softmax.rs::vec_soft_max_f32@e844591 -->
 ```rust
 pub fn vec_soft_max_f32(n: usize, y: &mut [f32], x: &[f32], max: f32) -> f64 {
     debug_assert!(y.len() >= n && x.len() >= n);
@@ -343,7 +343,7 @@ The general rule: **fuse when the intermediate has no other reader, and decide t
 
 SiLU and SwiGLU sit next to each other in the file because the second is the first plus a multiply:
 
-<!-- code: src/vec_ops/silu.rs::vec_swiglu_f32@88ffa5d -->
+<!-- code: src/vec_ops/silu.rs::vec_swiglu_f32@e844591 -->
 ```rust
 pub fn vec_swiglu_f32(n: usize, dst: &mut [f32], gate: &[f32], up: &[f32]) {
     debug_assert!(dst.len() >= n && gate.len() >= n && up.len() >= n);
@@ -407,7 +407,7 @@ Read the RoPE row carefully, because it shows the limit of this method: the witn
 
 The normalisation the ledger lists as "must not narrow", in its fused form:
 
-<!-- code: src/vec_ops/rms_norm.rs::rms_norm_fused_f32@88ffa5d -->
+<!-- code: src/vec_ops/rms_norm.rs::rms_norm_fused_f32@e844591 -->
 ```rust
 pub fn rms_norm_fused_f32(n: usize, y: &mut [f32], x: &[f32], w: &[f32], eps: f32) {
     debug_assert!(y.len() >= n && x.len() >= n && w.len() >= n);

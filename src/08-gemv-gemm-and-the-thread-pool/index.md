@@ -116,7 +116,7 @@ Two caveats a careful reader will want, stated here rather than buried:
 
 The loop every kernel on this machine is a variant of:
 
-<!-- code: src/kernel/pool.rs::mm_rows@88ffa5d -->
+<!-- code: src/kernel/pool.rs::mm_rows@e844591 -->
 ```rust
 pub(super) unsafe fn mm_rows(job: &MmJob, r0: usize, r1: usize) {
     let od = job.od;
@@ -144,7 +144,7 @@ pub(super) unsafe fn mm_rows(job: &MmJob, r0: usize, r1: usize) {
 
 The unit of work is a **row range**, because the weight row is the one thing in this computation that no two workers need to share:
 
-<!-- code: src/kernel/pool.rs::chunk@88ffa5d -->
+<!-- code: src/kernel/pool.rs::chunk@e844591 -->
 ```rust
 pub(super) fn chunk(parts: usize, idx: usize, total: usize) -> (usize, usize) {
     let a = total * idx / parts;
@@ -201,7 +201,7 @@ gate    a mutex the caller holds across submit -> wait
 
 The pool is a submission, a counter and a spin:
 
-<!-- code: src/kernel/pool.rs::par_for@88ffa5d -->
+<!-- code: src/kernel/pool.rs::par_for@e844591 -->
 ```rust
 /// Parallel-for over `total` tasks using the persistent pool: `f(ctx, start,
 /// end)` is called once per contiguous chunk (one per worker + the main
@@ -268,7 +268,7 @@ In this chapter's pool the same principle appears in miniature as a **threshold*
 
 The queue's bound in code, with the reasoning that this lesson is really about:
 
-<!-- code: crates/minfer-cli/src/server/batch.rs::queue_max_from_env@88ffa5d -->
+<!-- code: crates/minfer-cli/src/server/batch.rs::queue_max_from_env@e844591 -->
 ```rust
 /// #150: the default number of jobs that may wait for a slot. Deliberately the
 /// same number as the job channel's capacity (`server::mod`): one number is easier
@@ -328,13 +328,13 @@ A thread count is therefore a **measured** parameter with a shape, not a constan
 
 The threshold below which the pool is not worth waking:
 
-<!-- code: src/kernel/pool.rs::MIN_PARALLEL_MACS@88ffa5d -->
+<!-- code: src/kernel/pool.rs::MIN_PARALLEL_MACS@e844591 -->
 ```rust
 pub(crate) const MIN_PARALLEL_MACS: usize = 1 << 20; // 1M MACs
 ```
 <!-- /code -->
 
-<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul@88ffa5d -->
+<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul@e844591 -->
 ```rust
 let threads = cpu_threads();
 let macs = od.saturating_mul(id).saturating_mul(nt);

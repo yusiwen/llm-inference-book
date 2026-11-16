@@ -73,7 +73,7 @@ Look at that table before moving on. The file is called **q4_0**, and it is **5.
 
 The block size is not a constant in the format - it is a property of the type, and the engine answers it in one match:
 
-<!-- code: src/quantize.rs::QuantTarget::blck_size@88ffa5d -->
+<!-- code: src/quantize.rs::QuantTarget::blck_size@e844591 -->
 ```rust
 
 /// The block size (elements per block) of the encoded layout.
@@ -104,7 +104,7 @@ qs     u8[16]  16 B    32 nibbles: byte j holds weight j in its low nibble and w
 
 The engine's dequantizer, and the Q4_0 arm is the whole of this lesson:
 
-<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
+<!-- code: src/quantize.rs::dequantize_block@e844591 -->
 ```rust
 GgmlType::Q4_0 => {
     let d = f16_at(b, 0);
@@ -170,7 +170,7 @@ Q5_0 asks for one more bit per weight and pays 4 bytes per block for it: 22 byte
 
 Q5_0, where the high bit lives in a plane of its own:
 
-<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
+<!-- code: src/quantize.rs::dequantize_block@e844591 -->
 ```rust
 GgmlType::Q5_0 => {
     let d = f16_at(b, 0);
@@ -230,7 +230,7 @@ The pair Q8_0 x Q4_0 is the historical core of llama.cpp's CPU performance: a Q8
 
 Q8_0 in full, which is the shortest block in the format family:
 
-<!-- code: src/quantize.rs::dequantize_block@88ffa5d -->
+<!-- code: src/quantize.rs::dequantize_block@e844591 -->
 ```rust
 GgmlType::Q8_0 => {
     let d = f16_at(b, 0);
@@ -297,7 +297,7 @@ Two decoders, the same bytes, **1,280 reconstructed weights** each, all bit-exac
 
 The quantizer that produced this lesson's error table, where the clipping and the tie-breaking live:
 
-<!-- code: src/quantize.rs::quantize_q4_0@88ffa5d -->
+<!-- code: src/quantize.rs::quantize_q4_0@e844591 -->
 ```rust
 fn quantize_q4_0(x: &[f32], contract: FmaContract) -> Vec<u8> {
     let mut out = Vec::with_capacity(x.len() / 32 * 18);

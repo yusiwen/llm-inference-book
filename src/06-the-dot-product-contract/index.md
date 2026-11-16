@@ -59,7 +59,7 @@ The activation side is small by comparison: 896 floats per row, and each is reus
 
 Every shape this chapter is about arrives at one operator, and the engine's op vocabulary names it once:
 
-<!-- code: src/graph/ops.rs::Op::MatMul@88ffa5d -->
+<!-- code: src/graph/ops.rs::Op::MatMul@e844591 -->
 ```rust
 // ---- linear algebra ----
 MatMul {
@@ -76,7 +76,7 @@ The policy is one sentence: take the f32 activation row, and for every 32 values
 
 The engine's quantizer is that policy in code, and three details in it are this lesson:
 
-<!-- code: src/quants/avx2.rs::quantize_scalar@88ffa5d -->
+<!-- code: src/quants/avx2.rs::quantize_scalar@e844591 -->
 ```rust
 pub(super) fn quantize_scalar(x: &[f32], y: &mut [u8], k: usize) {
     let nb = k / 32;
@@ -176,7 +176,7 @@ Which is why the engine's two vector paths do different things and both are corr
 
 The engine's own version of those three lines, and it is shorter than the sketch because it needs no part names:
 
-<!-- code: src/quants/dot_q8_0.rs::dot_q8_0_q8_0_scalar@88ffa5d -->
+<!-- code: src/quants/dot_q8_0.rs::dot_q8_0_q8_0_scalar@e844591 -->
 ```rust
 fn dot_q8_0_q8_0_scalar(x: &[u8], y: &[u8], nb: usize) -> f32 {
     let mut s = 0.0f32;
@@ -218,7 +218,7 @@ Two rules follow from that table, and both are enforced in code rather than in a
 
 The dispatch contract as the engine writes it:
 
-<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul_f32@88ffa5d -->
+<!-- code: src/kernel/dispatch.rs::cpu_quant_matmul_f32@e844591 -->
 ```rust
 pub fn cpu_quant_matmul_f32(
     w: &Tensor,
@@ -288,7 +288,7 @@ Those are the numbers a scalar engine gets, and they are the reason the next two
 
 The oracle itself - the most obvious code in the engine, and the definition every fast kernel is checked against:
 
-<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_scalar@88ffa5d -->
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_scalar@e844591 -->
 ```rust
 fn dot_q4_0_q8_0_scalar(x: &[u8], y: &[u8], nb: usize) -> f32 {
     let mut s = 0.0f32;

@@ -81,7 +81,7 @@ The measurement that proves this matters is in the table at the top: `neon-sdot`
 
 The one reduction no lane-count argument can avoid, in the engine's own three lines:
 
-<!-- code: src/quants/avx2.rs::hsum_float_8@88ffa5d -->
+<!-- code: src/quants/avx2.rs::hsum_float_8@e844591 -->
 ```rust
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx")]
@@ -128,7 +128,7 @@ AVX2's coverage is wider than its reputation: `maddubs` covers Q4_0 (after the s
 
 Verbatim, the same four steps with the engine's identifiers:
 
-<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_avx2@88ffa5d -->
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0_avx2@e844591 -->
 ```rust
 unsafe fn dot_q4_0_q8_0_avx2(x: &[u8], y: &[u8], nb: usize) -> f32 {
     use core::arch::x86_64::*;
@@ -189,7 +189,7 @@ the same SDOT kernel, two versions of one helper:
 
 Verbatim, the same instruction the sketch above calls `vdotq_s32` - which the stable toolchain will not let the engine call:
 
-<!-- code: src/quants/neon.rs::sdot_vec@88ffa5d -->
+<!-- code: src/quants/neon.rs::sdot_vec@e844591 -->
 ```rust
 /// Accumulate 16 lanes of int8 × int8 into a scalar int32 with SDOT:
 /// one `sdot v.4s, a.16b, b.16b` computes 4 independent 4-element dot
@@ -256,7 +256,7 @@ That last point is the general lesson and it is uncomfortable: **at 32 weights p
 
 Verbatim, the same shape with both mechanisms in it:
 
-<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0@88ffa5d -->
+<!-- code: src/quants/dot_q4_0.rs::dot_q4_0_q8_0@e844591 -->
 ```rust
 #[inline]
 pub fn dot_q4_0_q8_0(q4: &[u8], q8: &[u8]) -> f32 {
@@ -310,7 +310,7 @@ Which is why every speedup in this chapter is computed inside one program, again
 
 The engine's correctness gate for a fast path, and it makes its claim about **bits**:
 
-<!-- code: src/quants/avx2.rs::avx2_family@88ffa5d -->
+<!-- code: src/quants/avx2.rs::avx2_family@e844591 -->
 ```rust
 // ============================================================
 // K-quant AVX2/FMA kernels (Q4_K / Q5_K / Q6_K × Q8_K) — bit-exact with
@@ -324,7 +324,7 @@ The engine's correctness gate for a fast path, and it makes its claim about **bi
 ```
 <!-- /code -->
 
-<!-- code: src/quants/avx2_correctness.rs::assert_bits@88ffa5d -->
+<!-- code: src/quants/avx2_correctness.rs::assert_bits@e844591 -->
 ```rust
 fn assert_bits(what: &str, offset: usize, got: f32, expected: f32) {
     assert_eq!(

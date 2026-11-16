@@ -101,7 +101,7 @@ that is the entire decision rule - no frequency counting at encode time, no look
 
 The engine's loop, in full:
 
-<!-- code: src/tokenizer.rs::bpe_encode@88ffa5d -->
+<!-- code: src/tokenizer.rs::bpe_encode@e844591 -->
 ```rust
 fn bpe_encode(&self, token: &str) -> Vec<u32> {
     // Split into characters
@@ -174,7 +174,7 @@ and the file names which one to use in a single string: `tokenizer.ggml.pre`, wh
 `qwen2`. The expression itself is not in the file. This is the first of the two things the file leaves out,
 and the engine carries it as an enum of dialects:
 
-<!-- code: src/tokenizer.rs::PreTokenizer@88ffa5d -->
+<!-- code: src/tokenizer.rs::PreTokenizer@e844591 -->
 ```rust
 pub enum PreTokenizer {
     /// `qwen2` (aliases: `deepseek-r1-qwen`): Qwen2 / Qwen2.5 / Qwen3.
@@ -253,7 +253,7 @@ model than `Héllo` typed with a precomposed one - a difference the user cannot 
 
 The engine decides this from the pre-tokenizer family, because the file does not say:
 
-<!-- code: src/tokenizer.rs::Tokenizer::applies_nfc@88ffa5d -->
+<!-- code: src/tokenizer.rs::Tokenizer::applies_nfc@e844591 -->
 ```rust
 /// Whether the input is normalized to NFC: true when the file's
 /// pre-tokenizer rule declares one (ADR-0044). SentencePiece has no rule, and
@@ -279,7 +279,7 @@ copying every prompt to satisfy a normalizer that will not change it is a waste 
 normalizer itself is a hand-written implementation - decomposition tables, canonical ordering by combining
 class, then recomposition - with a fast test in front of it:
 
-<!-- code: src/tokenizer/nfc.rs::needs_normalization@88ffa5d -->
+<!-- code: src/tokenizer/nfc.rs::needs_normalization@e844591 -->
 ```rust
 /// Whether `input` can change under NFC at all: a character that decomposes
 /// (canonically), a combining mark that may need reordering, a conjoining jamo
@@ -366,7 +366,7 @@ the file, never inferred from its name* - and it is why the table above, not a s
 
 The engine scans for specials first, earliest position wins:
 
-<!-- code: src/tokenizer.rs::Tokenizer::encode@88ffa5d -->
+<!-- code: src/tokenizer.rs::Tokenizer::encode@e844591 -->
 ```rust
 pub fn encode(&self, text: &str) -> Vec<u32> {
     let normalized = self.normalized(text);
@@ -408,7 +408,7 @@ Now the other half: what happens to a character that the merge loop cannot build
 vocabulary the answer is arithmetic - all 256 bytes have tokens, so any string can be represented exactly - and
 the engine verifies that at load time and refuses to run without it:
 
-<!-- code: src/tokenizer.rs::byte_fallback@88ffa5d -->
+<!-- code: src/tokenizer.rs::byte_fallback@e844591 -->
 ```rust
 /// One token per byte of a byte-encoded piece.
 ///
@@ -442,7 +442,7 @@ it as a panic rather than as a fallback.
 A file that declares no vocabulary at all is the third case, and the engine refuses text tokenization rather
 than inventing ids for it. The `decode_checked` entry point spells the refusal out:
 
-<!-- code: src/tokenizer.rs::Tokenizer::decode_checked@88ffa5d -->
+<!-- code: src/tokenizer.rs::Tokenizer::decode_checked@e844591 -->
 ```rust
 pub fn decode_checked(&self, ids: &[u32]) -> Result<Vec<u8>, String> {
     if self.model == TokenizerModel::None {
@@ -509,7 +509,7 @@ can be split across two ids - this chapter's emoji fixture is exactly that, four
 A decoder that hands its bytes to the terminal as they arrive prints three invalid bytes, and the terminal shows
 replacement characters. The engine's holdback is a byte scanner and nothing more:
 
-<!-- code: src/tokenizer.rs::complete_utf8_prefix_len@88ffa5d -->
+<!-- code: src/tokenizer.rs::complete_utf8_prefix_len@e844591 -->
 ```rust
 /// character boundary.
 ///

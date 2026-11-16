@@ -60,7 +60,7 @@ That last point is worth writing down as an invariant, because Rust will make yo
 
 The engine's tensor is four fields and a name, and the stride unit is the thing to notice:
 
-<!-- code: src/tensor.rs::Tensor@88ffa5d -->
+<!-- code: src/tensor.rs::Tensor@e844591 -->
 ```rust
 pub struct Tensor {
     pub ttype: TensorType,
@@ -148,7 +148,7 @@ Note what the function does *not* do: ask what the dtype means, or decode anythi
 
 The alignment the file needs is one expression, and the comment is the reference implementation's own:
 
-<!-- code: src/gguf.rs::ggml_pad@88ffa5d -->
+<!-- code: src/gguf.rs::ggml_pad@e844591 -->
 ```rust
 pub fn ggml_pad(x: usize, n: usize) -> usize {
     // ((x) + (n) - 1) & ~((n) - 1)
@@ -216,7 +216,7 @@ That assertion is the tensor equivalent of Chapter 2's tiling check: cheap, mech
 
 A borrowed tensor is a range plus the handle that keeps it alive, which is the answer to "who owns the mapping":
 
-<!-- code: src/tensor.rs::TensorData@88ffa5d -->
+<!-- code: src/tensor.rs::TensorData@e844591 -->
 ```rust
 pub struct TensorData {
     inner: TensorDataInner,
@@ -270,7 +270,7 @@ The reference engine's `src/tensor.rs` and `src/block.rs` are worth reading only
 
 Bytes out is a slice, and it is all a weight tensor is allowed to be until dispatch:
 
-<!-- code: src/tensor.rs::Deref for TensorData@88ffa5d -->
+<!-- code: src/tensor.rs::Deref for TensorData@e844591 -->
 ```rust
 impl std::ops::Deref for TensorData {
     type Target = [u8];
@@ -304,7 +304,7 @@ Two habits follow, and they are the practical content of this lesson.
 
 Why unused dimensions are `1` and not `0`, in one line of ggml parity:
 
-<!-- code: src/gguf.rs::ggml_nelements@88ffa5d -->
+<!-- code: src/gguf.rs::ggml_nelements@e844591 -->
 ```rust
 fn ggml_nelements(ne: &[i64; GGML_MAX_DIMS]) -> i64 {
     ne[0] * ne[1] * ne[2] * ne[3]

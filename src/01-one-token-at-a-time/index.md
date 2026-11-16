@@ -90,7 +90,7 @@ A loop that forgets any of the three still compiles. It even produces plausible 
 
 The engine's whole surface is one method, and it says where the state lives:
 
-<!-- code: src/conversation.rs::Engine::forward@88ffa5d -->
+<!-- code: src/conversation.rs::Engine::forward@e844591 -->
 ```rust
 impl Engine for GraphEngine<'_> {
     fn forward(&mut self, tokens: &[u32], positions: &[usize], n_out: usize) -> Vec<f32> {
@@ -124,7 +124,7 @@ Two consequences follow, and they are the two things most worth knowing before y
 
 Both regimes reach the same kernel with one number different, and the engine's GPU dispatch says so out loud:
 
-<!-- code: src/cuda/methods/dispatch.rs::dispatch_matmul@88ffa5d -->
+<!-- code: src/cuda/methods/dispatch.rs::dispatch_matmul@e844591 -->
 ```rust
 // excludes it. Decode (nt == 1) keeps the f32 kernel.
 // ...
@@ -244,7 +244,7 @@ All four are about correctness, and none is about speed. That is the chapter's p
 
 The engine is allowed to be lazy about many things, and this function is the list of things it is not:
 
-<!-- code: src/quantize.rs::can_decode@88ffa5d -->
+<!-- code: src/quantize.rs::can_decode@e844591 -->
 ```rust
 pub fn can_decode(type_: GgmlType) -> bool {
     matches!(

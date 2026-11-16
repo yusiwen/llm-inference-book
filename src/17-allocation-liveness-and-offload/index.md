@@ -56,7 +56,7 @@ allocates a byte on a device - will this fit - and what it does when the device 
 
 `alloc_graph` runs on every graph (re)build, and its doc comment draws the line everything else follows:
 
-<!-- code: src/graph/alloc.rs::alloc_graph@88ffa5d -->
+<!-- code: src/graph/alloc.rs::alloc_graph@e844591 -->
 ```rust
     /// Runs on every graph (re)build: previous liveness buffers are released
     /// back to their pools, while **persistent regions (KV cache) survive** —
@@ -97,7 +97,7 @@ charged the KV region to the arena would count it twice on every rebuild.
 
 Here is the whole algorithm, from the same function:
 
-<!-- code: src/graph/alloc.rs::liveness@88ffa5d -->
+<!-- code: src/graph/alloc.rs::liveness@e844591 -->
 ```rust
         // The scheduler executes nodes in BUILD order (node id order — the
         // builder appends sources before consumers), so liveness must use the
@@ -150,7 +150,7 @@ obvious, and each one was a bug:
    parent must therefore stay alive as long as any reader of the view, so its `last_use` is pushed forward
    *through* the view:
 
-<!-- code: src/graph/alloc.rs::extend_through_views@88ffa5d -->
+<!-- code: src/graph/alloc.rs::extend_through_views@e844591 -->
 ```rust
 /// Returns the nodes whose liveness actually grew (in walk order, the node
 /// first), so the caller can keep the pool's own deadline in step: `buf_alive`
@@ -189,7 +189,7 @@ something unrelated makes it likely.
 A real allocator does not hand out bytes; it hands out **size classes**. On this engine the ladder is a 1 KiB
 floor, powers of two up to 16 KiB, then 16 KiB steps:
 
-<!-- code: src/graph/allocplan.rs::class_size@88ffa5d -->
+<!-- code: src/graph/allocplan.rs::class_size@e844591 -->
 ```rust
 /// The size class `elems` is rounded up to.
 ///
@@ -222,7 +222,7 @@ grain wins instead. What the ladder costs on this graph:
 are reserved per class, so two buffers of different classes cannot share even when their live intervals never
 overlap. The allocator can report its own numbers, per backend:
 
-<!-- code: src/graph/alloc.rs::memory_report@88ffa5d -->
+<!-- code: src/graph/alloc.rs::memory_report@e844591 -->
 ```rust
     /// E4's accounting for one backend: what is resident, what is live, the peak, and the
     /// budget the allocator checks against.
@@ -263,7 +263,7 @@ node count, is what creates fragmentation.**
 The KV and the arena are what the host holds; the weights are what a device must hold, and they do not always fit.
 The engine's answer separates three states - a measurement, a failed query, and no device at all:
 
-<!-- code: src/graph/allocplan.rs::budget_decision@88ffa5d -->
+<!-- code: src/graph/allocplan.rs::budget_decision@e844591 -->
 ```rust
 /// Resolve a backend's activation budget from an explicit override and the device's
 /// own memory answer. Pure, so the whole mapping is unit-tested with no device.

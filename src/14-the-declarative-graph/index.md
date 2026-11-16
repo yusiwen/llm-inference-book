@@ -57,7 +57,7 @@ model. What it can do is show the after as data, and name the four questions the
 
 The engine's answer to all four is one type:
 
-<!-- code: src/graph/mod.rs::CNode@88ffa5d -->
+<!-- code: src/graph/mod.rs::CNode@e844591 -->
 ```rust
 /// Single compute node.
 #[derive(Debug, Clone)]
@@ -91,7 +91,7 @@ computation's edges, `out_shape`/`out_dtype` are known before anything runs, `ba
 at build time nobody has decided yet, and `view` marks the nodes that will not own a buffer at all. The graph
 itself is the vector, in an order the doc comment states as a promise:
 
-<!-- code: src/graph/mod.rs::ComputeGraph@88ffa5d -->
+<!-- code: src/graph/mod.rs::ComputeGraph@e844591 -->
 ```rust
 /// Compute graph: topologically ordered node sequence + input/output sets.
 #[derive(Debug, Clone, Default)]
@@ -153,7 +153,7 @@ you can *check* that arithmetic against the node list is the first thing the gra
 Building appends nodes. That is the whole of it, and the function that does it is worth reading because of what it
 does *not* do - there is no allocation, no kernel, no branching on data:
 
-<!-- code: src/graph/builder.rs::GraphBuilder::node@88ffa5d -->
+<!-- code: src/graph/builder.rs::GraphBuilder::node@e844591 -->
 ```rust
     /// Create an operator node; returns its id.
     pub fn node(
@@ -254,7 +254,7 @@ edges, the same shapes - and it has to hold while the *data* differs, which is t
 The claim that makes reuse possible is one sentence long, and the engine keeps it in the type that the cache
 compares:
 
-<!-- code: src/graph/params.rs::GraphParams@88ffa5d -->
+<!-- code: src/graph/params.rs::GraphParams@e844591 -->
 ```rust
 /// Reuse-relevant graph parameters (see module docs).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -330,7 +330,7 @@ only the input data is refreshed, and `n_past` never appears in the comparison b
 doc line writes that implication with a double-arrow sign, which this book's character gate refuses, so the
 sentence is paraphrased here rather than quoted.) The implementation is shorter than the sentence:
 
-<!-- code: src/graph/cache.rs::GraphCache::try_reuse@88ffa5d -->
+<!-- code: src/graph/cache.rs::GraphCache::try_reuse@e844591 -->
 ```rust
     pub fn try_reuse(&mut self, params: &GraphParams) -> Result<bool, String> {
         let Some(pos) = self
@@ -389,7 +389,7 @@ whenever the batching changed shape with the topology unchanged".
 The last thing the imperative loop could not do is show you what it was going to do. The graph can, and the export
 is twenty lines because the data structure already holds everything:
 
-<!-- code: src/graph/json.rs::ComputeGraph::export_json@88ffa5d -->
+<!-- code: src/graph/json.rs::ComputeGraph::export_json@e844591 -->
 ```rust
     /// Export the graph as the web-visualizer JSON document.
     /// `model` = display name (e.g. "qwen2.5-0.5b-instruct-q4_k_m"),

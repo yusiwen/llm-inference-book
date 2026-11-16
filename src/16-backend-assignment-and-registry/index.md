@@ -42,7 +42,7 @@ instead when you did. Lesson 4 is that distinction, with three refusals reproduc
 The question is a method on the backend trait (`supports_op`, Chapter 15), and the *asking* is a walk over the
 registry in priority order. The walk is worth reading in full, because every rule this chapter states is in it:
 
-<!-- code: src/graph/alloc.rs::supports_for@88ffa5d -->
+<!-- code: src/graph/alloc.rs::supports_for@e844591 -->
 ```rust
     /// F4: the device order is the registry's **priority** order, not a statement
     /// order in this function — Metal (300), CUDA (200), CPU (100) — and a backend
@@ -142,7 +142,7 @@ same trick as Chapter 10's identity gate - a rule enforced by the compiler rathe
 
 The registry holds two orders and they are not the same one:
 
-<!-- code: src/graph/registry.rs::Two orders@88ffa5d -->
+<!-- code: src/graph/registry.rs::Two orders@e844591 -->
 ```rust
 //! ## Two orders, and the determinism rule
 //!
@@ -197,7 +197,7 @@ meaning, the *order* does, and the test is what stops a well-meaning edit from r
 
 Assignment writes a backend into every node. Then the scheduler cuts the graph into runs:
 
-<!-- code: src/graph/scheduler.rs::assign_backends@88ffa5d -->
+<!-- code: src/graph/scheduler.rs::assign_backends@e844591 -->
 ```rust
     /// Assign every node to the best backend that supports it (capability
     /// driven via the allocator's backend registry).
@@ -280,7 +280,7 @@ round trip that costs more than the op it was optimising.
 
 A user names a backend with `--backend`. Three things can then be wrong, and the engine distinguishes all three:
 
-<!-- code: src/graph/registry.rs::NameError@88ffa5d -->
+<!-- code: src/graph/registry.rs::NameError@e844591 -->
 ```rust
 /// Why a name could not be resolved. The two cases are deliberately distinct: a
 /// name that does not exist is always an error, and so is a name this build does
@@ -317,7 +317,7 @@ The compile-time case carries its own reason, because a compiled-out backend mus
 for CUDA on a macOS build names the feature flag rather than pretending the name is a typo. The runtime case is the
 third:
 
-<!-- code: src/graph/registry.rs::check_available@88ffa5d -->
+<!-- code: src/graph/registry.rs::check_available@e844591 -->
 ```rust
 /// Startup stage 2: every **named** backend that is compiled in must also be
 /// usable on this machine. Run once the device layer is up, before the model is
@@ -376,7 +376,7 @@ script: a refusal that exits 0 is a warning, and a warning in a benchmark harnes
 The handle is a `u16` newtype with three constants, and the doc comment on the type says the only thing that
 matters about the number:
 
-<!-- code: src/graph/registry.rs::Backend@88ffa5d -->
+<!-- code: src/graph/registry.rs::Backend@e844591 -->
 ```rust
 /// A registered backend, as a cheap index into the registry.
 ///
@@ -400,7 +400,7 @@ impl Backend {
 The number is persisted in exactly one place - the KV-session file, which stores a cache so a later run can resume
 from it:
 
-<!-- code: src/graph/kvsession.rs::tag_of@88ffa5d -->
+<!-- code: src/graph/kvsession.rs::tag_of@e844591 -->
 ```rust
 /// The on-disk backend tag: the registry id, so the file format is the handle's
 /// id space and nothing else (F4). `backend_of_tag` is its inverse.
