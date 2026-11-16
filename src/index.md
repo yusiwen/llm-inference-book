@@ -57,7 +57,7 @@ The compute tier on each chapter is honest about what hardware it needs: ✅ run
 | **2 Arithmetic** | 6-10 | 25 | ✅ | Quantized dot products in scalar and SIMD, matmul shapes, ops, attention |
 | **3 Language** | 11-13 | 15 | ✅ | Text to ids, ids to prompts, scores to sampled tokens |
 | **4 The graph** | 14-20 | 36 | ✅ | A declarative graph with allocator, KV subsystem and a generation loop |
-| **5 Devices** | 21-26 | 30 | ⚠️ | A Metal backend, then CUDA from the machine model to a measured campaign |
+| **5 Devices** | 21-26 | 30 | ⚠️ | The CPU backend you wrote in Parts 2-4 used as the reference, with two accelerators drawn beside it: a Metal backend, then CUDA from the machine model to a measured campaign |
 | **6 Proving it** | 27-29 | 15 | ✅⚠️ | An identity gate, a defensible benchmark, and a server |
 
 **29 chapters, 146 lessons** in total: roughly 25-30 hours of reading plus 120-200 hours of hands-on work, spread over months rather than weekends. *(arithmetic on stated assumptions: the same per-chapter load as the author's previous handbook.)*
@@ -68,7 +68,8 @@ Three decisions explain most of the distance between this book and the project's
 
 1. **It is ordered by build dependency, not by module.** The project's walkthrough follows one run through the engine, which is the right order for understanding a finished system. A book you build along with has to follow what compiles onto what: file format, then numbers, then text, then the graph, then devices, then the proof.
 2. **The CUDA part is five chapters, not one.** The machine model, the Rust boundary, the kernel ladder, attention and graphs, and the optimization campaign are five different skills. The project's own CUDA tutorial teaches them well (see [the CUDA audit](appendix/cuda-docs-audit.md) for how this book differs and what it corrected), but a tutorial written for contributors can assume the rest of the engine; a book cannot.
-3. **Correctness and measurement are chapters, not appendices.** They are the two disciplines that separate an engine from a pile of kernels, and the project learned that the hard way - its own optimization record contains as many reverted levers as landed ones.
+3. **The CPU is not a chapter, because the CPU is most of the book.** Every kernel, every dispatch decision and every graph step in Parts 2 through 4 is written for the CPU first, and Chapter 16 already registers it as a backend in the same registry the GPU ones are added to. Part 5 is about what changes when the device is not the one you have been programming - command buffers to record, a graph to capture, a ladder of kernels that only pays off at GPU widths - and Chapter 21 opens by drawing CPU, Metal and CUDA in the same four layers rather than introducing a fourth, unrelated machine.
+4. **Correctness and measurement are chapters, not appendices.** They are the two disciplines that separate an engine from a pile of kernels, and the project learned that the hard way - its own optimization record contains as many reverted levers as landed ones.
 
 ## Where the code lives
 

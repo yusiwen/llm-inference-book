@@ -21,7 +21,7 @@ The first cost to understand is that the loop runs in two regimes that behave no
 
 That asymmetry is the spine of the book. Since the second regime is bandwidth-bound, and the weights are what has to be moved, the number of tokens per second a single request can produce has a ceiling you can compute on paper before writing a kernel: *the model's size divided by the machine's memory bandwidth*. For the 4.68 GB file this book uses - Qwen2.5-7B-Instruct at Q4_K_M - on a laptop measuring 198 GB/s, that ceiling is about 42 tokens per second. No amount of clever kernel work goes through it; the only ways past are reading fewer bytes or producing several tokens per read.
 
-That number also decides the book's structure. Quantization (Part 2) attacks the numerator. Batching and speculation (Part 5, and Chapter 29) attack the implied "per token" in the denominator. The graph and its allocation (Part 4) decide whether each byte is read once or twice. Correctness and measurement (Part 6) are how you know any of it worked.
+That number also decides the book's structure. Quantization (Part 2) attacks the numerator. Batching and speculation (Chapter 29, in Part 6) attack the implied "per token" in the denominator. The graph and its allocation (Part 4) decide whether each byte is read once or twice. Correctness and measurement (Part 6) are how you know any of it worked.
 
 ## What you'll be able to do
 

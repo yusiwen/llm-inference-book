@@ -3,7 +3,7 @@
 > - **Compute tier**: ✅ any laptop
 > - **Status**: draft
 > - **Build step S16**: A backend registry with stable ids, one capability question per op, a splitter that cuts the graph into contiguous same-backend runs, and three refusals you can reproduce in three commands.
-> - **Rule of this book**: The device implementations themselves are Part 5. This chapter is the seam: how an op ends up on a device, and what the engine owes you when it cannot.
+> - **Rule of this book**: The GPU backends themselves are Part 5; the CPU one is what you have been writing since Chapter 6, and it goes into this same registry. This chapter is the seam: how an op ends up on a device, and what the engine owes you when it cannot.
 
 ## First, the gist
 
