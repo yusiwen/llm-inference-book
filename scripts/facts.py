@@ -667,6 +667,14 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "family": ("scripts/family.py",
+               "runs the binary with its per-node trace on one real file and counts the nodes by op kind, "
+               "slices one transformer layer out of the graph, runs three byte-patched copies of the same "
+               "file through the loader to capture its refusals verbatim, and counts lines and `#[test]` "
+               "functions per family module in the pinned checkout; writes `facts/family.json`",
+               "node counts and one layer's slice from one trace; the refusals are exit codes and stderr read "
+               "as values; line and test counts are recomputed from the pinned checkout, not remembered",
+               ),
     "alloc": ("scripts/alloc.py",
               "runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the "
               "graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the "
@@ -1552,6 +1560,111 @@ def render_kv_session(f):
     return out
 
 
+def render_fam_layer(f):
+    """Chapter 19: one transformer layer as the graph actually builds it, in node order."""
+    L = f["trace"]["layer"]
+    out = ["| # | op | tensor | shape |", "|---|---|---|---|"]
+    for i, n in enumerate(L["ops"]):
+        shape = " x ".join(str(d) for d in n["shape"] if d != 1) or "1"
+        out.append(f"| {i} | `{n['op']}` | `{n['name']}` | {shape} |")
+    shared = L["shared_inputs"]
+    per_layer = L["per_layer_nodes"]
+    out.append("")
+    out.append(f"The slice holds {L['nodes']} nodes, but {len(shared)} of them are the `input` nodes "
+               f"({', '.join('`' + s + '`' for s in shared)}) that the graph creates **once** and every layer "
+               f"references - so a layer contributes **{per_layer} nodes of its own**. The prefill graph is "
+               f"{per_layer} x {L['layers_in_file']} = {per_layer * L['layers_in_file']} plus "
+               f"{L['graph_minus_layers']} model-level nodes (the embedding, the final norm, one matmul for the "
+               f"vocabulary, and those shared inputs).")
+    return out
+
+
+def render_fam_ops(f):
+    """Chapter 19: the op vocabulary a dense family needs, counted in two phases."""
+    pre, dec = f["trace"]["prefill"], f["trace"]["decode"]
+    kinds = sorted(set(pre["by_op"]) | set(dec["by_op"]), key=lambda k: (-pre["by_op"].get(k, 0), k))
+    out = ["| Op | Prefill nodes | Decode nodes | Per layer |", "|---|---|---|---|"]
+    layers = f["trace"]["layer"]["layers_in_file"]
+    # Ops that appear once at model level on top of their per-layer instances.
+    model_level = {"matmul": 1, "rms_norm": 1}
+    for k in kinds:
+        p, d = pre["by_op"].get(k, 0), dec["by_op"].get(k, 0)
+        if k in ("input", "get_rows"):
+            per = "**not per layer**"
+        else:
+            n = (p - model_level.get(k, 0)) / layers
+            per = f"{n:.0f}" + (" + 1 at model level" if k in model_level else "")
+        out.append(f"| `{k}` | {p} | {d} | {per} |")
+    out.append(f"| **total** | **{pre['nodes']}** | **{dec['nodes']}** | "
+               f"**{f['trace']['layer']['per_layer_nodes']}, plus "
+               f"{len(f['trace']['layer']['shared_inputs'])} shared inputs at model level** |")
+    out.append("")
+    out.append(f"{pre['kinds']} op kinds cover the whole model. That number is the chapter's real subject: a "
+               f"family is a *recipe over a vocabulary*, so the vocabulary's size is what a new family is "
+               f"measured against - and the shared vocabulary in this engine has "
+               f"{f['source']['op_variants']} variants.")
+    return out
+
+
+def render_fam_refusals(f):
+    """Chapter 19: what the loader says when the file is not a file this engine knows."""
+    out = ["| The file | Exit | The engine's message |", "|---|---|---|"]
+    for r in f["refusals"]:
+        out.append(f"| `general.architecture = qwen9` | {r['exit']} | {('`' + r['message'] + '`') if r['case'] == 'unknown architecture' else '`' + r['message'] + '`'} |")
+    # rewrite the first column per case, since each row's patch differs
+    out = ["| What was changed in the file | Exit | The engine's message |", "|---|---|---|"]
+    for r in f["refusals"]:
+        what = {"unknown architecture": "`general.architecture` renamed to `qwen9`",
+                "missing block_count": "the key `qwen2.block_count` renamed to `qwenX.block_count`",
+                "missing head_count": "the key `qwen2.attention.head_count` renamed to `qwenX.…`"}[r["case"]]
+        out.append(f"| {what} | {r['exit']} | `{r['message']}` |")
+    out.append("")
+    out.append("Three byte-patched copies of one working file, and three refusals: the first names the "
+               "architecture, the second and third name the *group* of fields rather than the one that is "
+               "missing - the resolver tries `qwen2.*` and then `llama.*`, so by the time it gives up it "
+               "cannot say which of the four was absent. That is the difference between an error that "
+               "diagnoses and an error that only refuses, and the chapter says which one this is.")
+    return out
+
+
+def render_fam_cost(f):
+    """Chapter 19: what the second family cost, in lines and tests, against the shared modules."""
+    s = f["source"]
+    out = ["| Module | Lines (without tests) | Lines of tests | `#[test]` fns |", "|---|---|---|---|"]
+    for fam in ("qwen2", "qwen3"):
+        m = s["modules"][fam]
+        out.append(f"| `src/models/{fam}/` | {m['lines_without_tests']:,} | {m['lines_of_tests']:,} | {m['test_fns']} |")
+    for rel, n in s["shared"].items():
+        out.append(f"| `{rel}` (shared) | {n:,} | - | - |")
+    out.append("")
+    q2, q3 = s["modules"]["qwen2"], s["modules"]["qwen3"]
+    out.append(f"The second family is {q3['lines_without_tests'] / q2['lines_without_tests']:.0%} of the first "
+               f"in code and {q3['test_fns']} tests against {q2['test_fns']} - not because Qwen3 is simpler, "
+               f"but because the vocabulary, the allocator, the scheduler, the fusion pass and the weight "
+               f"registry were already there. What a family owns is shapes, flags and a stop set.")
+    return out
+
+
+def render_fam_deltas(f):
+    """Chapter 19: the four places a family differs, each with a line count behind it.
+
+    The counts are `grep -c` of one anchor string per difference in each family's builder or loader.
+    A count is a pointer to the code, not a proof about it: the excerpts in the lesson are the proof.
+    """
+    d = f["source"]["deltas"]
+    meaning = {"per_head_qk_norm": "per-head RMSNorm on q and k after the projections, before RoPE",
+               "head_dim_from_metadata": "head width read from metadata instead of derived from `n_embd / n_head`",
+               "attention_bias": "an attention projection with a bias term",
+               "tied_output_embedding": "`output.weight` absent, so the input embedding is reused"}
+    out = ["| Difference | Anchor string | Qwen2 | Qwen3 |", "|---|---|---|---|"]
+    for key, v in d.items():
+        out.append(f"| {meaning.get(key, key)} | `{v['anchor']}` | {v['qwen2']} | {v['qwen3']} |")
+    out.append("")
+    out.append("Four differences, one per row, and the counts say which family implements each. A zero is the "
+               "interesting entry: it is the absence that a copied graph inherits silently.")
+    return out
+
+
 def render_ds_registry(f):
     """Chapter 16: one id space, two orders."""
     r = f["registry"]
@@ -1765,6 +1878,11 @@ BLOCKS = {
     "kv-defrag": render_kv_defrag,
     "kv-growth": render_kv_growth,
     "kv-session": render_kv_session,
+    "fam-layer": render_fam_layer,
+    "fam-ops": render_fam_ops,
+    "fam-refusals": render_fam_refusals,
+    "fam-cost": render_fam_cost,
+    "fam-deltas": render_fam_deltas,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
     "gr-trace": render_gr_trace,

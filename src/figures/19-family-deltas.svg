@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 400" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="One dense transformer layer with the four places model families diverge marked: the q k v projection widths and their optional bias, a per-head q and k normalization that only some families have, and a tied output embedding at the end of the model. The per-head normalization costs the fused qkv+rope decode path, because it sits between two operations that the fused kernel performs in one pass.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .fig-a-box { fill: #4d86b8; fill-opacity: .28; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-opt { fill: #8f7ad1; fill-opacity: .3; stroke: var(--quote-border, #4a6577); stroke-width: .8; stroke-dasharray: 4 3; }
+    .fig-a-end { fill: #3f7f76; fill-opacity: .28; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-link { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .8; }
+    .fig-a-note { fill: #8a6a10; fill-opacity: .22; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+  </style>
+  <text class="g-cap" x="24" y="24">ONE DENSE LAYER, AND THE FOUR PLACES FAMILIES DIVERGE</text>
+  <text class="g-s" x="24" y="44">read top to bottom; the dashed box exists in one family and not the other</text>
+  <rect x="30" y="64" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="80">pre-norm (rms_norm)</text>
+  <rect x="30" y="94" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="110">q / k / v projections</text>
+  <rect x="30" y="124" width="190" height="24" rx="2" class="fig-a-opt"/>
+  <text class="g-m" x="38" y="140">per-head q/k norm</text>
+  <rect x="30" y="154" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="170">rope</text>
+  <rect x="30" y="184" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="200">attention</text>
+  <rect x="30" y="214" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="230">output projection</text>
+  <rect x="30" y="244" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="260">residual add</text>
+  <rect x="30" y="274" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="290">ffn gate / up, silu x, down</text>
+  <rect x="30" y="304" width="190" height="24" rx="2" class="fig-a-box"/>
+  <text class="g-m" x="38" y="320">residual add</text>
+  <rect x="30" y="334" width="190" height="24" rx="2" class="fig-a-end"/>
+  <text class="g-m" x="38" y="350">final norm, vocab matmul</text>
+  <line class="g-link" x1="220" y1="106" x2="272" y2="106"/>
+  <text class="g-m" x="278" y="94">1) widths: q is n_head x head_dim, k/v are n_head_kv x head_dim.</text>
+  <text class="g-m" x="278" y="110">head_dim comes from metadata when a family decouples it; k/v also carry</text>
+  <text class="g-m" x="278" y="126">an optional bias that one family reads and another does not have at all.</text>
+  <line class="g-link" x1="220" y1="136" x2="272" y2="136"/>
+  <text class="g-m" x="278" y="148">2) an op between two fused ones: this is the expensive difference. The</text>
+  <text class="g-m" x="278" y="164">fused decode kernel does bias + rope + store in one pass and cannot</text>
+  <text class="g-m" x="278" y="180">express a norm in between, so the family that needs it loses the fusion.</text>
+  <line class="g-link" x1="220" y1="166" x2="272" y2="166"/>
+  <text class="g-m" x="278" y="196">3) the rope table: the base and the frequency scale come from metadata,</text>
+  <text class="g-m" x="278" y="212">one family adds per-pair scaling factors, and the table's width follows</text>
+  <text class="g-m" x="278" y="228">head_dim - so a wrong head width corrupts positions, not shapes.</text>
+  <line class="g-link" x1="220" y1="346" x2="272" y2="346"/>
+  <text class="g-m" x="278" y="338">4) tied output: when the file has no output weight, the embedding is</text>
+  <text class="g-m" x="278" y="354">reused. A loader rule, not a graph shape - and the one a copy forgets.</text>
+  <rect x="30" y="368" width="748" height="22" rx="2" class="fig-a-note"/>
+  <text class="g-m" x="38" y="383">what a family owns: shapes, flags, a stop set. What it does not own: the vocabulary, the allocator, the scheduler, the fusion pass.</text>
+</svg>

@@ -1,0 +1,905 @@
+//! Qwen3 (dense) compute-graph construction + graph forward path.
+//!
+//! Mirrors `qwen2/graph.rs` with the two Qwen3 deltas
+//! (docs/QWEN3-SUPPORT-PLAN.md §2):
+//!   1. head dim `hd` comes from `hparams.n_embd_head` (128), not
+//!      `n_embd / n_head` (64) — this drives the Q/K/V/wo widths, the RoPE dims,
+//!      the attention scale and the KV row stride.
+//!   2. per-head Q/K RMSNorm (`Op::QkNorm`) after the projections, before RoPE.
+//!
+//! The decode fused-QKV path (`Op::FusedQKV`) is intentionally NOT used for
+//! Qwen3: the `attn_bias_rope_store` kernel does bias+rope+store in one pass
+//! and cannot express the per-head norm between projection and rope (Phase E
+//! follow-up). The unfused 3-matmul path is correct on both backends. The
+//! fused-FFN decode path (`Op::FusedFFN`) IS reused (FFN is Qwen2-identical).
+
+use crate::graph::alloc::GraphAllocator;
+use crate::graph::backend::Backend;
+use crate::graph::cache::GraphCache;
+use crate::graph::fusion::FusionPass;
+use crate::graph::ops::{AttnMeta, AttnMode, FusedQkvNormMeta, RoPEMeta};
+use crate::graph::params::{CParams, GraphParams, GraphType};
+use crate::graph::scheduler::BackendScheduler;
+use crate::graph::ComputeGraph;
+
+use super::Qwen3Model;
+
+/// Qwen3 graph construction + execution.
+pub struct Qwen3Graph;
+
+impl Qwen3Graph {
+    /// Build the declarative graph for one forward step (deterministic in
+    /// `params` — the reuse invariant).
+    pub fn build(model: &Qwen3Model, params: &GraphParams) -> ComputeGraph {
+        let hp = &model.hparams;
+        // Namespaced fused-weight names must match the loader's registration
+        // keys (Qwen3Model::ns; empty for the primary model).
+        let wns = &model.ns;
+        let nt = params.n_tokens;
+        let ne = hp.n_embd as usize;
+        let nh = hp.n_head as usize;
+        let nk = hp.n_head_kv as usize;
+        let hd = hp.n_embd_head() as usize; // 128 (decoupled; NOT ne/nh = 64)
+        let nkt = hp.n_kv_embd as usize; // 1024
+        let hd_kv = nkt / nk; // 128
+        let nf = hp.n_ff as usize;
+        let eps = hp.f_norm_rms_eps;
+        let n_ctx = params.cparams.n_ctx;
+        // #200: whether this engine's device has the whole-block quantizing
+        // epilogue a packed KV cell needs (CUDA alone today). Resolved once per
+        // build — `device()` re-checks the weight registry, so it is not a
+        // per-layer call.
+        let fused_norm_packed_ok = Self::device(model) == crate::models::Device::Cuda;
+
+        let mut b = crate::graph::builder::GraphBuilder::new();
+
+        let inp_ids = b.input("token_ids", [nt, 1, 1, 1], crate::graph::DType::I32);
+        // E1/E2: when positions cannot bound a query's window (several
+        // sequences, or a window that does not start at cell 0) the attention
+        // nodes carry the flag, so a backend still deriving the bound refuses
+        // them instead of using a wrong window.
+        b.set_explicit_span(params.cparams.explicit_span);
+        // C8b S2: the same flag the caller set for this device — a sharing
+        // sequence's window is a list of cell runs, not one range.
+        b.set_kv_map(params.cparams.kv_map);
+        // C4 per-engine (issue #99): the storage format of this graph's KV regions
+        // is a parameter of the build, not a process global — it decides each KV
+        // node's cell width, so it is part of the reuse identity (`CParams`).
+        b.set_kv_format(params.cparams.kv_format);
+
+        let inp_pos = b.input("positions", [nt, 1, 1, 1], crate::graph::DType::I32);
+        // G3 tail-row reduction input, declared at the graph HEAD (not beside
+        // its consumers at the last layer): an input node mid-graph splits the
+        // forward into extra CPU/CUDA boundaries (2 full-stream syncs + host
+        // round-trip copies per step on the split path). R3-A1,
+        // docs/CUDA_OPTIMIZATION.md Part III. Node order is not semantics —
+        // the consumers below just reference the handle.
+        let tail_ids = (params.n_out < nt).then(|| {
+            b.input(
+                "tail_ids",
+                [params.n_out, 1, 1, 1],
+                crate::graph::DType::I32,
+            )
+        });
+
+        let mut h = b.embedding(inp_ids, model.tok_embd.as_ref().unwrap());
+
+        let mode = if params.cparams.flash_attn {
+            AttnMode::Flash
+        } else {
+            AttnMode::Gqa
+        };
+        let attn_scale = hp.attention_scale(); // 1/sqrt(128)
+
+        for (il, l) in model.layers.iter().enumerate() {
+            // E5: tag this block's nodes (see qwen2's loop) and decide once whether this
+            // block may use the device-only fused forms.
+            b.set_layer(Some(il));
+            let layer_gpu = params.cparams.gpu && il < params.cparams.gpu_layers;
+            let residual = h;
+
+            // pre-norm
+            let normed = b.rms_norm(h, l.attn_norm.as_ref(), eps);
+
+            // Q/K/V projections (no biases in Qwen3) + per-head Q/K RMSNorm +
+            // RoPE over the full head dim. decode (nt==1) with GPU QKV concat
+            // uses the fused path (Op::FusedQkvNorm): one concat matmul + a
+            // fused per-head norm + no-bias rope+store, replacing 3 matmul +
+            // 2 qk_norm + 2 rope + 2 store dispatches. Qwen3 has no attention
+            // biases, so the fused kernel applies the per-head norm (which the
+            // Qwen2 bias+rope+store kernel cannot express).
+            //
+            // C6/#200: the fused family writes K/V at allocator-resolved cells,
+            // not at `positions` — the epilogue takes the same `cells` input the
+            // unfused store does. A packed cell is only expressible where the
+            // epilogue has a whole-block quantizing arm, and that is CUDA alone
+            // (#144's packed epilogue; Metal's fused norm kernel is f32/f16-only,
+            // so a packed Metal cache keeps the unfused chain). The device is
+            // resolved once at the top of this build.
+            let fuse_qkv_norm = nt == 1
+                && layer_gpu
+                && params.cparams.fuse_qkv
+                && (!b.kv_is_packed() || fused_norm_packed_ok)
+                && l.q_norm.is_some()
+                && l.k_norm.is_some()
+                && Self::qkv_concat_available(&l.wq, &l.wk, &l.wv);
+            let (q, kv) = if fuse_qkv_norm {
+                let qkv = b.fused_qkv_norm(
+                    normed,
+                    inp_pos,
+                    il,
+                    FusedQkvNormMeta {
+                        qkv_weight: format!("{wns}blk.{il}.attn_qkv"),
+                        q_norm_name: l.q_norm.as_ref().map(|t| t.name.clone()),
+                        k_norm_name: l.k_norm.as_ref().map(|t| t.name.clone()),
+                        weight_ttype: l.wq.as_ref().unwrap().ttype,
+                        in_dim: hp.n_embd as usize,
+                        nqt: nh * hd,
+                        nkt,
+                        hd,
+                        nh,
+                        nk,
+                        freq_base: hp.rope_freq_base,
+                        freq_scale: hp.rope_freq_scale,
+                        freqs: hp.rope_freqs.map(Box::new),
+                        rope_style: hp.rope_style,
+                        kv_elems: nkt * n_ctx,
+                        row_elems: params.cparams.kv_format.row_elems(nkt),
+                        eps,
+                    },
+                );
+                // q lives at concat offset 0 (rows 0..nqt); K/V went into the
+                // persistent regions via the fused store — read them back.
+                let kv = b.kvcache_load(il, nkt, n_ctx, nk);
+                (qkv, kv)
+            } else {
+                let q = b.matmul(normed, l.wq.as_ref().unwrap(), None);
+                let k = b.matmul(normed, l.wk.as_ref().unwrap(), None);
+                let v = b.matmul(normed, l.wv.as_ref().unwrap(), None);
+
+                // Qwen3: per-head RMSNorm on Q and K before RoPE (llama.cpp
+                // `build_norm(Qcur, attn_q_norm, ...)` on the [hd, n_head, nt]
+                // reshaped buffer — contiguous rows in our flat layout).
+                let q = b.qk_norm(q, l.q_norm.as_ref(), hd, nh, eps);
+                let k = b.qk_norm(k, l.k_norm.as_ref(), hd, nk, eps);
+
+                let q = b.rope(
+                    q,
+                    inp_pos,
+                    hp.rope_style,
+                    RoPEMeta {
+                        freq_base: hp.rope_freq_base,
+                        freq_scale: hp.rope_freq_scale,
+                        freqs: hp.rope_freqs.map(Box::new),
+                        n_head: nh,
+                        hd,
+                    },
+                );
+                let k = b.rope(
+                    k,
+                    inp_pos,
+                    hp.rope_style,
+                    RoPEMeta {
+                        freq_base: hp.rope_freq_base,
+                        freq_scale: hp.rope_freq_scale,
+                        freqs: hp.rope_freqs.map(Box::new),
+                        n_head: nk,
+                        hd,
+                    },
+                );
+
+                b.kvcache_store(il, k, v, n_ctx);
+                let kv = b.kvcache_load(il, nkt, n_ctx, nk);
+                (q, kv)
+            };
+
+            // attention
+            let attn_out = b.attn(
+                q,
+                kv,
+                inp_pos,
+                mode,
+                AttnMeta {
+                    layer: il,
+                    n_head: nh,
+                    n_head_kv: nk,
+                    hd,
+                    hd_kv,
+                    nkt,
+                    scale: attn_scale,
+                },
+            );
+
+            // output projection + residual
+            let wo = b.matmul(attn_out, l.wo.as_ref().unwrap(), None);
+            let is_last = il == model.layers.len() - 1;
+            if is_last && params.n_out < nt {
+                // G3: reduce to the tail n_out rows BEFORE the last layer's FFN.
+                // The tail_ids input itself is declared at the graph head.
+                let tail_ids = tail_ids.expect("tail_ids input declared when n_out < nt");
+                let cur_tail = b.get_rows(wo, tail_ids, [ne, params.n_out, 1, 1]);
+                let res_tail = b.get_rows(residual, tail_ids, [ne, params.n_out, 1, 1]);
+                h = b.add(res_tail, cur_tail);
+            } else {
+                h = b.add(residual, wo);
+            }
+
+            // FFN (SwiGLU); fused gate+up decode path reused from Qwen2
+            // (nf = 3072 ≤ 16384 gate; FFN is Qwen2-identical). Decoupled from
+            // the QKV fusion gate (`fuse_qkv`) so A/B-ing the QKV fusion
+            // (MINFER_NO_FUSE_QKV) does not also flip the FFN fusion.
+            // fuse_ffn lives in CParams (the reuse identity) so the
+            // MINFER_NO_FUSE_FFN toggle reliably forces a rebuild.
+            let fuse_gu = nt == 1
+                && layer_gpu
+                && params.cparams.fuse_ffn
+                && Self::gu_concat_available(&l.ffn_gate, &l.ffn_up)
+                && nf <= 16384;
+            let residual = h;
+            let normed = b.rms_norm(h, l.ffn_norm.as_ref(), eps);
+            let ffn_out = if fuse_gu {
+                let gu_weight = format!("{wns}blk.{il}.ffn_gu");
+                let weight_ttype = l.ffn_gate.as_ref().unwrap().ttype;
+                // D3: the hand-written node is the default (it is faster where it
+                // fuses, and Metal needs it until G5); `MINFER_FFN_COMPOSITION=1`
+                // selects the proven composition instead. See
+                // `models::ffn_composition` for the rule and the loud refusal on a
+                // backend without offset views.
+                let ffn_composition = crate::models::ffn_composition(
+                    crate::config::get().ffn_composition.as_deref(),
+                    Self::device(model),
+                );
+                let ffn_node = !ffn_composition;
+                let gu = if ffn_node {
+                    b.fused_ffn(
+                        normed,
+                        crate::graph::ops::FusedFfnMeta {
+                            gu_weight,
+                            weight_ttype,
+                            in_dim: ne,
+                            nf,
+                        },
+                    )
+                } else {
+                    b.fused_ffn_composition(normed, &gu_weight, weight_ttype, ne, nf)
+                };
+                b.matmul(gu, l.ffn_down.as_ref().unwrap(), None)
+            } else {
+                let gate = b.matmul(normed, l.ffn_gate.as_ref().unwrap(), None);
+                let up = b.matmul(normed, l.ffn_up.as_ref().unwrap(), None);
+                let g = b.silu(gate);
+                let sw = b.mul(g, up);
+                b.matmul(sw, l.ffn_down.as_ref().unwrap(), None)
+            };
+            h = b.add(residual, ffn_out);
+        }
+        // E5: the final norm and `lm_head` are outside any block (see qwen2's build).
+        b.set_layer(None);
+
+        // output: norm + lm_head
+        let normed = b.rms_norm(h, model.output_norm.as_ref(), eps);
+        let logits = b.matmul(
+            normed,
+            model.output.as_ref().unwrap(),
+            model.output_b.as_ref(),
+        );
+        b.output(logits);
+
+        b.build()
+    }
+
+    /// Whether wq/wk/wv can share one concat matmul (loader registered
+    /// `blk.{i}.attn_qkv`): same quant type, same input dim, block-aligned.
+    fn qkv_concat_available(
+        wq: &Option<crate::tensor::Tensor>,
+        wk: &Option<crate::tensor::Tensor>,
+        wv: &Option<crate::tensor::Tensor>,
+    ) -> bool {
+        let (Some(wq), Some(wk), Some(wv)) = (wq, wk, wv) else {
+            return false;
+        };
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            crate::metal::concat_rows(&[wq, wk, wv]).is_some()
+        }
+        // #200: CUDA arm — metadata-only probe, mirroring qwen2's D3-8 arm.
+        // `concat_rows_feasible` applies exactly `concat_rows`' preconditions, and
+        // the loader performs the real concatenation once at model load (see
+        // `register_weight`/`register_weight_q6k_padded` there), so building the
+        // graph does not rebuild the concat bytes: doing that here measured a
+        // ~920 ms stall per decode graph build on the 14B.
+        #[cfg(all(feature = "cuda", not(all(target_os = "macos", feature = "metal"))))]
+        {
+            crate::cuda::concat_rows_feasible(&[wq, wk, wv])
+        }
+        #[cfg(not(any(
+            all(target_os = "macos", feature = "metal"),
+            all(feature = "cuda", not(all(target_os = "macos", feature = "metal")))
+        )))]
+        {
+            let _ = (wq, wk, wv);
+            false
+        }
+    }
+
+    /// Whether ffn_gate/ffn_up can share one concat matmul (loader registered
+    /// `blk.{i}.ffn_gu`): same quant type, same input dim, block-aligned.
+    fn gu_concat_available(
+        fg: &Option<crate::tensor::Tensor>,
+        fu: &Option<crate::tensor::Tensor>,
+    ) -> bool {
+        let (Some(fg), Some(fu)) = (fg, fu) else {
+            return false;
+        };
+        #[cfg(all(target_os = "macos", feature = "metal", not(feature = "cuda")))]
+        {
+            crate::metal::concat_rows(&[fg, fu]).is_some()
+        }
+        #[cfg(all(target_os = "macos", feature = "metal", feature = "cuda"))]
+        {
+            crate::metal::concat_rows(&[fg, fu]).is_some()
+                || crate::cuda::concat_rows(&[fg, fu]).is_some()
+        }
+        #[cfg(all(not(all(target_os = "macos", feature = "metal")), feature = "cuda"))]
+        {
+            crate::cuda::concat_rows(&[fg, fu]).is_some()
+        }
+        #[cfg(all(
+            not(all(target_os = "macos", feature = "metal")),
+            not(feature = "cuda")
+        ))]
+        {
+            let _ = (fg, fu);
+            false
+        }
+    }
+
+    /// Register every weight the graph references on the allocator's backend.
+    pub(crate) fn register_graph_weights(model: &Qwen3Model, alloc: &mut GraphAllocator) {
+        for t in [
+            &model.tok_embd,
+            &model.output_norm,
+            &model.output,
+            &model.output_b,
+        ] {
+            if let Some(t) = t {
+                let name = t.name.clone();
+                alloc.register_weight(&name, t.clone());
+            }
+        }
+        for l in &model.layers {
+            for t in [
+                &l.attn_norm,
+                &l.wq,
+                &l.wk,
+                &l.wv,
+                &l.wo,
+                &l.q_norm,
+                &l.k_norm,
+                &l.ffn_norm,
+                &l.ffn_gate,
+                &l.ffn_up,
+                &l.ffn_down,
+            ] {
+                if let Some(t) = t {
+                    let name = t.name.clone();
+                    alloc.register_weight(&name, t.clone());
+                }
+            }
+        }
+    }
+
+    /// Graph-based forward with a caller-provided cache and explicit context
+    /// size (server / multi-slot path).
+    pub fn forward_cached(
+        model: &Qwen3Model,
+        tokens: &[u32],
+        positions: &[usize],
+        n_out: usize,
+        n_ctx: usize,
+        cache: &mut GraphCache,
+    ) -> Vec<f32> {
+        // The classic single-sequence forward IS a one-sequence batch (E2).
+        Self::forward_batch(
+            model,
+            &crate::graph::batch::Batch::single(tokens, positions),
+            n_out,
+            n_ctx,
+            cache,
+        )
+    }
+
+    /// One forward over a batch: `nt` query tokens belonging to `n_seqs`
+    /// sequences, each attending only to its own KV cells (Phase E / E2).
+    ///
+    /// `n_out` keeps its single-sequence meaning (the last `n_out` rows); a
+    /// multi-sequence batch returns one logits row per sequence instead, in
+    /// batch order (`Batch::out_rows`).
+    pub fn forward_batch(
+        model: &Qwen3Model,
+        batch: &crate::graph::batch::Batch,
+        n_out: usize,
+        n_ctx: usize,
+        cache: &mut GraphCache,
+    ) -> Vec<f32> {
+        if let Err(e) = batch.check() {
+            panic!("forward_batch: {e}");
+        }
+        let tokens = &batch.tokens;
+        let positions = &batch.positions;
+        let nt = batch.len();
+        let out_rows = batch.out_rows(n_out);
+        let n_out = out_rows.len();
+        // E2: whether the causal (positions-based) attention instantiation is
+        // exact for this batch, taken from the KV reservations — the authority on
+        // where each sequence's window starts — so no caller can get it wrong.
+        // One sequence starting at cell 0 keeps the classic path; a second
+        // sequence (whose reservation cannot also start at 0), or a non-zero
+        // start, takes the explicit span. This reads the *batch*, never
+        // `GraphParams`: the sequence count is data (A7/E2), so it is not part
+        // of the reuse identity.
+        let explicit_span = {
+            let mut need = batch.n_seqs() > 1;
+            for (seq, _, _) in batch.groups() {
+                if cache.alloc().kv_seq_slot(seq).map(|s| s.start).unwrap_or(0) != 0 {
+                    need = true;
+                }
+            }
+            need
+        };
+        debug_assert!(n_out <= nt);
+        if let Some(&maxp) = positions.iter().max() {
+            assert!(
+                maxp < n_ctx,
+                "position {maxp} exceeds n_ctx {n_ctx} (KV region overflow)"
+            );
+        }
+        // GPU participation is part of the reuse identity (backend assignment
+        // lives in the built graph), and it comes from `Self::device` so the
+        // builder and the server's batching default (E6) cannot disagree.
+        let device = Self::device(model);
+        let metal_on = device == crate::models::Device::Metal;
+        let cuda_on = device == crate::models::Device::Cuda;
+        // C8b S2/S4: a sequence that reads part of its prefix in place needs the
+        // window as a list of cell runs rather than one range. Only a device whose
+        // kernel can gather a map is asked (CPU, CUDA and, since #362, Metal), and
+        // *whether* to share is the caller's decision — this only reflects it,
+        // read from the reservations the cache already holds.
+        let kv_map = device.gathers_attn_map()
+            && batch.groups().iter().any(|&(seq, _, _)| {
+                cache
+                    .alloc()
+                    .kv_seq_slot(seq)
+                    .map(|s| s.shared.rows > 0)
+                    .unwrap_or(false)
+            });
+        let params = GraphParams {
+            n_tokens: nt,
+            n_out,
+            gtype: if nt == 1 {
+                GraphType::Decode
+            } else {
+                GraphType::Prefill
+            },
+            cparams: CParams {
+                n_ctx,
+                flash_attn: false,
+                explicit_span,
+                // C8b S2: the window as a list of cell runs. The caller sets it on
+                // a `CParams` only for a device that can gather a map
+                // (`Device::gathers_attn_map`).
+                kv_map,
+                gpu: metal_on || cuda_on,
+                // E5: how many blocks the device holds (see qwen2's build for the rule).
+                gpu_layers: if metal_on || cuda_on {
+                    model.offload.plan.gpu_layers
+                } else {
+                    0
+                },
+                // decode (nt==1) QKV fusion (Op::FusedQkvNorm — per-head Q/K norm
+                // + no-bias rope+store) is part of the topology; the env toggle
+                // forces a rebuild so it can be A/B'd reliably (like qwen2's
+                // FusedQKV). Prefill (nt>1) never uses it. #200 opened the CUDA
+                // arm: the no-bias epilogue takes `cells`, so CUDA keeps the fused
+                // chain under an explicit span exactly as qwen2 does; Metal's arm
+                // keeps the pre-C6 single-sequence gate (it has no explicit-span
+                // attention at all, G5).
+                fuse_qkv: nt == 1
+                    && (metal_on || cuda_on)
+                    && (cuda_on || !explicit_span)
+                    && crate::config::get().fuse_qkv,
+                fuse_ffn: nt == 1 && (metal_on || cuda_on) && crate::config::get().fuse_ffn,
+                // C4 per-engine (issue #99): this engine's resolved KV format, part
+                // of the reuse identity so a cached graph is never reused across
+                // formats.
+                kv_format: model.kv_format,
+            },
+            weights_version: 1,
+        };
+
+        // C4 per-engine (issue #99): the allocator's CPU kernels speak this engine's
+        // resolved format; the graph nodes carry the same one.
+        cache.alloc().set_kv_format(model.kv_format);
+
+        if !cache
+            .try_reuse(&params)
+            .expect("re-map onto a cached graph")
+        {
+            let mut graph = Self::build(model, &params);
+            let sched = BackendScheduler::new();
+            {
+                let alloc = cache.alloc();
+                Self::register_graph_weights(model, alloc);
+                #[cfg(all(target_os = "macos", feature = "metal"))]
+                if metal_on {
+                    alloc.enable_metal();
+                }
+                #[cfg(feature = "cuda")]
+                if cuda_on {
+                    alloc.enable_cuda();
+                }
+                // E5: the offload plan is what keeps a non-offloaded block off the device
+                // (see qwen2's forward_cached).
+                alloc.set_offload_plan(Some(model.offload.plan));
+                sched.assign_backends(&mut graph, alloc);
+                // F4: the backend list and the node → index map come from the
+                // allocator's registry view (see qwen2's forward_cached).
+                let backends: Vec<&dyn Backend> = alloc.fusion_backends();
+                FusionPass::new().run(&mut graph, &backends, &|g, id| {
+                    g.node(id)
+                        .backend
+                        .and_then(|b| alloc.fusion_backend_index(b))
+                });
+                alloc.alloc_graph(&graph).unwrap();
+            }
+            cache.replace_graph(graph, params);
+        }
+
+        let (graph, alloc) = cache.current().unwrap();
+
+        let ids: Vec<u32> = tokens.to_vec();
+        alloc.fill_input_i32(graph, "token_ids", &ids).unwrap();
+        let pos: Vec<u32> = positions.iter().map(|&p| p as u32).collect();
+        alloc.fill_input_i32(graph, "positions", &pos).unwrap();
+        // E1: one sequence today (batch composition is E2). The allocator
+        // resolves each query's allowed cells from the cell store, so the IR's
+        // seq ids and the kernel's window cannot disagree.
+        // Phase C / C2 + E1 + E2: mark each sequence's written rows, fill the
+        // sequence ids and resolve every query's attention span from the cell
+        // store — one call, so the ids and the kernels' windows cannot disagree.
+        // All of it is data, so the graph and its reuse identity are untouched.
+        alloc
+            .fill_batch_inputs(graph, batch)
+            .unwrap_or_else(|e| panic!("batch inputs: {e}"));
+        if graph
+            .inputs
+            .iter()
+            .any(|&i| graph.node(i).name == "tail_ids")
+        {
+            alloc.fill_input_i32(graph, "tail_ids", &out_rows).unwrap();
+        }
+        if crate::config::get().graph_dump.is_some() {
+            if let Some(idsbuf) = graph
+                .inputs
+                .iter()
+                .find(|&&i| graph.node(i).name == "token_ids")
+                .copied()
+            {
+                let v = alloc.copy_to_cpu(idsbuf).unwrap_or_default();
+                eprintln!("[graph dump] ids after fill: {:?}", &v[..v.len().min(8)]);
+            }
+        }
+
+        let sched = BackendScheduler::new();
+        sched.execute(graph, alloc).unwrap();
+
+        // debug dump: MINFER_GRAPH_DUMP=/tmp/x writes the logits and layer-0 KV
+        // so GPU vs CPU graph runs can be compared (Phase D verification).
+        // Decode steps are written per-position (logits_decode_{pos}.f32) so a
+        // full generation can be inspected step by step.
+        if let Some(dir) = crate::config::get().graph_dump.clone() {
+            let logits = alloc.copy_to_cpu(graph.outputs[0]).expect("logits buffer");
+            let tag = if nt == 1 {
+                format!("decode_{}", positions[0])
+            } else {
+                "prefill".to_string()
+            };
+            let _ = std::fs::write(format!("{dir}/logits_{tag}.f32"), {
+                let mut b = Vec::with_capacity(logits.len() * 4);
+                for x in &logits {
+                    b.extend_from_slice(&x.to_le_bytes());
+                }
+                b
+            });
+            if let Some(kv0) = graph
+                .nodes
+                .iter()
+                .position(|n| matches!(n.op, crate::graph::ops::Op::KvcacheLoad { layer: 0 }))
+            {
+                if let Some(kv) = alloc.copy_to_cpu(kv0) {
+                    let mut b = Vec::with_capacity(kv.len() * 4);
+                    for x in &kv {
+                        b.extend_from_slice(&x.to_le_bytes());
+                    }
+                    let _ = std::fs::write(format!("{dir}/kv0_{tag}.f32"), b);
+                }
+            }
+            // intermediate nodes (layer-0 Q/K path + attention) for decode-vs-
+            // prefill debugging (mirrors qwen2's node dump)
+            for nid in [2usize, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] {
+                if nid < graph.n_nodes() {
+                    if let Some(buf) = alloc.copy_to_cpu(nid) {
+                        let mut b = Vec::with_capacity(buf.len() * 4);
+                        for x in &buf {
+                            b.extend_from_slice(&x.to_le_bytes());
+                        }
+                        let _ = std::fs::write(format!("{dir}/node{nid}_{tag}.f32"), b);
+                    }
+                }
+            }
+            eprintln!(
+                "[graph dump] wrote {dir}/logits_{tag}.f32 ({} elems)",
+                logits.len()
+            );
+        }
+
+        let nv = model.hparams.n_vocab as usize;
+        let logits = alloc.copy_to_cpu(graph.outputs[0]).expect("logits buffer");
+        // R3-A2: the buffer is always exactly n_out*nv (G3-reduced, or
+        // n_out == nt) — skip the redundant full-logits clone.
+        if logits.len() == n_out * nv {
+            logits
+        } else {
+            logits[..n_out * nv].to_vec()
+        }
+    }
+
+    /// The backend this model's forwards will run on — the **single authority**
+    /// for the GPU gates (E6).
+    ///
+    /// `forward_batch` derives `CParams.gpu` from it and the server derives its
+    /// batching default from it, so "the device participates" means one thing
+    /// everywhere. Metal wins when both are available, matching the allocator's
+    /// backend priority. Uses attributes rather than `cfg!()` so the
+    /// `metal_backend` path is not resolved on non-macOS builds (the module does
+    /// not exist there).
+    pub fn device(model: &Qwen3Model) -> crate::models::Device {
+        #[cfg(any(all(target_os = "macos", feature = "metal"), feature = "cuda"))]
+        {
+            // F4: a fenced backend does not participate (see qwen2's twin).
+            let filter = crate::graph::registry::active_filter();
+            #[cfg(all(target_os = "macos", feature = "metal"))]
+            if filter.allows(crate::graph::Backend::METAL)
+                && crate::graph::metal_backend::metal_available()
+                && Self::weights_on_gpu(model)
+            {
+                return crate::models::Device::Metal;
+            }
+            // CUDA participation (Phase 7): requires a usable device AND every
+            // matmul weight registered on the CUDA registry in a kernel-supported
+            // type (all-or-nothing; 7e③ moved the embedding gather on device, so
+            // tok_embd is gated like every other weight).
+            #[cfg(feature = "cuda")]
+            if filter.allows(crate::graph::Backend::CUDA)
+                && crate::cuda::CudaState::get().is_some()
+                && Self::weights_on_cuda(model)
+            {
+                return crate::models::Device::Cuda;
+            }
+        }
+        #[cfg(not(any(all(target_os = "macos", feature = "metal"), feature = "cuda")))]
+        let _ = model;
+        crate::models::Device::Cpu
+    }
+
+    /// Every weight the graph reads must be GPU-registered for the Metal path.
+    #[cfg(all(target_os = "macos", feature = "metal"))]
+    fn weights_on_gpu(model: &Qwen3Model) -> bool {
+        // E5: only the offloaded blocks (and the unblocked tensors under a full plan) have to
+        // be registered — see qwen2's twin.
+        let plan = model.offload.plan;
+        if plan.is_cpu_only() {
+            return false;
+        }
+        let names: Vec<String> = {
+            let mut v = Vec::new();
+            if plan.device_holds_unblocked() {
+                for t in [
+                    &model.tok_embd,
+                    &model.output_norm,
+                    &model.output,
+                    &model.output_b,
+                ] {
+                    if let Some(t) = t {
+                        v.push(t.name.clone());
+                    }
+                }
+            }
+            for (i, l) in model.layers.iter().enumerate() {
+                if !plan.on_device(i) {
+                    continue;
+                }
+                for t in [
+                    &l.attn_norm,
+                    &l.wq,
+                    &l.wk,
+                    &l.wv,
+                    &l.wo,
+                    &l.q_norm,
+                    &l.k_norm,
+                    &l.ffn_norm,
+                    &l.ffn_gate,
+                    &l.ffn_up,
+                    &l.ffn_down,
+                ] {
+                    if let Some(t) = t {
+                        v.push(t.name.clone());
+                    }
+                }
+            }
+            v
+        };
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            let Some(mps) = crate::metal::MpsState::get() else {
+                return false;
+            };
+            names.iter().all(|n| mps.has_weight(n))
+        }
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            let _ = names;
+            false
+        }
+    }
+
+    /// CUDA participation gate (Phase 7c, extended 7e③): all-or-nothing over
+    /// the weights the graph executes, now INCLUDING `tok_embd` (7e③ gave the
+    /// embedding a device gather+dequant kernel). Matmul weights additionally
+    /// require a type with an f32-activation kernel (Q5_0/Q5_1/Q5_K/F32 have
+    /// none — the loader registers them for the legacy path, so the type
+    /// check is required here; the 2 B/element f16/bf16 weights each have one);
+    /// tok_embd requires an embed-kernel type (F32/Q4_0/Q8_0/Q4_K/Q6_K, plus the
+    /// f16/bf16 gathers). Norm/bias weights are f32 and only need
+    /// registration; q_norm/k_norm feed Op::QkNorm on CUDA.
+    #[cfg(feature = "cuda")]
+    fn weights_on_cuda(model: &Qwen3Model) -> bool {
+        use crate::tensor::TensorType;
+        fn matmul_t_ok(t: &crate::tensor::Tensor, cuda: &crate::cuda::CudaState) -> bool {
+            matches!(t.ttype, |TensorType::Q4_0| TensorType::Q8_0
+                | TensorType::Q4_1
+                | TensorType::Q4_K
+                | TensorType::Q5_0
+                | TensorType::Q6_K
+                | TensorType::F32
+                // #167: the loader registers f16 raw and `f16_f32_matmul_vec` /
+                // `_scalar` are its device kernels (#141). Without this arm the
+                // all-or-nothing gate dropped an f16 Qwen3 model to the CPU even
+                // after the loader had registered it — qwen2's twin list has had
+                // F16 since #141.
+                | TensorType::F16
+                // #208 (CUDA half): the loader registers bf16 raw and
+                // `bf16_f32_matmul_vec` / `_scalar` are its device kernels —
+                // qwen2's twin list gained the same arm in the same PR, because
+                // the shared registration rule admits the type for both.
+                | TensorType::BF16
+                | TensorType::Q5_1
+                | TensorType::Q5_K)
+                && cuda.has_weight_of_size(&t.name, t.data().len())
+        }
+        fn matmul_ok(t: &Option<crate::tensor::Tensor>, cuda: &crate::cuda::CudaState) -> bool {
+            match t {
+                Some(t) => matmul_t_ok(t, cuda),
+                None => true,
+            }
+        }
+        fn embed_t_ok(t: &crate::tensor::Tensor, cuda: &crate::cuda::CudaState) -> bool {
+            matches!(t.ttype, |TensorType::F32| TensorType::Q4_0
+                | TensorType::Q8_0
+                | TensorType::Q4_K
+                | TensorType::Q5_0
+                | TensorType::Q6_K
+                // #167: `embed_rows_f16` is the device gather (#141); see
+                // `matmul_t_ok` for the gate this completes.
+                | TensorType::F16
+                // #208 (CUDA half): `embed_rows_bf16` is the device gather.
+                | TensorType::BF16
+                | TensorType::Q5_1
+                | TensorType::Q5_K)
+                && cuda.has_weight_of_size(&t.name, t.data().len())
+        }
+        fn embed_ok(t: &Option<crate::tensor::Tensor>, cuda: &crate::cuda::CudaState) -> bool {
+            match t {
+                Some(t) => embed_t_ok(t, cuda),
+                None => true,
+            }
+        }
+        fn registered(t: &Option<crate::tensor::Tensor>, cuda: &crate::cuda::CudaState) -> bool {
+            match t {
+                Some(t) => cuda.has_weight_of_size(&t.name, t.data().len()),
+                None => true,
+            }
+        }
+        let Some(cuda) = crate::cuda::CudaState::get() else {
+            return false;
+        };
+        // E5: only the offloaded blocks and (under a full plan) the unblocked tensors.
+        let plan = model.offload.plan;
+        if plan.is_cpu_only() {
+            return false;
+        }
+        let mut ok = true;
+        if plan.device_holds_unblocked() {
+            ok = embed_ok(&model.tok_embd, &cuda)
+                && matmul_ok(&model.output, &cuda)
+                && registered(&model.output_norm, &cuda)
+                && registered(&model.output_b, &cuda);
+        }
+        for (i, l) in model.layers.iter().enumerate() {
+            if !plan.on_device(i) {
+                continue;
+            }
+            ok &= registered(&l.attn_norm, &cuda)
+                && matmul_ok(&l.wq, &cuda)
+                && matmul_ok(&l.wk, &cuda)
+                && matmul_ok(&l.wv, &cuda)
+                && matmul_ok(&l.wo, &cuda)
+                && registered(&l.q_norm, &cuda)
+                && registered(&l.k_norm, &cuda)
+                && registered(&l.ffn_norm, &cuda)
+                && matmul_ok(&l.ffn_gate, &cuda)
+                && matmul_ok(&l.ffn_up, &cuda)
+                && matmul_ok(&l.ffn_down, &cuda);
+        }
+        if !ok {
+            // Identify the first weight that fails the gate (same checks, same
+            // order as above; 0 = embed, 1 = matmul, 2 = registered-only) so
+            // the message names the tensor instead of a generic complaint.
+            let mut named: Vec<(&Option<crate::tensor::Tensor>, u8)> = Vec::new();
+            if plan.device_holds_unblocked() {
+                named.extend([
+                    (&model.tok_embd, 0u8),
+                    (&model.output, 1u8),
+                    (&model.output_norm, 2u8),
+                    (&model.output_b, 2u8),
+                ]);
+            }
+            for (i, l) in model.layers.iter().enumerate() {
+                if !plan.on_device(i) {
+                    continue;
+                }
+                named.extend([
+                    (&l.attn_norm, 2u8),
+                    (&l.wq, 1u8),
+                    (&l.wk, 1u8),
+                    (&l.wv, 1u8),
+                    (&l.wo, 1u8),
+                    (&l.q_norm, 2u8),
+                    (&l.k_norm, 2u8),
+                    (&l.ffn_norm, 2u8),
+                    (&l.ffn_gate, 1u8),
+                    (&l.ffn_up, 1u8),
+                    (&l.ffn_down, 1u8),
+                ]);
+            }
+            let fail = named.into_iter().find(|(t, kind)| match (t, kind) {
+                (Some(t), 0) => !embed_t_ok(t, &cuda),
+                (Some(t), 1) => !matmul_t_ok(t, &cuda),
+                (Some(t), _) => !cuda.has_weight_of_size(&t.name, t.data().len()),
+                (None, _) => false,
+            });
+            if let Some((Some(t), _)) = fail {
+                eprintln!(
+                    "CUDA GATE: weight '{}' (type {:?}) has no CUDA kernel or is not registered",
+                    t.name, t.ttype
+                );
+            } else {
+                eprintln!("CUDA GATE: a matmul weight has an unsupported type");
+            }
+        }
+        ok
+    }
+}
+
+#[cfg(test)]
+mod tests;

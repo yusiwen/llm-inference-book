@@ -1,0 +1,379 @@
+{
+ "artifact": "family",
+ "engine": {
+  "version": "minfer v0.0.9",
+  "baseline": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
+  "model": "qwen2.5-0.5b-instruct-q4_k_m.gguf"
+ },
+ "trace": {
+  "prefill": {
+   "nodes": 443,
+   "kinds": 11,
+   "by_op": {
+    "matmul": 169,
+    "rms_norm": 49,
+    "add": 48,
+    "rope": 48,
+    "attn": 24,
+    "kvcache_load": 24,
+    "kvcache_store": 24,
+    "silu": 24,
+    "swiglu": 24,
+    "input": 6,
+    "get_rows": 3
+   }
+  },
+  "decode": {
+   "nodes": 440,
+   "kinds": 11,
+   "by_op": {
+    "matmul": 169,
+    "rms_norm": 49,
+    "add": 48,
+    "rope": 48,
+    "attn": 24,
+    "kvcache_load": 24,
+    "kvcache_store": 24,
+    "silu": 24,
+    "swiglu": 24,
+    "input": 5,
+    "get_rows": 1
+   }
+  },
+  "layer": {
+   "nodes": 21,
+   "ops": [
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.attn_q.weight",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.attn_k.weight",
+     "shape": [
+      128,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.attn_v.weight",
+     "shape": [
+      128,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "rope",
+     "name": "rope",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "rope",
+     "name": "rope",
+     "shape": [
+      128,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "input",
+     "name": "cells",
+     "shape": [
+      34,
+      1,
+      1,
+      1
+     ],
+     "dtype": "i32"
+    },
+    {
+     "op": "kvcache_store",
+     "name": "kv_store.0",
+     "shape": [
+      128,
+      4096,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "kvcache_load",
+     "name": "kv_load.0",
+     "shape": [
+      128,
+      4096,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "input",
+     "name": "attn_span",
+     "shape": [
+      68,
+      1,
+      1,
+      1
+     ],
+     "dtype": "i32"
+    },
+    {
+     "op": "input",
+     "name": "seq_ids",
+     "shape": [
+      34,
+      1,
+      1,
+      1
+     ],
+     "dtype": "i32"
+    },
+    {
+     "op": "attn",
+     "name": "attn",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.attn_output.weight",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "add",
+     "name": "add",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "rms_norm",
+     "name": "rms_norm",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.ffn_gate.weight",
+     "shape": [
+      4864,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.ffn_up.weight",
+     "shape": [
+      4864,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "silu",
+     "name": "silu",
+     "shape": [
+      4864,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "swiglu",
+     "name": "mul",
+     "shape": [
+      4864,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "matmul",
+     "name": "matmul_blk.0.ffn_down.weight",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "add",
+     "name": "add",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    },
+    {
+     "op": "rms_norm",
+     "name": "rms_norm",
+     "shape": [
+      896,
+      34,
+      1,
+      1
+     ],
+     "dtype": "f32"
+    }
+   ],
+   "layers_in_file": 24,
+   "shared_inputs": [
+    "cells",
+    "attn_span",
+    "seq_ids"
+   ],
+   "per_layer_nodes": 18,
+   "graph_minus_layers": 11
+  }
+ },
+ "refusals": [
+  {
+   "case": "unknown architecture",
+   "file": "arch-unknown.gguf",
+   "exit": 1,
+   "message": "Error: qwen9 model: unsupported architecture (supported: qwen2, qwen3, llama)"
+  },
+  {
+   "case": "missing block_count",
+   "file": "no-block-count.gguf",
+   "exit": 1,
+   "message": "Error: qwen2 model: GGUF metadata: cannot determine hparams (qwen2.*/llama.* embedding_length, attention.head_count, block_count, feed_forward_length)"
+  },
+  {
+   "case": "missing head_count",
+   "file": "no-head-count.gguf",
+   "exit": 1,
+   "message": "Error: qwen2 model: GGUF metadata: cannot determine hparams (qwen2.*/llama.* embedding_length, attention.head_count, block_count, feed_forward_length)"
+  }
+ ],
+ "source": {
+  "arch_arms": [
+   [
+    "qwen2",
+    "qwen2"
+   ],
+   [
+    "qwen3",
+    "qwen3"
+   ],
+   [
+    "llama",
+    "qwen2"
+   ]
+  ],
+  "refusal": "unsupported architecture (supported: qwen2, qwen3, llama)",
+  "modules": {
+   "qwen2": {
+    "files": 11,
+    "lines_without_tests": 2876,
+    "lines_of_tests": 4197,
+    "test_fns": 29
+   },
+   "qwen3": {
+    "files": 5,
+    "lines_without_tests": 1854,
+    "lines_of_tests": 621,
+    "test_fns": 6
+   }
+  },
+  "op_variants": 23,
+  "deltas": {
+   "per_head_qk_norm": {
+    "anchor": "QkNorm",
+    "qwen2": 0,
+    "qwen3": 2
+   },
+   "head_dim_from_metadata": {
+    "anchor": "n_embd_head",
+    "qwen2": 1,
+    "qwen3": 2
+   },
+   "attention_bias": {
+    "anchor": "attn_q_bias",
+    "qwen2": 1,
+    "qwen3": 0
+   },
+   "tied_output_embedding": {
+    "anchor": "tok_embd.clone()",
+    "qwen2": 1,
+    "qwen3": 1
+   }
+  },
+  "shared": {
+   "src/graph/ops.rs": 385,
+   "src/graph/alloc.rs": 2879,
+   "src/graph/registry.rs": 567,
+   "src/models/weight_reg.rs": 209
+  },
+  "mod_lines": 494
+ },
+ "machine": {
+  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "python": "3.15.2"
+ },
+ "provenance": {
+  "command": "python3 scripts/family.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer",
+  "statistic": "node counts and one layer's slice from the engine's own `MINFER_TRACE` dump; refusals are the binary's stderr on byte-patched copies of the same file; source counts are line and `#[test]` counts in the pinned checkout",
+  "artifact": "facts/family.json"
+ }
+}

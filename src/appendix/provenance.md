@@ -18,6 +18,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `dotcheck` | `scripts/dotcheck.py` | decomposes the quantized dot product's error into activation, integer and scale parts, and bounds each format's accumulator | not machine-dependent | - | max relative error against f64; the bounds are arithmetic, the worst partial is measured |
 | `dotsimd` | `scripts/dotsimd.c` | times four SIMD kernels and the scalar reference, one source file compiled for ARM and for x86 | Apple M4 Pro (arm64) and Intel i7-11700B (x86_64) | per machine | median of the runs per machine |
 | `engine-measure` | `scripts/engine-measure.py` | runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree | Darwin 27.2.0, arm64 | per machine | one run of the engine's suite; the derived column must equal the measured one, format by format and context by context |
+| `family` | `scripts/family.py` | runs the binary with its per-node trace on one real file and counts the nodes by op kind, slices one transformer layer out of the graph, runs three byte-patched copies of the same file through the loader to capture its refusals verbatim, and counts lines and `#[test]` functions per family module in the pinned checkout; writes `facts/family.json` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | node counts and one layer's slice from one trace; the refusals are exit codes and stderr read as values; line and test counts are recomputed from the pinned checkout, not remembered |
 | `fusion` | `scripts/fuse.py` | runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64 | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding |
 | `gguf-qwen2.5-0.5b-q4_0` | `scripts/gguf-inspect.py` | parses the same model at Q4_0 | not machine-dependent | - | read once from the file |
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
@@ -127,6 +128,18 @@ clang -O2 -o dotsimd scripts/dotsimd.c  (arm);  gcc -O3 -mf16c -o dotsimd script
 
 ```bash
 cargo test --release measure -- --nocapture   # MINFER_MEASURE_MODEL=~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf (in ~/git/mine/minfer)
+```
+
+### family
+
+`scripts/family.py` - runs the binary with its per-node trace on one real file and counts the nodes by op kind, slices one transformer layer out of the graph, runs three byte-patched copies of the same file through the loader to capture its refusals verbatim, and counts lines and `#[test]` functions per family module in the pinned checkout; writes `facts/family.json`.
+
+- **Machine**: {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}
+- **Runs**: per machine; node counts and one layer's slice from one trace; the refusals are exit codes and stderr read as values; line and test counts are recomputed from the pinned checkout, not remembered
+- **Raw numbers**: `facts/family.json`
+
+```bash
+(no command recorded)
 ```
 
 ### fusion
