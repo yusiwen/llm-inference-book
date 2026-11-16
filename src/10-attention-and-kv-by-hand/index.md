@@ -223,7 +223,7 @@ unsafe fn attn_heads(ctx: *const (), h0: usize, h1: usize) {
 
 Why it matters is the cache, and the cache is what turns long context into a memory problem rather than a compute problem:
 
-<!-- facts: kvengine.kv-cache-size -->
+<!-- facts: engine-measure.kv-cache-size -->
 | Quantity | f32 | f16 | q8_0 |
 |---|---|---|---|
 | f32 words one cell occupies | 128 | 128 | 34 |
@@ -458,7 +458,7 @@ Now the honest part, and it is a negative result this chapter keeps rather than 
 
 ## Cache arithmetic for one model
 
-<!-- facts: kvengine.kv-cache-size -->
+<!-- facts: engine-measure.kv-cache-size -->
 | Quantity | f32 | f16 | q8_0 |
 |---|---|---|---|
 | f32 words one cell occupies | 128 | 128 | 34 |
@@ -473,8 +473,8 @@ Now the honest part, and it is a negative result this chapter keeps rather than 
 The first three rows are `row_elems x 4 x 2` - f32 words per cell, bytes per word, and the two regions K and V. The region rows are the engine's own `kv_footprint` measurement, which `scripts/kv-engine.py` recomputes from `row_elems` and refuses to write when the two disagree. The share divides by the 468.6 MiB file. The last row is the payload actually read per decode step, not the words reserved for it.
 <!-- /facts -->
 
-<!-- facts: kvengine.provenance -->
-*`scripts/kv-engine.py`; runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree; on **Darwin 27.2.0, arm64**; one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one. Command: `cd ~/git/mine/minfer && cargo test --release measure -- --nocapture`. Raw numbers: `facts/kvengine.json`.*
+<!-- facts: engine-measure.provenance -->
+*`scripts/engine-measure.py`; runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree; on **Darwin 27.2.0, arm64**; one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one. Command: see [the provenance index](../appendix/provenance.md#engine-measure). Raw numbers: `facts/engine-measure.json`.*
 <!-- /facts -->
 
 <!-- facts: attn.provenance -->

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the engine's own KV measurement tests and write facts/kvengine.json.
+"""Run the engine's own measurement tests and write facts/engine-measure.json.
 
 Why this exists. Chapter 10's cache table used to be the book's arithmetic on a
 "2 bytes per value" assumption, and the engine does not implement that: `KvFormat::row_elems`
@@ -19,11 +19,12 @@ So the numbers come from the engine now:
 The witness is offline: like `facts/tokenizer-witness.json`, this artifact is written once on a
 machine that has the checkout, and CI only checks that the page still matches the artifact.
 
-    python3 scripts/kv-engine.py --json facts/kvengine.json
+    python3 scripts/kv-engine.py --json facts/engine-measure.json
 """
 
 import argparse
 import json
+import os
 import math
 import pathlib
 import platform
@@ -37,15 +38,24 @@ MINFER = pathlib.Path.home() / "git" / "mine" / "minfer"
 Q8_0_BLOCK, Q8_0_BLOCK_BYTES, WORD_BYTES = 32, 34, 4
 
 
-def run_tests(repo, log=None):
-    """The engine's measurement suite, verbatim. `--log` re-reads a saved run instead."""
+def run_tests(repo, log=None, gguf=None):
+    """The engine's measurement suite, verbatim. `--log` re-reads a saved run instead.
+
+    `MINFER_MEASURE_MODEL` is *read* by one test (the allocator ledger needs a real graph); without it
+    that test prints a `skipped` line instead of measuring, so the ledger is only collected when a model
+    is named here.
+    """
     if log:
         text = pathlib.Path(log).read_text()
         command = f"cargo test --release measure -- --nocapture   # re-read from {log}"
     else:
         command = "cargo test --release measure -- --nocapture"
+        env = {**os.environ}
+        if gguf:
+            env["MINFER_MEASURE_MODEL"] = str(gguf)
+            command += f"   # MINFER_MEASURE_MODEL={gguf}"
         proc = subprocess.run(["cargo", "test", "--release", "measure", "--", "--nocapture"],
-                              cwd=repo, capture_output=True, text=True)
+                              cwd=repo, capture_output=True, text=True, env=env)
         text = proc.stdout + proc.stderr
         if proc.returncode != 0:
             raise SystemExit(f"the engine's measure tests failed in {repo}:\n{text[-3000:]}")
@@ -59,7 +69,11 @@ def run_tests(repo, log=None):
         for key, value in payload.items():
             if isinstance(value, dict):
                 groups[key] = value
-    missing = [k for k in ("kv_geometry", "kv_footprint") if k not in groups]
+    skipped = [g["skipped"] for g in groups.values() if "skipped" in g]
+    for reason in skipped:
+        print(f"  note: the engine skipped one group - {reason}")
+    need = ["kv_geometry", "kv_footprint"] + (["alloc_ledger"] if gguf else [])
+    missing = [k for k in need if k not in groups]
     if missing:
         raise SystemExit(f"no {' / '.join(missing)} group in the test output - the tests moved")
     return groups, command
@@ -125,13 +139,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--minfer", default=str(MINFER))
     ap.add_argument("--log", default=None, help="re-read a saved `cargo test` log instead of running")
-    ap.add_argument("--json", default=str(FACTS / "kvengine.json"))
+    ap.add_argument("--json", default=str(FACTS / "engine-measure.json"))
+    ap.add_argument("--gguf", default=os.environ.get("MINFER_MEASURE_MODEL",
+                                                     str(pathlib.Path.home() / ".cache" / "myfer" /
+                                                         "qwen2.5-0.5b-instruct-q4_k_m.gguf")),
+                    help="the model the allocator-ledger test needs (it only *reads* the variable)")
     ap.add_argument("--gguf-bytes", type=int, default=491400032,
                     help="the blob the share-of-weights row divides by")
     args = ap.parse_args()
 
     repo = pathlib.Path(args.minfer)
-    groups, command = run_tests(repo, args.log)
+    groups, command = run_tests(repo, args.log, args.gguf)
     geo, foot = groups["kv_geometry"], groups["kv_footprint"]
     nkt, layers, ctxs = geo["n_embd"], foot["layers"], sorted({r["n_ctx"] for r in foot["rows"]})
     derived = derive(nkt, layers, ctxs)
@@ -151,7 +169,8 @@ def main():
         "layers": layers,
         "contexts": ctxs,
         "weights_bytes": args.gguf_bytes,
-        "groups": {"kv_geometry": geo, "kv_footprint": foot},
+        "groups": {"kv_geometry": geo, "kv_footprint": foot,
+                   "alloc_ledger": groups.get("alloc_ledger")},
         "derived": derived,
         "checks": {"derived_equals_measured": True, "compared": ["row_elems", "row_bytes",
                                                                  "per_token_per_layer",
@@ -160,7 +179,7 @@ def main():
             "command": (f"cd {repo} && {command}"),
             "statistic": "one run of the engine's own measurement tests; the derived column is "
                          "recomputed from `KvFormat::row_elems` and must equal the measured one",
-            "artifact": "facts/kvengine.json",
+            "artifact": "facts/engine-measure.json",
         },
     }
     pathlib.Path(args.json).write_text(json.dumps(artifact, indent=1) + "\n")

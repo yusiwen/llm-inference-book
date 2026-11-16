@@ -2,7 +2,7 @@
  "artifact": "alloc",
  "engine": {
   "version": "minfer v0.0.9",
-  "baseline": "88ffa5d",
+  "baseline": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
   "binary": "minfer",
   "prompt": "The capital of France is",
   "steps": 3
@@ -10,301 +10,12 @@
  "phases": {
   "prefill": {
    "nodes": 443,
+   "transient_nodes": 395,
    "naive_bytes": 88778548,
-   "live_floor_bytes": 2107188,
-   "arena_bytes": 4491540,
-   "reused_allocations": 428,
-   "holes_at_end": 71,
-   "peak_step": 21,
-   "spans": [
-    {
-     "node": 19,
-     "op": "matmul",
-     "start": 19,
-     "end": 22,
-     "offset": 522516,
-     "bytes": 661504
-    },
-    {
-     "node": 20,
-     "op": "matmul",
-     "start": 20,
-     "end": 22,
-     "offset": 1184020,
-     "bytes": 661504
-    },
-    {
-     "node": 21,
-     "op": "silu",
-     "start": 21,
-     "end": 21,
-     "offset": 1845524,
-     "bytes": 661504
-    },
-    {
-     "node": 22,
-     "op": "swiglu",
-     "start": 22,
-     "end": 23,
-     "offset": 1845524,
-     "bytes": 661504
-    },
-    {
-     "node": 37,
-     "op": "matmul",
-     "start": 37,
-     "end": 40,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 38,
-     "op": "matmul",
-     "start": 38,
-     "end": 40,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 39,
-     "op": "silu",
-     "start": 39,
-     "end": 39,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 40,
-     "op": "swiglu",
-     "start": 40,
-     "end": 41,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 55,
-     "op": "matmul",
-     "start": 55,
-     "end": 58,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 56,
-     "op": "matmul",
-     "start": 56,
-     "end": 58,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 57,
-     "op": "silu",
-     "start": 57,
-     "end": 57,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 58,
-     "op": "swiglu",
-     "start": 58,
-     "end": 59,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 73,
-     "op": "matmul",
-     "start": 73,
-     "end": 76,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 74,
-     "op": "matmul",
-     "start": 74,
-     "end": 76,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 75,
-     "op": "silu",
-     "start": 75,
-     "end": 75,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 76,
-     "op": "swiglu",
-     "start": 76,
-     "end": 77,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 91,
-     "op": "matmul",
-     "start": 91,
-     "end": 94,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 92,
-     "op": "matmul",
-     "start": 92,
-     "end": 94,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 93,
-     "op": "silu",
-     "start": 93,
-     "end": 93,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 94,
-     "op": "swiglu",
-     "start": 94,
-     "end": 95,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 109,
-     "op": "matmul",
-     "start": 109,
-     "end": 112,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 110,
-     "op": "matmul",
-     "start": 110,
-     "end": 112,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 111,
-     "op": "silu",
-     "start": 111,
-     "end": 111,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 112,
-     "op": "swiglu",
-     "start": 112,
-     "end": 113,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 127,
-     "op": "matmul",
-     "start": 127,
-     "end": 130,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 128,
-     "op": "matmul",
-     "start": 128,
-     "end": 130,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 129,
-     "op": "silu",
-     "start": 129,
-     "end": 129,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 130,
-     "op": "swiglu",
-     "start": 130,
-     "end": 131,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 145,
-     "op": "matmul",
-     "start": 145,
-     "end": 148,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 146,
-     "op": "matmul",
-     "start": 146,
-     "end": 148,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 147,
-     "op": "silu",
-     "start": 147,
-     "end": 147,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 148,
-     "op": "swiglu",
-     "start": 148,
-     "end": 149,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 163,
-     "op": "matmul",
-     "start": 163,
-     "end": 166,
-     "offset": 2507028,
-     "bytes": 661504
-    },
-    {
-     "node": 164,
-     "op": "matmul",
-     "start": 164,
-     "end": 166,
-     "offset": 3168532,
-     "bytes": 661504
-    },
-    {
-     "node": 165,
-     "op": "silu",
-     "start": 165,
-     "end": 165,
-     "offset": 3830036,
-     "bytes": 661504
-    },
-    {
-     "node": 166,
-     "op": "swiglu",
-     "start": 166,
-     "end": 167,
-     "offset": 3830036,
-     "bytes": 661504
-    }
+   "persistent_nodes": 48,
+   "persistent_ops": [
+    "kvcache_load",
+    "kvcache_store"
    ],
    "largest_buffer": {
     "node": 19,
@@ -316,319 +27,16 @@
      1
     ],
     "bytes": 661504
-   },
-   "persistent_nodes": 48,
-   "kv_region_bytes": 50331648,
-   "kv_layers": 24,
-   "largest_kv_node": {
-    "shape": [
-     128,
-     4096,
-     1,
-     1
-    ],
-    "bytes": 2097152
-   },
-   "sum_over_floor": 42.13,
-   "arena_over_floor": 2.132
+   }
   },
   "decode": {
    "nodes": 440,
+   "transient_nodes": 392,
    "naive_bytes": 3293720,
-   "live_floor_bytes": 611352,
-   "arena_bytes": 739848,
-   "reused_allocations": 425,
-   "holes_at_end": 60,
-   "peak_step": 439,
-   "spans": [
-    {
-     "node": 18,
-     "op": "matmul",
-     "start": 18,
-     "end": 21,
-     "offset": 15368,
-     "bytes": 19456
-    },
-    {
-     "node": 19,
-     "op": "matmul",
-     "start": 19,
-     "end": 21,
-     "offset": 34824,
-     "bytes": 19456
-    },
-    {
-     "node": 20,
-     "op": "silu",
-     "start": 20,
-     "end": 20,
-     "offset": 54280,
-     "bytes": 19456
-    },
-    {
-     "node": 21,
-     "op": "swiglu",
-     "start": 21,
-     "end": 22,
-     "offset": 54280,
-     "bytes": 19456
-    },
-    {
-     "node": 36,
-     "op": "matmul",
-     "start": 36,
-     "end": 39,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 37,
-     "op": "matmul",
-     "start": 37,
-     "end": 39,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 38,
-     "op": "silu",
-     "start": 38,
-     "end": 38,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 39,
-     "op": "swiglu",
-     "start": 39,
-     "end": 40,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 54,
-     "op": "matmul",
-     "start": 54,
-     "end": 57,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 55,
-     "op": "matmul",
-     "start": 55,
-     "end": 57,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 56,
-     "op": "silu",
-     "start": 56,
-     "end": 56,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 57,
-     "op": "swiglu",
-     "start": 57,
-     "end": 58,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 72,
-     "op": "matmul",
-     "start": 72,
-     "end": 75,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 73,
-     "op": "matmul",
-     "start": 73,
-     "end": 75,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 74,
-     "op": "silu",
-     "start": 74,
-     "end": 74,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 75,
-     "op": "swiglu",
-     "start": 75,
-     "end": 76,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 90,
-     "op": "matmul",
-     "start": 90,
-     "end": 93,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 91,
-     "op": "matmul",
-     "start": 91,
-     "end": 93,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 92,
-     "op": "silu",
-     "start": 92,
-     "end": 92,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 93,
-     "op": "swiglu",
-     "start": 93,
-     "end": 94,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 108,
-     "op": "matmul",
-     "start": 108,
-     "end": 111,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 109,
-     "op": "matmul",
-     "start": 109,
-     "end": 111,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 110,
-     "op": "silu",
-     "start": 110,
-     "end": 110,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 111,
-     "op": "swiglu",
-     "start": 111,
-     "end": 112,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 126,
-     "op": "matmul",
-     "start": 126,
-     "end": 129,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 127,
-     "op": "matmul",
-     "start": 127,
-     "end": 129,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 128,
-     "op": "silu",
-     "start": 128,
-     "end": 128,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 129,
-     "op": "swiglu",
-     "start": 129,
-     "end": 130,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 144,
-     "op": "matmul",
-     "start": 144,
-     "end": 147,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 145,
-     "op": "matmul",
-     "start": 145,
-     "end": 147,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 146,
-     "op": "silu",
-     "start": 146,
-     "end": 146,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 147,
-     "op": "swiglu",
-     "start": 147,
-     "end": 148,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 162,
-     "op": "matmul",
-     "start": 162,
-     "end": 165,
-     "offset": 73736,
-     "bytes": 19456
-    },
-    {
-     "node": 163,
-     "op": "matmul",
-     "start": 163,
-     "end": 165,
-     "offset": 93192,
-     "bytes": 19456
-    },
-    {
-     "node": 164,
-     "op": "silu",
-     "start": 164,
-     "end": 164,
-     "offset": 112648,
-     "bytes": 19456
-    },
-    {
-     "node": 165,
-     "op": "swiglu",
-     "start": 165,
-     "end": 166,
-     "offset": 112648,
-     "bytes": 19456
-    }
+   "persistent_nodes": 48,
+   "persistent_ops": [
+    "kvcache_load",
+    "kvcache_store"
    ],
    "largest_buffer": {
     "node": 439,
@@ -640,33 +48,104 @@
      1
     ],
     "bytes": 607744
-   },
-   "persistent_nodes": 48,
-   "kv_region_bytes": 50331648,
-   "kv_layers": 24,
-   "largest_kv_node": {
-    "shape": [
-     128,
-     4096,
-     1,
-     1
-    ],
-    "bytes": 2097152
-   },
-   "sum_over_floor": 5.39,
-   "arena_over_floor": 1.21
+   }
   }
  },
- "classes": {
-  "exact_bytes": 189441844,
-  "rounded_bytes": 193529856,
-  "overhead_pct": 2.16,
-  "nodes_pow2_regime": 13,
-  "nodes_grain_regime": 430
+ "kv": {
+  "region_bytes": 100663296,
+  "layers": 24,
+  "n_ctx": 4096,
+  "format": "f32",
+  "n_tokens": 34
+ },
+ "ledger": {
+  "weights_bytes": {
+   "value": 485452288,
+   "author": "engine",
+   "from": "GraphAllocator::memory_report"
+  },
+  "kv_region_bytes": {
+   "value": 100663296,
+   "author": "engine",
+   "from": "KvCache::region_bytes"
+  },
+  "pool_bytes": {
+   "value": 3147776,
+   "author": "engine",
+   "from": "memory_report high-water"
+  },
+  "live_bytes": {
+   "value": 632832,
+   "author": "engine",
+   "from": "memory_report"
+  },
+  "peak_live_bytes": {
+   "value": 2152448,
+   "author": "engine",
+   "from": "memory_report"
+  },
+  "naive_bytes": {
+   "value": 88778548,
+   "author": "book",
+   "from": "sum of the trace's transient buffers"
+  },
+  "predicted_bytes": {
+   "value": 589263360,
+   "author": "book",
+   "from": "weights + KV + pool"
+  },
+  "observed_rss_bytes": {
+   "value": 496959488,
+   "author": "kernel",
+   "from": "/usr/bin/time -l"
+  },
+  "delta_bytes": {
+   "value": 92303872,
+   "author": "book",
+   "from": "predicted - observed"
+  }
+ },
+ "prefill": {
+  "idle_slots": 11,
+  "reserved_classes": 4
+ },
+ "decode": {
+  "nodes": 440,
+  "pool_bytes": 740352,
+  "live_bytes": 631808,
+  "peak_live_bytes": 631808,
+  "idle_slots": 7,
+  "reserved_classes": 3,
+  "naive_bytes": 3293720
+ },
+ "reuse": {
+  "prefill": 28.2,
+  "decode": 4.45
+ },
+ "crosscheck": {
+  "prefill": {
+   "trace_nodes": 443,
+   "engine_nodes": 443,
+   "match": true
+  },
+  "decode": {
+   "trace_nodes": 440,
+   "engine_nodes": 440,
+   "match": true
+  }
  },
  "process": {
-  "maxrss_bytes": 497270784,
+  "maxrss_runs": [
+   495845376,
+   496959488,
+   498548736
+  ],
+  "maxrss_median": 496959488,
+  "maxrss_min": 495845376,
+  "maxrss_max": 498548736,
+  "runs": 3,
   "gguf_bytes": 491400032,
+  "engine_weights_bytes": 485452288,
   "model": "qwen2.5-0.5b-instruct-q4_k_m.gguf"
  },
  "machine": {
@@ -674,14 +153,10 @@
   "machine": "arm64",
   "python": "3.15.2"
  },
- "invocation": "python3 scripts/alloc.py /private/tmp/mf17-target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf17 --out facts/alloc.json",
- "summary": {
-  "naive_over_arena": 19.77,
-  "arena_bytes": 4491540,
-  "naive_bytes": 88778548,
-  "live_floor_bytes": 2107188,
-  "reused_allocations": 428,
-  "rss_minus_gguf_bytes": 5870752,
-  "class_overhead_pct": 2.16
+ "invocation": "python3 scripts/alloc.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer",
+ "provenance": {
+  "command": "python3 scripts/alloc.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer",
+  "statistic": "peak RSS: median of 3 runs with the range beside it; the engine's ledger comes from `cargo test --release measure` at the same baseline; the naive column is arithmetic over one trace",
+  "artifact": "facts/alloc.json"
  }
 }

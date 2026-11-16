@@ -4,7 +4,7 @@
   "describe": "v0.0.9-134-ge844591"
  },
  "machine": "Darwin 27.2.0, arm64",
- "command": "cargo test --release measure -- --nocapture (in /Users/yusiwen/git/mine/minfer)",
+ "command": "cargo test --release measure -- --nocapture   # MINFER_MEASURE_MODEL=/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf (in /Users/yusiwen/git/mine/minfer)",
  "n_kv_embd": 128,
  "layers": 24,
  "contexts": [
@@ -152,6 +152,67 @@
      "region_bytes": 213909504
     }
    ]
+  },
+  "alloc_ledger": {
+   "arch": "qwen2",
+   "isolated": {
+    "decode": {
+     "budget": null,
+     "budget_is_bounded": false,
+     "idle_slots": 7,
+     "live_bytes": 631808,
+     "nodes": 440,
+     "peak_live_bytes": 631808,
+     "pool_bytes": 740352,
+     "reserved_classes": 3,
+     "weights_bytes": 0
+    },
+    "prefill": {
+     "budget": null,
+     "budget_is_bounded": false,
+     "idle_slots": 11,
+     "live_bytes": 632832,
+     "nodes": 443,
+     "peak_live_bytes": 2152448,
+     "pool_bytes": 3147776,
+     "reserved_classes": 4,
+     "weights_bytes": 0
+    }
+   },
+   "kv": {
+    "layers": 24,
+    "n_ctx": 4096,
+    "packed": false,
+    "region_bytes": 100663296
+   },
+   "kv_format": "f32",
+   "model": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+   "n_ctx": 4096,
+   "n_tokens": 34,
+   "session": {
+    "decode": {
+     "budget": null,
+     "budget_is_bounded": false,
+     "idle_slots": 13,
+     "live_bytes": 631808,
+     "nodes": 440,
+     "peak_live_bytes": 2152448,
+     "pool_bytes": 3148800,
+     "reserved_classes": 5,
+     "weights_bytes": 485452288
+    },
+    "prefill": {
+     "budget": null,
+     "budget_is_bounded": false,
+     "idle_slots": 11,
+     "live_bytes": 632832,
+     "nodes": 443,
+     "peak_live_bytes": 2152448,
+     "pool_bytes": 3147776,
+     "reserved_classes": 4,
+     "weights_bytes": 485452288
+    }
+   }
   }
  },
  "derived": {
@@ -201,8 +262,8 @@
   ]
  },
  "provenance": {
-  "command": "cd /Users/yusiwen/git/mine/minfer && cargo test --release measure -- --nocapture",
+  "command": "cd /Users/yusiwen/git/mine/minfer && cargo test --release measure -- --nocapture   # MINFER_MEASURE_MODEL=/Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf",
   "statistic": "one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one",
-  "artifact": "facts/kvengine.json"
+  "artifact": "facts/engine-measure.json"
  }
 }

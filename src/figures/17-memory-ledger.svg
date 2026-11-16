@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 330" width="100%" style="max-width:100%;height:auto"
-  role="img" aria-label="Memory ledger. The weights are 468.6 mebibytes, the persistent KV regions 48 mebibytes, and the activation arena 4.28 mebibytes, which adds up to a prediction of 520.9 mebibytes. The process's own peak resident set was 474.2 mebibytes, 46.7 mebibytes below the prediction, because untouched pages of the weights and of the KV regions are never resident.">
+  role="img" aria-label="Memory ledger. The weights are 463.0 mebibytes, the persistent KV regions 96.0 mebibytes, and the transient pool 3.0 mebibytes, which adds up to a prediction of 562.0 mebibytes. The process's own peak resident set was 473.9 mebibytes, 88.0 mebibytes below the prediction, because the KV region is allocated for 4096 tokens while only 34 were written, and because untouched pages of the weights are never resident.">
   <style>
     .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
     .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
@@ -13,21 +13,21 @@
   </style>
   <text class="g-cap" x="24" y="24">MEMORY LEDGER: PREDICTION ABOVE, PROCESS BELOW</text>
   <text class="g-s" x="24" y="44">every region the run needs, and the peak resident set of the process that needed them</text>
-  <text class="g-m" x="24" y="96">weights (GGUF file)</text>
-  <rect x="300" y="80" width="381.9" height="24" rx="2" class="fig-a-w" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
-  <text class="g-m" x="689.9" y="96">468.6 MiB</text>
-  <text class="g-m" x="24" y="136">KV regions (24 layers)</text>
-  <rect x="300" y="120" width="39.1" height="24" rx="2" class="fig-a-kv" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
-  <text class="g-m" x="347.1" y="136">48.0 MiB</text>
-  <text class="g-m" x="24" y="176">activation arena</text>
-  <rect x="300" y="160" width="3.5" height="24" rx="2" class="fig-a-arena" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
-  <text class="g-m" x="311.5" y="176">4.3 MiB</text>
+  <text class="g-m" x="24" y="96">weights (engine: memory_report)</text>
+  <rect x="300" y="80" width="313.0" height="24" rx="2" class="fig-a-w" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <text class="g-m" x="621.0" y="96">463.0 MiB</text>
+  <text class="g-m" x="24" y="136">KV regions (engine: region_bytes)</text>
+  <rect x="300" y="120" width="64.9" height="24" rx="2" class="fig-a-kv" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <text class="g-m" x="373.0" y="136">96.0 MiB</text>
+  <text class="g-m" x="24" y="176">transient pool (engine, high-water)</text>
+  <rect x="300" y="160" width="2.6" height="24" rx="1" class="fig-a-arena" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <text class="g-m" x="311.0" y="176">3.0 MiB</text>
   <line class="g-rule" x1="24" y1="206" x2="786" y2="206"/>
   <text class="g-m" x="24" y="230">predicted resident (the three above, added)</text>
-  <text class="g-m" x="300" y="230">546,223,220 B = 520.9 MiB</text>
+  <text class="g-m" x="300" y="230">589,263,360 B = 562.0 MiB</text>
   <text class="g-m" x="24" y="266">observed peak RSS of the same run</text>
-  <rect x="300" y="248" width="386.5" height="24" rx="2" class="fig-a-rss" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
-  <text class="g-m" x="694.5" y="264">474.2 MiB</text>
-  <line class="fig-a-dash" x1="300.0" y1="284" x2="724.5" y2="284"/>
-  <text class="g-m" x="24" y="314">the process held 46.7 MiB less than the prediction: pages of the weights and of the KV regions that were never touched are never resident</text>
+  <rect x="300" y="248" width="320.4" height="24" rx="2" class="fig-a-rss" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <text class="g-m" x="628.4" y="264">473.9 MiB</text>
+  <line class="fig-a-dash" x1="620.4" y1="284" x2="680.0" y2="284"/>
+  <text class="g-m" x="24" y="314">the process held 88.0 MiB less than the prediction: the KV region is allocated for 4096 tokens and 34 were written, and untouched weight pages are never resident</text>
 </svg>

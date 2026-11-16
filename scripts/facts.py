@@ -761,7 +761,7 @@ INSTRUMENTS = {
                "computes each vector op the way an engine writes it, reports the error against an f64 "
                "oracle, and times the op",
                "median of three runs for timing; the errors are deterministic and identical across runs"),
-    "kvengine": ("scripts/kv-engine.py",
+    "engine-measure": ("scripts/engine-measure.py",
                   "runs the engine's own measurement tests (`cargo test --release measure`) and reads "
                   "the KV geometry and footprint groups out of them, then recomputes every number from "
                   "`KvFormat::row_elems` and refuses to write the artifact when the two disagree",
@@ -1379,62 +1379,76 @@ def _mb(n):
 
 
 def render_al_liveness(f):
-    """Chapter 17: what one arena costs against giving every node its own buffer."""
-    out = ["| | Prefill (34 tokens) | Decode (1 token) |", "|---|---|---|"]
+    """Chapter 17: the naive bill against the engine's arena, phase by phase."""
     pre, dec = f["phases"]["prefill"], f["phases"]["decode"]
-    out.append(f"| Nodes in the graph | {pre['nodes']} | {dec['nodes']} |")
-    out.append(f"| Sum of every buffer, no reuse | {pre['naive_bytes']:,} B ({_mb(pre['naive_bytes'])}) "
-               f"| {dec['naive_bytes']:,} B ({_mb(dec['naive_bytes'])}) |")
-    out.append(f"| One arena, first fit over the live set | {pre['arena_bytes']:,} B ({_mb(pre['arena_bytes'])}) "
-               f"| {dec['arena_bytes']:,} B ({_mb(dec['arena_bytes'])}) |")
-    out.append(f"| Live-set floor (no allocator can go below) | {pre['live_floor_bytes']:,} B "
-               f"({_mb(pre['live_floor_bytes'])}) | {dec['live_floor_bytes']:,} B ({_mb(dec['live_floor_bytes'])}) |")
-    out.append(f"| Naive / arena | {pre['sum_over_floor'] and round(pre['naive_bytes'] / pre['arena_bytes'], 2)}x "
-               f"| {round(dec['naive_bytes'] / dec['arena_bytes'], 2)}x |")
-    out.append(f"| Arena / floor (what fragmentation costs) | {pre['arena_over_floor']}x | {dec['arena_over_floor']}x |")
-    out.append(f"| Allocations served from a dead buffer | {pre['reused_allocations']} of {pre['nodes']} "
-               f"| {dec['reused_allocations']} of {dec['nodes']} |")
-    out.append(f"| Largest transient buffer | `{pre['largest_buffer']['op']}` "
-               f"{'x'.join(str(d) for d in pre['largest_buffer']['shape'])} = "
-               f"{pre['largest_buffer']['bytes']:,} B | `{dec['largest_buffer']['op']}` "
-               f"{'x'.join(str(d) for d in dec['largest_buffer']['shape'])} = "
-               f"{dec['largest_buffer']['bytes']:,} B |")
+    ep, ed, reuse = f["prefill"], f["decode"], f["reuse"]
+    led = f["ledger"]
+    pf_pool, pf_live, pf_peak = (led["pool_bytes"]["value"], led["live_bytes"]["value"],
+                                 led["peak_live_bytes"]["value"])
+    out = ["| | Prefill (34 tokens) | Decode (1 token) |", "|---|---|---|",
+           f"| Nodes in the graph | {pre['nodes']} | {dec['nodes']} |",
+           f"| Transient nodes (the rest name persistent regions) | {pre['transient_nodes']} "
+           f"| {dec['transient_nodes']} |",
+           f"| Sum of every transient buffer, no reuse (**the book's arithmetic**) "
+           f"| {pre['naive_bytes']:,} B ({_mb(pre['naive_bytes'])}) "
+           f"| {dec['naive_bytes']:,} B ({_mb(dec['naive_bytes'])}) |",
+           f"| The engine's pool, high-water (**the engine's**) | {pf_pool:,} B "
+           f"({_mb(pf_pool)}) | {ed['pool_bytes']:,} B ({_mb(ed['pool_bytes'])}) |",
+           f"| Live when the phase ends | {pf_live:,} B ({_mb(pf_live)}) "
+           f"| {ed['live_bytes']:,} B ({_mb(ed['live_bytes'])}) |",
+           f"| Peak live inside the phase | {pf_peak:,} B ({_mb(pf_peak)}) "
+           f"| {ed['peak_live_bytes']:,} B ({_mb(ed['peak_live_bytes'])}) |",
+           f"| Naive / pool (what reuse bought) | {reuse['prefill']}x | {reuse['decode']}x |",
+           f"| Size classes still reserved at the end | {ep['reserved_classes']} "
+           f"| {ed['reserved_classes']} |",
+           f"| Idle slots in them | {ep['idle_slots']} | {ed['idle_slots']} |",
+           f"| Largest transient buffer | `{pre['largest_buffer']['op']}` "
+           f"{'x'.join(str(d) for d in pre['largest_buffer']['shape'])} = "
+           f"{pre['largest_buffer']['bytes']:,} B | `{dec['largest_buffer']['op']}` "
+           f"{'x'.join(str(d) for d in dec['largest_buffer']['shape'])} = "
+           f"{dec['largest_buffer']['bytes']:,} B |"]
     return out
 
 
 def render_al_ledger(f):
-    """Chapter 17: the ledger - what the model says should be resident, next to what the process held."""
-    pre = f["phases"]["prefill"]
-    proc = f["process"]
-    kv = pre["kv_region_bytes"]
-    total = proc["gguf_bytes"] + kv + pre["arena_bytes"]
-    out = ["| Region | Bytes | Share of the prediction | Lifetime |", "|---|---|---|---|"]
-    out.append(f"| Weights (the GGUF file) | {proc['gguf_bytes']:,} | "
-               f"{proc['gguf_bytes'] / total * 100:.1f}% | for the process |")
-    out.append(f"| KV regions ({pre['kv_layers']} layers, {pre['kv_layers'] and kv // pre['kv_layers']:,} B each) "
-               f"| {kv:,} | {kv / total * 100:.1f}% | persistent across rebuilds |")
-    out.append(f"| Activation arena | {pre['arena_bytes']:,} | {pre['arena_bytes'] / total * 100:.1f}% "
-               f"| dies with the graph |")
-    out.append(f"| **Predicted resident** | **{total:,}** | 100% | |")
-    out.append(f"| **Observed peak RSS** | **{proc['maxrss_bytes']:,}** | "
-               f"{proc['maxrss_bytes'] / total * 100:.1f}% of the prediction | |")
-    out.append(f"| Difference (observation minus prediction) | {proc['maxrss_bytes'] - total:,} | | |")
+    """Chapter 17: the ledger, with the party that measured each line named in the table."""
+    led, kv, proc = f["ledger"], f["kv"], f["process"]
+    total = led["predicted_bytes"]["value"]
+    obs = led["observed_rss_bytes"]["value"]
+    rows = [("Weights - for the life of the process", "weights_bytes"),
+            (f"KV regions, {kv['layers']} layers - persistent across rebuilds", "kv_region_bytes"),
+            ("Transient pool, high-water - dies with the graph", "pool_bytes"),
+            ("**Predicted resident** - the three rows above, added", "predicted_bytes"),
+            ("**Observed peak RSS** - the whole process", "observed_rss_bytes"),
+            ("Prediction minus observation", "delta_bytes")]
+    out = ["| Region | Bytes | MiB | Whose number |", "|---|---|---|---|"]
+    for label, key in rows:
+        value = led[key]["value"]
+        author = f"{led[key]['author']}, `{led[key]['from'].replace(' high-water', '')}`"
+        bold = label.startswith("**")
+        name = label.replace("**", "")
+        out.append(f"| {'**' if bold else ''}{name}{'**' if bold else ''} "
+                   f"| {'**' if bold else ''}{value:,}{'**' if bold else ''} "
+                   f"| {'**' if bold else ''}{value / 2**20:.1f}{'**' if bold else ''} "
+                   f"| {author} |" if not bold else
+                   f"| **{name}** | **{value:,}** | **{value / 2**20:.1f}** | {author} |")
     out.append("")
-    out.append(f"For scale: giving every buffer its own allocation would need {pre['naive_bytes']:,} B of "
-               f"activations instead of {pre['arena_bytes']:,} B - {round(pre['naive_bytes'] / pre['arena_bytes'], 2)}x "
-               f"more, and still an order of magnitude less than the weights.")
+    out.append(f"The prediction is not a bound in either direction, and the reason is in the same table: "
+               f"the cache is allocated for {kv['n_ctx']:,} tokens and the run wrote {kv['n_tokens']}, so "
+               f"most of the {_mb(led['kv_region_bytes']['value'])} of KV is address space the kernel never "
+               f"had to back. Observed peak RSS is a median of {proc['runs']} runs "
+               f"({proc['maxrss_min']:,} to {proc['maxrss_max']:,} B).")
     return out
 
 
 def render_al_classes(f):
-    """Chapter 17: what rounding every activation up to its size class costs on this graph."""
-    c = f["classes"]
-    out = ["| | Bytes |", "|---|---|"]
-    out.append(f"| Exact sizes | {c['exact_bytes']:,} |")
-    out.append(f"| Rounded to size classes | {c['rounded_bytes']:,} |")
-    out.append(f"| Overhead | {c['overhead_pct']}% |")
-    out.append(f"| Nodes in the power-of-two regime (<= 16 KiB) | {c['nodes_pow2_regime']} |")
-    out.append(f"| Nodes in the 16 KiB-step regime | {c['nodes_grain_regime']} |")
+    """Chapter 17: what the pool keeps between phases - the engine's own slot and class counts."""
+    pre, dec = f["prefill"], f["decode"]
+    out = ["| | Prefill arena | Decode arena (fresh) |", "|---|---|---|",
+           f"| Nodes allocated | 443 | {dec['nodes']} |",
+           f"| Pool bytes | {f['ledger']['pool_bytes']['value']:,} | {dec['pool_bytes']:,} |",
+           f"| Size classes reserved | {pre['reserved_classes']} | {dec['reserved_classes']} |",
+           f"| Idle slots kept for the next graph | {pre['idle_slots']} | {dec['idle_slots']} |"]
     return out
 
 
