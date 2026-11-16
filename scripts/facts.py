@@ -1452,6 +1452,106 @@ def render_al_classes(f):
     return out
 
 
+def render_kv_sharing(f):
+    """Chapter 18: two sequences, one arena - the measurement that found three bugs."""
+    s = f["groups"]["kv_sharing"]
+    before, att, both = s["before_release"], s["after_release_attempt"], s["after_release_both"]
+    a, b, c = before["a"], before["b"], before["cells"]
+    spans_b = ", ".join(f"({sp['base']}, {sp['cell']}, {sp['len']})" for sp in before["spans"]["b"])
+    out = ["| | donor A | sharer B | arena |", "|---|---|---|---|",
+           f"| Reservation | cells [{a['start']}, {a['start'] + a['cap']}) | "
+           f"cells [{b['start']}, {b['start'] + b['cap']}) | {s['n_ctx']} cells |",
+           f"| Rows read in place from the other sequence | - | {b['shared_rows']} (positions 0-{b['shared_rows'] - 1}) | |",
+           f"| Rows written | {a['written']} | {b['private_written']} | |",
+           f"| Spans | {len(before['spans']['a']) and 'own run' or 'none (its own run)'} | {spans_b} | |",
+           f"| `reserved_cells` / `shared_cells` / `owned_cells` "
+           f"| | | {c['reserved']} / {c['shared']} / {c['owned']} |",
+           f"| `free_cells` / `free_runs` | | | **{c['free']} / {c['free_runs']} x {c['largest_free_run']}** |",
+           f"| After `release_seq(A)` while B still reads | **{att['freed']} cells freed** "
+           f"| unchanged ({att['b']['shared_rows']} shared rows) | {att['cells']['reserved']} / "
+           f"{att['cells']['shared']} / {att['cells']['owned']}, free {att['cells']['free']} |",
+           f"| After releasing both | - | - | free {both['cells']['free']}, reserved "
+           f"{both['cells']['reserved']} |"]
+    return out
+
+
+def render_kv_defrag(f):
+    """Chapter 18: a compaction that changes addresses and nothing else."""
+    d = f["groups"]["kv_defrag"]
+    before, after = d["before"], d["after"]
+    out = ["| | Before | After |", "|---|---|---|",
+           f"| Free cells | {before['free_cells']} | {after['free_cells']} |",
+           f"| Free runs | {before['free_runs']} | {after['free_runs']} |",
+           f"| Largest free run | **{before['largest_free_run']}** | **{after['largest_free_run']}** |",
+           f"| Cells in the run that moves | {d['run_cells']} | {d['run_cells']} |",
+           f"| Sequences | {before['sequences']} | {before['sequences']} |"]
+    out.append(f"| Rows moved | - | {after['cells_moved']} |")
+    out.append("")
+    moves = "; ".join(f"seq {m['seq']}: cells [{m['from']}, {m['from'] + m['rows']}) -> "
+                      f"[{m['to']}, {m['to'] + m['rows']})" for m in d["moves"])
+    checks = ", ".join(f"seq {r['seq']} {'unchanged' if r['checksums_unchanged'] else 'CHANGED'}"
+                       for r in d["rows"])
+    out.append(f"Arena {d['n_ctx']} cells, {d['layers']} layer, cell {d['n_embd']} wide. Moves: {moves}. "
+               f"Every moved row's checksum before and after: {checks}.")
+    return out
+
+
+def render_kv_growth(f):
+    """Chapter 18: the region is allocated for the whole context, so growth is exactly linear."""
+    g = f["groups"]["kv_context_growth"]
+    rows = g["rows"]
+    out = ["| Context | Region bytes | MiB | x the 1k row |", "|---|---|---|---|"]
+    base = rows[0]["region_bytes"]
+    for r in rows:
+        out.append(f"| {r['n_ctx']:,} tokens | {r['region_bytes']:,} | {r['mib']:.1f} | "
+                   f"{r['region_bytes'] / base:.1f} |")
+    out.append("")
+    out.append(f"One layer, {g['n_embd']} f32 words per cell, {g['format']} region. Every row is exactly its "
+               f"context times the row above it: the allocator asks for the whole window up front, so a "
+               f"doubling of context is a doubling of bytes, and nothing grows lazily at the page level.")
+    return out
+
+
+def render_kv_session(f):
+    """Chapter 18: the session file's byte map, arithmetic over the writer's field order.
+
+    Every offset comes from `KvSessionWriter::create` and `finish` in `src/graph/kvsession.rs`: a
+    32-byte header, one record per layer, the arena bookkeeping, the caller's host blob, and a trailing
+    FNV-1a checksum. This is arithmetic over quoted code, not a measurement - see the chapter's note.
+    """
+    led = f["groups"]["alloc_ledger"]
+    n_layer, n_ctx = led["kv"]["layers"], led["kv"]["n_ctx"]
+    row_elems = {r["format"]: r["row_elems"] for r in f["groups"]["kv_geometry"]["formats"]}["f32"]
+    # `create` writes the 8-byte magic then seven u32 fields: 36 bytes, not a round 32.
+    header, u32, u64 = 8 + 7 * 4, 4, 8
+    layer_record = 3 * u32 + 2 * (n_ctx * row_elems * 4)
+    bookkeeping = (3 * u32                       # identity, n_ctx, n_seqs
+                   + 6 * u32                     # one sequence: seq, start, cap, shared.cell, shared.rows, written
+                   + u32 + u32 + u32 + 3 * u32   # n_spans, seq, len, one span (base, cell, len)
+                   + u32 + n_layer * (3 * u32 + n_ctx * u32)  # n_layers, then each layer's owner table
+                   + 4 * u64)                    # defrags, cells_moved, cows, cow_cells
+    body = layer_record * n_layer
+    total = header + body + bookkeeping + u32 + u64
+    out = ["| Section | Bytes | Field order |", "|---|---|---|",
+           f"| Magic and header | {header:,} | `MINFERKV` (8 bytes), then version, flags, backend tag, "
+           f"n_layer, n_ctx, n_embd, row_elems - seven 4-byte fields |",
+           f"| One layer's record | {layer_record:,} | layer index, K words, V words (3 x u32 of bookkeeping, "
+           f"then 2 x {n_ctx * row_elems:,} f32 words) |",
+           f"| All {n_layer} layer records | {body:,} | {layer_record:,} x {n_layer} |",
+           f"| Arena bookkeeping | {bookkeeping:,} | identity, n_ctx, per-sequence slots and spans, then "
+           f"**each layer's owner table** ({n_ctx:,} u32 = {n_ctx * u32:,} B per layer), then four u64 counters |",
+           f"| Host state | 4 + n | length-prefixed, opaque, inside the checksum |",
+           f"| Checksum | {u64} | FNV-1a over everything before it |",
+           f"| **Total for this model, empty host state** | **{total:,}** | "
+           f"{total / 2**20:.1f} MiB, of which {body / 2**20:.1f} MiB is KV rows |"]
+    out.append("")
+    out.append(f"Read the fourth row again: the file carries the **owner table**, {n_ctx * u32:,} bytes per "
+               f"layer, because a restored arena must know not only the rows but which sequence holds each "
+               f"cell. That is {bookkeeping / 1024:.0f} KiB of bookkeeping against {body / 2**20:.1f} MiB of "
+               f"rows at this context - small, and not optional.")
+    return out
+
+
 def render_ds_registry(f):
     """Chapter 16: one id space, two orders."""
     r = f["registry"]
@@ -1661,6 +1761,10 @@ BLOCKS = {
     "attention-scores": render_attention_scores,
     "decode-step": render_decode_step,
     "kv-cache-size": render_kv_cache_size,
+    "kv-sharing": render_kv_sharing,
+    "kv-defrag": render_kv_defrag,
+    "kv-growth": render_kv_growth,
+    "kv-session": render_kv_session,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
     "gr-trace": render_gr_trace,

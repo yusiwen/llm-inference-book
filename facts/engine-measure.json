@@ -14,6 +14,120 @@
  ],
  "weights_bytes": 491400032,
  "groups": {
+  "kv_context_growth": {
+   "format": "f32",
+   "layers": 1,
+   "n_embd": 128,
+   "rows": [
+    {
+     "mib": 1.0,
+     "n_ctx": 1024,
+     "region_bytes": 1048576
+    },
+    {
+     "mib": 4.0,
+     "n_ctx": 4096,
+     "region_bytes": 4194304
+    },
+    {
+     "mib": 8.0,
+     "n_ctx": 8192,
+     "region_bytes": 8388608
+    },
+    {
+     "mib": 32.0,
+     "n_ctx": 32768,
+     "region_bytes": 33554432
+    }
+   ]
+  },
+  "kv_sharing": {
+   "after_release_attempt": {
+    "b": {
+     "cap": 8,
+     "private_written": 8,
+     "shared_cell": 0,
+     "shared_rows": 34,
+     "start": 34,
+     "written": 42
+    },
+    "cells": {
+     "free": 22,
+     "free_runs": 1,
+     "largest_free_run": 22,
+     "owned": 42,
+     "reserved": 42,
+     "shared": 34
+    },
+    "free_runs": [
+     {
+      "len": 22,
+      "start": 42
+     }
+    ],
+    "freed": 0
+   },
+   "after_release_both": {
+    "cells": {
+     "free": 64,
+     "free_runs": 1,
+     "owned": 0,
+     "reserved": 0,
+     "shared": 0
+    }
+   },
+   "before_release": {
+    "a": {
+     "cap": 34,
+     "private_written": 34,
+     "shared_cell": 0,
+     "shared_rows": 0,
+     "start": 0,
+     "written": 34
+    },
+    "b": {
+     "cap": 8,
+     "private_written": 8,
+     "shared_cell": 0,
+     "shared_rows": 34,
+     "start": 34,
+     "written": 42
+    },
+    "cells": {
+     "free": 22,
+     "free_runs": 1,
+     "largest_free_run": 22,
+     "owned": 42,
+     "reserved": 42,
+     "shared": 34
+    },
+    "spans": {
+     "a": [
+      {
+       "base": 0,
+       "cell": 0,
+       "len": 34
+      }
+     ],
+     "b": [
+      {
+       "base": 0,
+       "cell": 0,
+       "len": 34
+      },
+      {
+       "base": 34,
+       "cell": 34,
+       "len": 8
+      }
+     ]
+    }
+   },
+   "layers": 1,
+   "n_ctx": 64,
+   "n_embd": 4,
+   "shared_rows": 34
+  },
   "kv_geometry": {
    "formats": [
     {
@@ -104,6 +218,81 @@
    "layers": 1,
    "n_ctx": 4096,
    "n_embd": 128
+  },
+  "kv_defrag": {
+   "after": {
+    "cells_moved": 4,
+    "defrags": 1,
+    "free_cells": 8,
+    "free_runs": 1,
+    "largest_free_run": 8
+   },
+   "before": {
+    "free_cells": 8,
+    "free_runs": 2,
+    "largest_free_run": 4,
+    "owned_cells": 8,
+    "sequences": 2
+   },
+   "layers": 1,
+   "moves": [
+    {
+     "from": 8,
+     "rows": 4,
+     "seq": 3,
+     "to": 4
+    }
+   ],
+   "n_ctx": 16,
+   "n_embd": 4,
+   "rows": [
+    {
+     "cells_after": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "cells_before": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "checksums": [
+      1025112786636179775,
+      11889978290540820998,
+      12121115649336811725,
+      12236748569254437069
+     ],
+     "checksums_unchanged": true,
+     "seq": 1
+    },
+    {
+     "cells_after": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "cells_before": [
+      8,
+      9,
+      10,
+      11
+     ],
+     "checksums": [
+      12583871200418504601,
+      12612866766440144793,
+      12641862332461784985,
+      12670857898483425177
+     ],
+     "checksums_unchanged": true,
+     "seq": 3
+    }
+   ],
+   "rows_moved": 4,
+   "run_cells": 4
   },
   "kv_footprint": {
    "layers": 24,

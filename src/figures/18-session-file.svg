@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 340" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="A KV session file as a byte map. The file is 101,057,232 bytes for this model at a 4096-token context: a 36-byte header, 24 layer records of 4,194,316 bytes each carrying K and V rows, 393,600 bytes of arena bookkeeping including one 16,384-byte owner table per layer, a length-prefixed host state blob, and a trailing 8-byte FNV-1a checksum. 99.6 percent of the file is KV rows.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-t   { fill: var(--fg, #cfdae5); font-size: 10px; opacity: .8; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+    .fig-a-kv { fill: #8f7ad1; fill-opacity: .45; }
+    .fig-a-book { fill: #3f7f76; fill-opacity: .55; }
+    .fig-a-head { fill: #4d86b8; fill-opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">A KV SESSION AS A FILE: 101,057,232 BYTES</text>
+  <text class="g-s" x="24" y="44">one model, 24 layers, 4,096 tokens, f32 cells - the layout `create` and `finish` write, in their order</text>
+  <rect x="30" y="66" width="4" height="26" rx="1" class="fig-a-head" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <rect x="34" y="66" width="748" height="26" rx="1" class="fig-a-kv" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <rect x="782" y="66" width="6" height="26" rx="1" class="fig-a-book" stroke="var(--quote-border, #4a6577)" stroke-width=".8"/>
+  <text class="g-m" x="30" y="112">header 36 B</text>
+  <text class="g-m" x="390" y="112">24 layer records: 4,194,316 B each = 100,663,584 B (99.6 per cent)</text>
+  <text class="g-m" x="30" y="130">arena bookkeeping 393,600 B (0.4 per cent) - drawn 6 px wide, not to scale</text>
+  <line class="g-rule" x1="24" y1="146" x2="786" y2="146"/>
+  <text class="g-t" x="30" y="172">bytes 0-8 - magic "MINFERKV" - refused unless it is exactly this</text>
+  <text class="g-t" x="30" y="190">bytes 8-12 - version 2 today; a reader refuses anything else, and version 2 added the host blob</text>
+  <text class="g-t" x="30" y="208">bytes 12-16 - flags: bit 0 packed q8_0, bit 1 f16; every other bit is refused, which is why a new</text>
+  <text class="g-t" x="30" y="224">            element type did not need a version bump</text>
+  <text class="g-t" x="30" y="242">bytes 16-36 - backend tag, n_layer, n_ctx, n_embd, row_elems - the geometry a load must match</text>
+  <text class="g-t" x="30" y="260">then - 24 layer records of 4,194,316 B: index, k.len, v.len, then K words and V words</text>
+  <text class="g-t" x="30" y="278">then - arena bookkeeping, the caller's host blob, and the FNV-1a checksum over all of it</text>
+  <line class="g-rule" x1="24" y1="294" x2="786" y2="294"/>
+  <text class="g-m" x="24" y="314">the owner table is the surprising part: 4,096 u32 = 16,384 B per layer, so a restore knows which sequence holds each cell</text>
+  <text class="g-m" x="24" y="332">every byte above the layer records is inside one FNV-1a checksum, which is why a one-byte corruption is refused instead of applied</text>
+</svg>

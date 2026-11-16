@@ -72,7 +72,8 @@ def run_tests(repo, log=None, gguf=None):
     skipped = [g["skipped"] for g in groups.values() if "skipped" in g]
     for reason in skipped:
         print(f"  note: the engine skipped one group - {reason}")
-    need = ["kv_geometry", "kv_footprint"] + (["alloc_ledger"] if gguf else [])
+    need = ["kv_geometry", "kv_footprint", "kv_context_growth", "kv_sharing", "kv_defrag"] + (
+        ["alloc_ledger"] if gguf else [])
     missing = [k for k in need if k not in groups]
     if missing:
         raise SystemExit(f"no {' / '.join(missing)} group in the test output - the tests moved")
@@ -169,8 +170,8 @@ def main():
         "layers": layers,
         "contexts": ctxs,
         "weights_bytes": args.gguf_bytes,
-        "groups": {"kv_geometry": geo, "kv_footprint": foot,
-                   "alloc_ledger": groups.get("alloc_ledger")},
+        # every group the suite printed, so a chapter can render from the same run
+        "groups": groups,
         "derived": derived,
         "checks": {"derived_equals_measured": True, "compared": ["row_elems", "row_bytes",
                                                                  "per_token_per_layer",
