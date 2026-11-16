@@ -524,10 +524,23 @@ Which makes the whole file arithmetic on the model's geometry:
 Read the fourth row again: the file carries the **owner table**, 16,384 bytes per layer, because a restored arena must know not only the rows but which sequence holds each cell. That is 384 KiB of bookkeeping against 96.0 MiB of rows at this context - small, and not optional.
 <!-- /facts -->
 
-**That table is arithmetic over quoted code, not a measurement, and the chapter says so rather than implying
-otherwise.** The CLI's single-turn mode writes no `.kv` file, so there is no run to point at; the offsets come from
-`create` and `finish`, and the geometry comes from the engine's ledger at the baseline. When you build this, run the
-save/restart/reload test and the table stops being arithmetic.
+**That table began as arithmetic over quoted code. It is now a measurement.** The single-shot path writes no
+`.kv` file, but the conversation frontend does: Chapter 20 ran two turns through one `--session` and read the file
+the engine left behind.
+
+<!-- facts: loop.loop-session-measured -->
+| | Bytes |
+|---|---|
+| The file the engine wrote, on disk | **101,058,161** |
+| Header, 24 layer records, arena bookkeeping, checksum | 101,057,232 |
+| Difference: the host state blob | **929** |
+
+The difference is the host blob - a 4-byte length and 925 bytes of the conversation's JSON - which the byte map shows as `4 + n` because its size belongs to the caller, not the container. Everything else matches to the byte, which is what makes the arithmetic in this section a measurement rather than a model of one.
+<!-- /facts -->
+
+The header's fields are the eight the byte map lists, in the order `create` writes them, and the one line the
+arithmetic could not predict is the line it declared it could not predict: the host blob. That is the difference
+between a model of a file and a file - and it is why this book states which of the two it is showing.
 
 The owner table is the line that surprises people: 16,384 bytes per layer, 384 KiB for 24 layers. A file carrying
 only the rows would restore bytes into cells nobody owns, and the first request after the restore could write over a
@@ -535,7 +548,7 @@ shared prefix. What the file carries is the **arena**, not a slab of memory.
 
 <figure class="book-figure">{{#include ../figures/18-session-file.svg}}</figure>
 
-*Figure 18.2 - the same file as a byte map: a 36-byte header, 24 layer records of 4.19 MB each, 384 KiB of arena bookkeeping with one owner table per layer, the caller's host state, and a trailing FNV-1a checksum. 96.0 MiB of the 96.4 MiB total is KV rows.*
+*Figure 18.2 - the same file as a byte map: a 36-byte header, 24 layer records of 4.19 MB each, 384 KiB of arena bookkeeping with one owner table per layer, the caller's host state, and a trailing FNV-1a checksum. 96.0 MiB of the 96.4 MiB total is KV rows. The map was drawn from the writer's field order and then checked against a file the engine wrote (lesson 5).*
 
 ## Cache operations
 
@@ -595,4 +608,8 @@ Order the work so each step fails when it is wrong:
 
 <!-- facts: engine-measure.provenance -->
 *`scripts/engine-measure.py`; runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree; on **Darwin 27.2.0, arm64**; one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one. Command: see [the provenance index](../appendix/provenance.md#engine-measure). Raw numbers: `facts/engine-measure.json`.*
+<!-- /facts -->
+
+<!-- facts: loop.provenance -->
+*`scripts/loop.py`; runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one `--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT mid-decode, and drives a context overflow against `--n-ctx 32`; on **Darwin 27.2.0, arm64**; the engine's own `Prefill:`/`Generated:` lines, median of 3 runs; graph builds counted from `MINFER_REBUILD_TRACE`; the session file is read as bytes (`<8s7I` header) and sized on disk. Command: see [the provenance index](../appendix/provenance.md#loop). Raw numbers: `facts/loop.json`.*
 <!-- /facts -->

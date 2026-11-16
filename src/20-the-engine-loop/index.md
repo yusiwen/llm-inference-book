@@ -16,10 +16,10 @@ are where the loop's bookkeeping becomes visible.
 
 The measured loop on this engine and a 0.5B model:
 
-- a **prompt token costs 4.94 ms** in prefill, where 34 tokens go through one graph;
-- a **generated token costs 12.61 ms** in steady decode, and **99.2 per cent of that is the forward pass** - the
-  sampler is 0.08 ms, which is why optimising it is optimising noise;
-- a **graph build costs 0.6 ms and 0.4 ms**, once for the prompt shape and once for the decode shape, and every
+- a **prompt token costs 4.31 ms** in prefill, where 34 tokens go through one graph;
+- a **generated token costs 12.50 ms** in steady decode, and **99.2 per cent of that is the forward pass** - the
+  sampler is 0.09 ms, which is why optimising it is optimising noise;
+- a **graph build costs 0.9 ms and 0.4 ms**, once for the prompt shape and once for the decode shape, and every
   run builds exactly two of them whether it generates one token or twenty-four;
 - the **second turn of a conversation prefills 14 tokens**, not the history it inherits, off a 101,058,161-byte
   session file whose header is the 36 bytes Chapter 18 predicted.
@@ -73,10 +73,10 @@ builds, and `MINFER_TIMING=1` splits each decode step into sample and forward ti
 <!-- facts: loop.loop-runs -->
 | Run | Shapes built | Build cost | Prefill | Decode |
 |---|---|---|---|---|
-| prefill-only, 34 prompt tokens, `-n 1` | nt=34, nt=1 | 0.6 / 0.4 ms | 202.5 tok/s | - |
-| run 1: 36 prompt + 24 generated | nt=36, nt=1 | 0.5 ms / 0.5 ms | 240.3 tok/s | 79.3 tok/s |
-| run 2: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.5 ms | 210.4 tok/s | 77.2 tok/s |
-| run 3: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 236.1 tok/s | 80.8 tok/s |
+| prefill-only, 34 prompt tokens, `-n 1` | nt=34, nt=1 | 0.9 / 0.4 ms | 231.8 tok/s | - |
+| run 1: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 233.7 tok/s | 78.7 tok/s |
+| run 2: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 210.3 tok/s | 80.0 tok/s |
+| run 3: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 253.4 tok/s | 84.7 tok/s |
 
 Every run builds **exactly two graphs**, whether it generates one token or twenty-four: the prompt's shape and the decode shape. That is the reuse cache working - 24 decode steps, one build for decode - and it is why the second rebuild's `nt=1` is the interesting line: the shape of a step that repeats.
 <!-- /facts -->
@@ -90,15 +90,17 @@ What that costs and what it does not:
 <!-- facts: loop.loop-cost -->
 | Phase | Per token | What it is |
 |---|---|---|
-| Prefill, 34 tokens in one graph | **4.94 ms** | one forward over the whole prompt |
-| Decode, steady | **12.61 ms** | one forward over one token, re-reading the weights |
-| of which: the forward pass | 12.81 ms (99.2%) | the model's arithmetic and memory traffic |
-| of which: the sampler | 0.08 ms (0.8%) | top-k, top-p, the penalties, one token |
-| Graph build, once per shape | 0.6 / 0.4 ms | build + backend assign + alloc, for the prompt shape then the decode shape |
+| Prefill, 34 tokens in one graph | **4.31 ms** | one forward over the whole prompt |
+| Decode, steady | **12.50 ms** | one forward over one token, re-reading the weights |
+| of which: the forward pass | 12.98 ms (99.2%) | the model's arithmetic and memory traffic |
+| of which: the sampler | 0.09 ms (0.8%) | top-k, top-p, the penalties, one token |
+| Graph build, once per shape | 0.9 / 0.4 ms | build + backend assign + alloc, for the prompt shape then the decode shape |
 
-Two numbers to keep. The build is **3.1% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 303 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
+Two numbers to keep. The build is **3.1% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 300 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
 <!-- /facts -->
 
+The per-run rows carry the spread - prefill ranged 210 to 253 tok/s across three runs on an idle laptop - which
+is why every number in this chapter is a median and why the chapter prints the runs rather than only their middle.
 Read the last line of that table twice. A build is **3.1 per cent of one decode step**, so a loop that rebuilt
 every step would lose about 3 per cent - annoying, not fatal - and the reason to build a reuse cache is not the
 3 per cent: it is that the build also **re-allocates the transient pool** (Chapter 17), and an allocator that is
@@ -293,7 +295,7 @@ The four ends of this loop, with the evidence each leaves behind:
 |---|---|---|
 | the model chose its end-of-generation token | 0 | `Generated:` line in every ordinary run |
 | `n_predict` reached | 0 | `[turn 1] stopped by n_predict / context limit` - printed by the conversation frontend |
-| cancelled (SIGINT) | 130 | `[cancelled] SIGINT - 0 of 600 requested tokens` |
+| cancelled (SIGINT) | 130 | `[cancelled] SIGINT - 1 of 600 requested tokens` |
 | context overflow | 101 | `position 59 exceeds n_ctx 59 (KV region overflow)` |
 
 Exit 130 is 128 + SIGINT, and it is a *decision*: the CLI prints its summary, says how many of the requested tokens it produced (with an em dash the book prints as a hyphen, because its figures and pages are ASCII), and exits with the shell's cancellation code so a script can tell a cancelled run from a finished one. Exit 101 is Rust's panic code, and it is not a decision the loop made - it is the KV region's own assertion firing, because the prompt filled the region exactly and the first generated token had nowhere to go.
@@ -418,10 +420,10 @@ That is what makes two engines in one process possible - and it is why the measu
 
 | Phase | What dominates | Measured on this model | What would reduce it |
 |---|---|---|---|
-| first prefill (cold) | the prompt's forward pass, one graph | 4.94 ms per prompt token (34 tokens, 202.5 tok/s) | a shorter prompt, or chunked prefill across steps |
-| prefill (warm) | the same; the weights are resident | the same 4.94 ms within run-to-run noise | nothing in the loop: this is the model |
+| first prefill (cold) | the prompt's forward pass, one graph | 4.31 ms per prompt token (34 tokens, 231.8 tok/s) | a shorter prompt, or chunked prefill across steps |
+| prefill (warm) | the same; the weights are resident | the same 4.31 ms within run-to-run noise | nothing in the loop: this is the model |
 | first decode step (build) | build + assign + allocate, once | 0.4-0.6 ms, 3.1 per cent of a step | fewer parameter changes (Chapter 16's assignment is the cost) |
-| steady decode step | the forward pass, 99.2 per cent of it | 12.61 ms: 12.81 forward, 0.08 sampler | nothing in the loop; Chapter 28 is the memory-traffic answer |
+| steady decode step | the forward pass, 99.2 per cent of it | 12.50 ms: 12.98 forward, 0.09 sampler | nothing in the loop; Chapter 28 is the memory-traffic answer |
 | multi-turn append | the new suffix's forward pass | 14 prompt tokens on turn 2, not 46 | an append-only prefix, which is what this is |
 
 Every row is either the model or the build, and the loop's own share - the sampler, the bookkeeping, the string
@@ -471,5 +473,5 @@ because a dropped layer does not crash.
 - [ ] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement)
 
 <!-- facts: loop.provenance -->
-*`scripts/loop.py`; runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one `--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT mid-decode, and drives a context overflow against `--n-ctx 32`; on **{'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}**; the engine's own `Prefill:`/`Generated:` lines, median of 3 runs; graph builds counted from `MINFER_REBUILD_TRACE`; the session file is read as bytes (`<8s7I` header) and sized on disk. Command: see [the provenance index](../appendix/provenance.md#loop). Raw numbers: `facts/loop.json`.*
+*`scripts/loop.py`; runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one `--session` file, decodes the 36-byte session header out of the `.kv` companion, sends SIGINT mid-decode, and drives a context overflow against `--n-ctx 32`; on **Darwin 27.2.0, arm64**; the engine's own `Prefill:`/`Generated:` lines, median of 3 runs; graph builds counted from `MINFER_REBUILD_TRACE`; the session file is read as bytes (`<8s7I` header) and sized on disk. Command: see [the provenance index](../appendix/provenance.md#loop). Raw numbers: `facts/loop.json`.*
 <!-- /facts -->

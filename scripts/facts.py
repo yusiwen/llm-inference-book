@@ -1529,6 +1529,20 @@ def render_kv_growth(f):
     return out
 
 
+def session_bytes(n_layer, n_ctx, row_elems):
+    """The session file's sections, from the writer's field order. One authority for two chapters."""
+    header, u32, u64 = 8 + 7 * 4, 4, 8
+    layer_record = 3 * u32 + 2 * (n_ctx * row_elems * 4)
+    bookkeeping = (3 * u32                       # identity, n_ctx, n_seqs
+                   + 6 * u32                     # one sequence: seq, start, cap, shared.cell, shared.rows, written
+                   + u32 + u32 + u32 + 3 * u32   # n_spans, seq, len, one span (base, cell, len)
+                   + u32 + n_layer * (3 * u32 + n_ctx * u32)  # n_layers, then each layer's owner table
+                   + 4 * u64)                    # defrags, cells_moved, cows, cow_cells
+    body = layer_record * n_layer
+    return {"header": header, "layer_record": layer_record, "body": body, "bookkeeping": bookkeeping,
+            "total_empty_host": header + body + bookkeeping + u32 + u64}
+
+
 def render_kv_session(f):
     """Chapter 18: the session file's byte map, arithmetic over the writer's field order.
 
@@ -1539,16 +1553,10 @@ def render_kv_session(f):
     led = f["groups"]["alloc_ledger"]
     n_layer, n_ctx = led["kv"]["layers"], led["kv"]["n_ctx"]
     row_elems = {r["format"]: r["row_elems"] for r in f["groups"]["kv_geometry"]["formats"]}["f32"]
-    # `create` writes the 8-byte magic then seven u32 fields: 36 bytes, not a round 32.
-    header, u32, u64 = 8 + 7 * 4, 4, 8
-    layer_record = 3 * u32 + 2 * (n_ctx * row_elems * 4)
-    bookkeeping = (3 * u32                       # identity, n_ctx, n_seqs
-                   + 6 * u32                     # one sequence: seq, start, cap, shared.cell, shared.rows, written
-                   + u32 + u32 + u32 + 3 * u32   # n_spans, seq, len, one span (base, cell, len)
-                   + u32 + n_layer * (3 * u32 + n_ctx * u32)  # n_layers, then each layer's owner table
-                   + 4 * u64)                    # defrags, cells_moved, cows, cow_cells
-    body = layer_record * n_layer
-    total = header + body + bookkeeping + u32 + u64
+    s = session_bytes(n_layer, n_ctx, row_elems)
+    header, u32, u64 = s["header"], 4, 8
+    layer_record, body, bookkeeping = s["layer_record"], s["body"], s["bookkeeping"]
+    total = s["total_empty_host"]
     out = ["| Section | Bytes | Field order |", "|---|---|---|",
            f"| Magic and header | {header:,} | `MINFERKV` (8 bytes), then version, flags, backend tag, "
            f"n_layer, n_ctx, n_embd, row_elems - seven 4-byte fields |",
@@ -1671,6 +1679,25 @@ def render_fam_deltas(f):
     out.append("")
     out.append("Four differences, one per row, and the counts say which family implements each. A zero is the "
                "interesting entry: it is the absence that a copied graph inherits silently.")
+    return out
+
+
+def render_loop_session_measured(f):
+    """Chapter 18/20: the session file the engine wrote, against the field-order arithmetic."""
+    m = f["multi_turn"]
+    h = m["header"]
+    s = session_bytes(h["n_layer"], h["n_ctx"], h["row_elems"])
+    measured = m["kv_bytes"]
+    delta = measured - s["total_empty_host"]
+    out = ["| | Bytes |", "|---|---|",
+           f"| The file the engine wrote, on disk | **{measured:,}** |",
+           f"| Header, {h['n_layer']} layer records, arena bookkeeping, checksum | {s['total_empty_host']:,} |",
+           f"| Difference: the host state blob | **{delta:,}** |"]
+    out.append("")
+    out.append(f"The difference is the host blob - a 4-byte length and {delta - 4:,} bytes of the conversation's "
+               f"JSON - which the byte map shows as `4 + n` because its size belongs to the caller, not the "
+               f"container. Everything else matches to the byte, which is what makes the arithmetic in this "
+               f"section a measurement rather than a model of one.")
     return out
 
 
@@ -1979,6 +2006,7 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "loop-session-measured": render_loop_session_measured,
     "loop-runs": render_loop_runs,
     "loop-turns": render_loop_turns,
     "loop-stops": render_loop_stops,

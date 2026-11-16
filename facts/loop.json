@@ -11,121 +11,121 @@
     "nums": {
      "prefill": {
       "n": 34,
-      "s": 0.17,
-      "tok_s": 202.5
+      "s": 0.14,
+      "tok_s": 234.7
      },
      "generated": {
       "n": 1,
       "s": 0.01,
-      "tok_s": 74.0
+      "tok_s": 66.9
      },
      "total": {
       "n": 35,
-      "s": 0.18,
-      "tok_s": 193.0
+      "s": 0.16,
+      "tok_s": 219.0
      },
      "timing": {
       "tokens": 1,
       "sample_ms": 0.08,
-      "sample_pct": 0.6,
-      "forward_ms": 13.43,
-      "forward_pct": 99.4
+      "sample_pct": 0.5,
+      "forward_ms": 14.83,
+      "forward_pct": 99.5
      }
     },
     "builds": [
      {
       "nt": 34,
-      "ms": 0.6
+      "ms": 0.9
      },
      {
       "nt": 1,
       "ms": 0.4
      }
     ],
-    "wall_s": 0.274
+    "wall_s": 0.259
    },
    {
     "nums": {
      "prefill": {
       "n": 34,
-      "s": 0.17,
-      "tok_s": 199.5
-     },
-     "generated": {
-      "n": 1,
-      "s": 0.01,
-      "tok_s": 84.8
-     },
-     "total": {
-      "n": 35,
-      "s": 0.18,
-      "tok_s": 192.1
-     },
-     "timing": {
-      "tokens": 1,
-      "sample_ms": 0.08,
-      "sample_pct": 0.7,
-      "forward_ms": 11.7,
-      "forward_pct": 99.3
-     }
-    },
-    "builds": [
-     {
-      "nt": 34,
-      "ms": 0.6
-     },
-     {
-      "nt": 1,
-      "ms": 0.4
-     }
-    ],
-    "wall_s": 0.273
-   },
-   {
-    "nums": {
-     "prefill": {
-      "n": 34,
-      "s": 0.13,
-      "tok_s": 253.4
-     },
-     "generated": {
-      "n": 1,
-      "s": 0.01,
-      "tok_s": 80.2
-     },
-     "total": {
-      "n": 35,
       "s": 0.15,
-      "tok_s": 238.6
+      "tok_s": 219.9
+     },
+     "generated": {
+      "n": 1,
+      "s": 0.02,
+      "tok_s": 65.6
+     },
+     "total": {
+      "n": 35,
+      "s": 0.17,
+      "tok_s": 206.1
      },
      "timing": {
       "tokens": 1,
-      "sample_ms": 0.08,
-      "sample_pct": 0.6,
-      "forward_ms": 12.37,
-      "forward_pct": 99.4
+      "sample_ms": 0.12,
+      "sample_pct": 0.8,
+      "forward_ms": 15.09,
+      "forward_pct": 99.2
      }
     },
     "builds": [
      {
       "nt": 34,
-      "ms": 0.5
+      "ms": 0.6
      },
      {
       "nt": 1,
       "ms": 0.4
      }
     ],
-    "wall_s": 0.237
+    "wall_s": 0.255
+   },
+   {
+    "nums": {
+     "prefill": {
+      "n": 34,
+      "s": 0.15,
+      "tok_s": 231.8
+     },
+     "generated": {
+      "n": 1,
+      "s": 0.01,
+      "tok_s": 76.3
+     },
+     "total": {
+      "n": 35,
+      "s": 0.16,
+      "tok_s": 219.1
+     },
+     "timing": {
+      "tokens": 1,
+      "sample_ms": 0.11,
+      "sample_pct": 0.9,
+      "forward_ms": 12.97,
+      "forward_pct": 99.1
+     }
+    },
+    "builds": [
+     {
+      "nt": 34,
+      "ms": 0.6
+     },
+     {
+      "nt": 1,
+      "ms": 0.5
+     }
+    ],
+    "wall_s": 0.248
    }
   ],
-  "median_tok_s": 202.5,
+  "median_tok_s": 231.8,
   "median_tokens": 34,
   "builds_per_run": [
    2
   ],
   "build_ms": [
-   0.6,
+   0.9,
    0.4
   ]
  },
@@ -136,79 +136,17 @@
      "prefill": {
       "n": 36,
       "s": 0.15,
-      "tok_s": 240.3
+      "tok_s": 233.7
      },
      "generated": {
       "n": 24,
       "s": 0.3,
-      "tok_s": 79.3
+      "tok_s": 78.7
      },
      "total": {
       "n": 60,
-      "s": 0.45,
-      "tok_s": 132.6
-     },
-     "timing": null
-    },
-    "builds": [
-     {
-      "nt": 36,
-      "ms": 0.5
-     },
-     {
-      "nt": 1,
-      "ms": 0.5
-     }
-    ],
-    "wall_s": 0.542
-   },
-   {
-    "nums": {
-     "prefill": {
-      "n": 36,
-      "s": 0.17,
-      "tok_s": 210.4
-     },
-     "generated": {
-      "n": 24,
-      "s": 0.31,
-      "tok_s": 77.2
-     },
-     "total": {
-      "n": 60,
-      "s": 0.48,
-      "tok_s": 124.5
-     },
-     "timing": null
-    },
-    "builds": [
-     {
-      "nt": 36,
-      "ms": 0.6
-     },
-     {
-      "nt": 1,
-      "ms": 0.5
-     }
-    ],
-    "wall_s": 0.572
-   },
-   {
-    "nums": {
-     "prefill": {
-      "n": 36,
-      "s": 0.15,
-      "tok_s": 236.1
-     },
-     "generated": {
-      "n": 24,
-      "s": 0.3,
-      "tok_s": 80.8
-     },
-     "total": {
-      "n": 60,
-      "s": 0.45,
-      "tok_s": 133.4
+      "s": 0.46,
+      "tok_s": 130.7
      },
      "timing": null
     },
@@ -222,29 +160,91 @@
       "ms": 0.4
      }
     ],
-    "wall_s": 0.536
+    "wall_s": 0.549
+   },
+   {
+    "nums": {
+     "prefill": {
+      "n": 36,
+      "s": 0.17,
+      "tok_s": 210.3
+     },
+     "generated": {
+      "n": 24,
+      "s": 0.3,
+      "tok_s": 80.0
+     },
+     "total": {
+      "n": 60,
+      "s": 0.47,
+      "tok_s": 127.4
+     },
+     "timing": null
+    },
+    "builds": [
+     {
+      "nt": 36,
+      "ms": 0.6
+     },
+     {
+      "nt": 1,
+      "ms": 0.4
+     }
+    ],
+    "wall_s": 0.558
+   },
+   {
+    "nums": {
+     "prefill": {
+      "n": 36,
+      "s": 0.14,
+      "tok_s": 253.4
+     },
+     "generated": {
+      "n": 24,
+      "s": 0.28,
+      "tok_s": 84.7
+     },
+     "total": {
+      "n": 60,
+      "s": 0.43,
+      "tok_s": 141.0
+     },
+     "timing": null
+    },
+    "builds": [
+     {
+      "nt": 36,
+      "ms": 0.6
+     },
+     {
+      "nt": 1,
+      "ms": 0.4
+     }
+    ],
+    "wall_s": 0.515
    }
   ],
-  "median_tok_s": 79.3,
+  "median_tok_s": 80.0,
   "median_tokens": 24,
   "builds_per_run": [
    2
   ],
   "build_ms": [
-   0.5,
-   0.5
+   0.6,
+   0.4
   ],
-  "ms_per_token": 12.61,
+  "ms_per_token": 12.5,
   "timed": {
-   "median_tok_s": 77.5,
-   "ms_per_token": 12.9,
-   "sample_ms": 0.08,
-   "forward_ms": 12.81,
+   "median_tok_s": 76.4,
+   "ms_per_token": 13.09,
+   "sample_ms": 0.09,
+   "forward_ms": 12.98,
    "sample_pct": 0.8,
    "forward_pct": 99.2
   }
  },
- "prefill_ms_per_token": 4.94,
+ "prefill_ms_per_token": 4.31,
  "multi_turn": {
   "turns": [
    {
@@ -282,7 +282,7 @@
   "exit": 101,
   "prompt_tokens": "59",
   "panic": [
-   "thread 'main' (11448046) panicked at src/models/qwen2/graph.rs:502:13:",
+   "thread 'main' (11487539) panicked at src/models/qwen2/graph.rs:502:13:",
    "position 59 exceeds n_ctx 59 (KV region overflow)"
   ]
  },
@@ -292,17 +292,17 @@
    "prefill": {
     "n": 36,
     "s": 0.15,
-    "tok_s": 236.4
+    "tok_s": 240.5
    },
    "generated": {
     "n": 4,
-    "s": 0.05,
-    "tok_s": 79.4
+    "s": 0.07,
+    "tok_s": 56.5
    },
    "total": {
     "n": 40,
-    "s": 0.2,
-    "tok_s": 197.4
+    "s": 0.22,
+    "tok_s": 181.4
    },
    "timing": null
   },
@@ -314,28 +314,28 @@
  },
  "interrupt": {
   "exit": 130,
-  "note": "[cancelled] SIGINT \u2014 0 of 600 requested tokens",
+  "note": "[cancelled] SIGINT \u2014 1 of 600 requested tokens",
   "nums": {
    "prefill": {
     "n": 42,
-    "s": 0.18,
-    "tok_s": 228.4
+    "s": 0.17,
+    "tok_s": 243.3
    },
-   "generated": null,
+   "generated": {
+    "n": 1,
+    "s": 0.01,
+    "tok_s": 87.1
+   },
    "total": {
-    "n": 42,
+    "n": 43,
     "s": 0.18,
-    "tok_s": 228.4
+    "tok_s": 233.6
    },
    "timing": null
   },
-  "tail": "Total:     42 tokens in 0.18s (228.4 tok/s)"
+  "tail": "Total:     43 tokens in 0.18s (233.6 tok/s)"
  },
- "machine": {
-  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
-  "machine": "arm64",
-  "python": "3.15.2"
- },
+ "machine": "Darwin 27.2.0, arm64",
  "provenance": {
   "command": "python3 scripts/loop.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer",
   "statistic": "the engine's own `Prefill:`/`Generated:` lines, median of 3 runs; graph builds counted from `MINFER_REBUILD_TRACE`; the session file is read as bytes (`<8s7I` header) and sized on disk",

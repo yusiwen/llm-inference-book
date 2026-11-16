@@ -212,8 +212,8 @@ def main():
         "n_predict_stop": n_predict_stop(binary, model),
         "stop_reason": stop_reason(binary, model),
         "interrupt": interrupt(binary, model),
-        "machine": {"platform": platform.platform(), "machine": platform.machine(),
-                    "python": platform.python_version()},
+        # The rendering convention every instrument shares: "Darwin 27.2.1, arm64".
+        "machine": f"{platform.system()} {platform.release()}, {platform.machine()}",
         "provenance": {
             "command": f"python3 scripts/loop.py {binary} {model} --minfer {checkout}",
             "statistic": f"the engine's own `Prefill:`/`Generated:` lines, median of {RUNS} runs; graph "

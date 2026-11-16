@@ -366,11 +366,7 @@
   },
   "mod_lines": 494
  },
- "machine": {
-  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
-  "machine": "arm64",
-  "python": "3.15.2"
- },
+ "machine": "Darwin 27.2.0, arm64",
  "provenance": {
   "command": "python3 scripts/family.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer",
   "statistic": "node counts and one layer's slice from the engine's own `MINFER_TRACE` dump; refusals are the binary's stderr on byte-patched copies of the same file; source counts are line and `#[test]` counts in the pinned checkout",

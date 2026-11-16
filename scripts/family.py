@@ -179,8 +179,7 @@ def main():
         "trace": counted_trace(binary, model, work),
         "refusals": refusals,
         "source": source_facts(checkout),
-        "machine": {"platform": platform.platform(), "machine": platform.machine(),
-                    "python": platform.python_version()},
+        "machine": f"{platform.system()} {platform.release()}, {platform.machine()}",
         "provenance": {
             "command": f"python3 scripts/family.py {binary} {model} --minfer {checkout}",
             "statistic": "node counts and one layer's slice from the engine's own `MINFER_TRACE` dump; "
