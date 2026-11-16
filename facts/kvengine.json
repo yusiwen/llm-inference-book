@@ -1,0 +1,208 @@
+{
+ "baseline": {
+  "commit": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
+  "describe": "v0.0.9-134-ge844591"
+ },
+ "machine": "Darwin 27.2.0, arm64",
+ "command": "cargo test --release measure -- --nocapture (in /Users/yusiwen/git/mine/minfer)",
+ "n_kv_embd": 128,
+ "layers": 24,
+ "contexts": [
+  4096,
+  8192,
+  32768
+ ],
+ "weights_bytes": 491400032,
+ "groups": {
+  "kv_geometry": {
+   "formats": [
+    {
+     "bytes_per_token_per_layer": 1024,
+     "devices": [
+      {
+       "device": "cpu",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "metal",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "cuda",
+       "registered": false,
+       "supports": true
+      }
+     ],
+     "format": "f32",
+     "payload_bytes": 512,
+     "region_bits_per_element": 32.0,
+     "region_bytes": 4194304,
+     "row_bytes": 512,
+     "row_elems": 128,
+     "stored_bits_per_element": 32.0,
+     "unused_bytes_per_cell": 0
+    },
+    {
+     "bytes_per_token_per_layer": 1024,
+     "devices": [
+      {
+       "device": "cpu",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "metal",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "cuda",
+       "registered": false,
+       "supports": true
+      }
+     ],
+     "format": "f16",
+     "payload_bytes": 256,
+     "region_bits_per_element": 32.0,
+     "region_bytes": 4194304,
+     "row_bytes": 512,
+     "row_elems": 128,
+     "stored_bits_per_element": 16.0,
+     "unused_bytes_per_cell": 256
+    },
+    {
+     "bytes_per_token_per_layer": 272,
+     "devices": [
+      {
+       "device": "cpu",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "metal",
+       "registered": true,
+       "supports": true
+      },
+      {
+       "device": "cuda",
+       "registered": false,
+       "supports": false
+      }
+     ],
+     "format": "q8_0",
+     "payload_bytes": 136,
+     "region_bits_per_element": 8.5,
+     "region_bytes": 1114112,
+     "row_bytes": 136,
+     "row_elems": 34,
+     "stored_bits_per_element": 8.5,
+     "unused_bytes_per_cell": 0
+    }
+   ],
+   "layers": 1,
+   "n_ctx": 4096,
+   "n_embd": 128
+  },
+  "kv_footprint": {
+   "layers": 24,
+   "n_embd": 128,
+   "rows": [
+    {
+     "format": "f16",
+     "layers": 24,
+     "mib": 96.0,
+     "n_ctx": 4096,
+     "region_bytes": 100663296
+    },
+    {
+     "format": "q8_0",
+     "layers": 24,
+     "mib": 25.5,
+     "n_ctx": 4096,
+     "region_bytes": 26738688
+    },
+    {
+     "format": "f16",
+     "layers": 24,
+     "mib": 192.0,
+     "n_ctx": 8192,
+     "region_bytes": 201326592
+    },
+    {
+     "format": "q8_0",
+     "layers": 24,
+     "mib": 51.0,
+     "n_ctx": 8192,
+     "region_bytes": 53477376
+    },
+    {
+     "format": "f16",
+     "layers": 24,
+     "mib": 768.0,
+     "n_ctx": 32768,
+     "region_bytes": 805306368
+    },
+    {
+     "format": "q8_0",
+     "layers": 24,
+     "mib": 204.0,
+     "n_ctx": 32768,
+     "region_bytes": 213909504
+    }
+   ]
+  }
+ },
+ "derived": {
+  "f32": {
+   "row_elems": 128,
+   "row_bytes": 512,
+   "per_token_per_layer": 1024,
+   "per_token_all_layers": 24576,
+   "region_bytes": {
+    "4096": 100663296,
+    "8192": 201326592,
+    "32768": 805306368
+   }
+  },
+  "f16": {
+   "row_elems": 128,
+   "row_bytes": 512,
+   "per_token_per_layer": 1024,
+   "per_token_all_layers": 24576,
+   "region_bytes": {
+    "4096": 100663296,
+    "8192": 201326592,
+    "32768": 805306368
+   },
+   "share_of_weights_at_8k": 0.4096999977403339
+  },
+  "q8_0": {
+   "row_elems": 34,
+   "row_bytes": 136,
+   "per_token_per_layer": 272,
+   "per_token_all_layers": 6528,
+   "region_bytes": {
+    "4096": 26738688,
+    "8192": 53477376,
+    "32768": 213909504
+   },
+   "share_of_weights_at_8k": 0.10882656189977619
+  }
+ },
+ "checks": {
+  "derived_equals_measured": true,
+  "compared": [
+   "row_elems",
+   "row_bytes",
+   "per_token_per_layer",
+   "region_bytes x format x ctx"
+  ]
+ },
+ "provenance": {
+  "command": "cd /Users/yusiwen/git/mine/minfer && cargo test --release measure -- --nocapture",
+  "statistic": "one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one",
+  "artifact": "facts/kvengine.json"
+ }
+}

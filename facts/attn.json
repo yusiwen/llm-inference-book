@@ -29,12 +29,6 @@
   "unmasked_relative": 0.222118,
   "self_weight": 0.002401
  },
- "cache": {
-  "per_token_per_layer_f16": 512,
-  "all_layers_4k": 50331648,
-  "all_layers_8k": 100663296,
-  "share_of_weights_at_8k": 0.2048
- },
  "rebuild": {
   "recompute_kv_s": 0.105109,
   "read_kv_s": 6.3667e-05,

@@ -761,6 +761,12 @@ INSTRUMENTS = {
                "computes each vector op the way an engine writes it, reports the error against an f64 "
                "oracle, and times the op",
                "median of three runs for timing; the errors are deterministic and identical across runs"),
+    "kvengine": ("scripts/kv-engine.py",
+                  "runs the engine's own measurement tests (`cargo test --release measure`) and reads "
+                  "the KV geometry and footprint groups out of them, then recomputes every number from "
+                  "`KvFormat::row_elems` and refuses to write the artifact when the two disagree",
+                  "one run of the engine's suite; the derived column must equal the measured one, "
+                  "format by format and context by context"),
     "attn": ("scripts/attn.c",
              "runs one layer of real attention on the model's own weights: scores, one decode step at four "
              "prefix lengths, the softmax alone, and rebuilding the cache against reading it",
@@ -863,25 +869,55 @@ def render_decode_step(f):
     return rows
 
 
-def render_cache_size(f):
-    """The cache-size table the chapter promises: formulas, values, and what they were measured from."""
-    g, c = f["geometry"], f["cache"]
-    per_tok_layer = c["per_token_per_layer_f16"]
-    weights = 491400032
-    per_step_4k = c["all_layers_4k"]
-    return ["| Quantity | Formula | Value for this model | Measured or derived |", "|---|---|---|---|",
-            f"| Bytes per token per layer | 2 x n_kv x head_dim x 2 (f16) | {per_tok_layer:.0f} B | "
-            f"derived from {g['n_kv']} KV heads x {g['head_dim']} dims |",
-            f"| Bytes per token, all layers | previous x n_layer | {per_tok_layer * g['n_layer']:.0f} B "
-            f"({per_tok_layer * g['n_layer'] / 1024:.1f} KiB) | {g['n_layer']} layers |",
-            f"| Bytes per 4k context | previous x 4096 | {c['all_layers_4k'] / 2**20:.1f} MiB | "
-            f"the buffer the instrument allocates |",
-            f"| Bytes per 8k context | previous x 2 | {c['all_layers_8k'] / 2**20:.1f} MiB | doubling, "
-            f"not measured |",
-            f"| Share of the weights at 8k | cache / {weights / 2**20:.0f} MiB file | "
-            f"{c['share_of_weights_at_8k'] * 100:.1f} per cent | both are facts about this file |",
-            f"| Attention reads per decode step at 4k | the whole cache, every layer | "
-            f"{per_step_4k / 2**20:.1f} MiB | the step measured below |"]
+
+def render_kv_cache_size(f):
+    """What the engine allocates for the KV cache, per storage format.
+
+    The allocation is `row_elems` f32 words per cell per region, times two regions (K and V), so
+    **f16 and f32 allocate the same region** - f16 halves the *payload* inside those words, which is
+    a bandwidth win, not a footprint win. Only q8_0 shrinks the cell (34 words per 128 elements).
+    Sizes are the engine's own `kv_footprint` measurement; the arithmetic beside them is `row_elems`
+    recomputed in Python by `scripts/kv-engine.py`, which fails if the two disagree.
+    """
+    d = f["derived"]
+    geo = {row["format"]: row for row in f["groups"]["kv_geometry"]["formats"]}
+    layers, weights = f["layers"], f["weights_bytes"]
+    ctxs = f["contexts"]
+
+    def mib(n):
+        return f"{n / 2**20:,.1f} MiB"
+
+    def kib(n):
+        return f"{n / 1024:,.1f} KiB"
+
+    read = {fmt: geo[fmt]["payload_bytes"] * 2 for fmt in ("f32", "f16", "q8_0")}
+
+    def region(fmt, ctx):
+        return d[fmt]["region_bytes"][str(ctx)]
+
+    rows = ["| Quantity | f32 | f16 | q8_0 |", "|---|---|---|---|",
+            f"| f32 words one cell occupies | {d['f32']['row_elems']} | {d['f16']['row_elems']} "
+            f"| {d['q8_0']['row_elems']} |",
+            f"| Bytes per token per layer | {d['f32']['per_token_per_layer']:,} B "
+            f"| {d['f16']['per_token_per_layer']:,} B | {d['q8_0']['per_token_per_layer']:,} B |",
+            f"| Bytes per token, all {layers} layers | {kib(d['f32']['per_token_all_layers'])} "
+            f"| {kib(d['f16']['per_token_all_layers'])} | {kib(d['q8_0']['per_token_all_layers'])} |"]
+    for ctx in ctxs:
+        label = f"{ctx // 1024}k" if ctx % 1024 == 0 else str(ctx)
+        rows.append(f"| Region at {label} tokens | {mib(region('f32', ctx))} "
+                    f"| {mib(region('f16', ctx))} | {mib(region('q8_0', ctx))} |")
+    rows.append(f"| Share of the weights at 8k | {region('f32', 8192) / weights * 100:.1f} per cent "
+                f"| {region('f16', 8192) / weights * 100:.1f} per cent "
+                f"| {region('q8_0', 8192) / weights * 100:.1f} per cent |")
+    rows.append(f"| Read per decode step at 4k | {mib(read['f32'] * 4096 * layers)} "
+                f"| {mib(read['f16'] * 4096 * layers)} | {mib(read['q8_0'] * 4096 * layers)} |")
+    rows.append("")
+    rows.append("The first three rows are `row_elems x 4 x 2` - f32 words per cell, bytes per word, and the "
+                "two regions K and V. The region rows are the engine's own `kv_footprint` measurement, which "
+                "`scripts/kv-engine.py` recomputes from `row_elems` and refuses to write when the two "
+                "disagree. The share divides by the 468.6 MiB file. The last row is the payload actually "
+                "read per decode step, not the words reserved for it.")
+    return rows
 
 
 def render_rebuild(f):
@@ -1610,7 +1646,7 @@ BLOCKS = {
     "provenance": render_provenance,
     "attention-scores": render_attention_scores,
     "decode-step": render_decode_step,
-    "cache-size": render_cache_size,
+    "kv-cache-size": render_kv_cache_size,
     "rebuild": render_rebuild,
     "mask-effect": render_mask_effect,
     "gr-trace": render_gr_trace,

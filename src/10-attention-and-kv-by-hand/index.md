@@ -9,7 +9,7 @@
 
 Attention lets every token look at the tokens before it and mix their values into its own representation. Naively that means recomputing the keys and values of the whole prefix at every step, which is quadratic work per token. The **KV cache** (key-value cache) removes that: keys and values are computed once, stored, and read back. **GQA** (grouped-query attention) then reuses one key/value head across several query heads, which is what makes the cache small enough to hold. The whole chapter is one idea applied twice: prefill fills the cache, decode reads it, and both must agree exactly.
 
-The sizes are worth having in front of you before the definitions, because they are what the rest of the book optimises. On this model, at a 1,024-token prefix, one layer's attention for one token - fourteen heads, no SIMD, f32 - takes **212 microseconds**, and **11 per cent** of that is the softmax; the rest is two matrix multiplies. Rebuilding the keys and values for that prefix instead of reading them takes **105 milliseconds**, which is 500 times the whole attention step. A four-thousand-token context costs **48 MiB** of cache across the model's 24 layers, and at eight thousand it is **96 MiB** - a fifth of the weights.
+The sizes are worth having in front of you before the definitions, because they are what the rest of the book optimises. On this model, at a 1,024-token prefix, one layer's attention for one token - fourteen heads, no SIMD, f32 - takes **212 microseconds**, and **11 per cent** of that is the softmax; the rest is two matrix multiplies. Rebuilding the keys and values for that prefix instead of reading them takes **105 milliseconds**, which is 500 times the whole attention step. A four-thousand-token context costs **96 MiB** of cache across the model's 24 layers, and at eight thousand it is **192 MiB**, two fifths of the weights - because a cell is a fixed number of f32 words, so storing f16 values does not make the cache smaller, only cheaper to read. Packed to q8_0 the same four-thousand-token cache is 25.5 MiB.
 
 ## What you'll be able to do
 
@@ -223,18 +223,22 @@ unsafe fn attn_heads(ctx: *const (), h0: usize, h1: usize) {
 
 Why it matters is the cache, and the cache is what turns long context into a memory problem rather than a compute problem:
 
-<!-- facts: attn.cache-size -->
-| Quantity | Formula | Value for this model | Measured or derived |
+<!-- facts: kvengine.kv-cache-size -->
+| Quantity | f32 | f16 | q8_0 |
 |---|---|---|---|
-| Bytes per token per layer | 2 x n_kv x head_dim x 2 (f16) | 512 B | derived from 2 KV heads x 64 dims |
-| Bytes per token, all layers | previous x n_layer | 12288 B (12.0 KiB) | 24 layers |
-| Bytes per 4k context | previous x 4096 | 48.0 MiB | the buffer the instrument allocates |
-| Bytes per 8k context | previous x 2 | 96.0 MiB | doubling, not measured |
-| Share of the weights at 8k | cache / 469 MiB file | 20.5 per cent | both are facts about this file |
-| Attention reads per decode step at 4k | the whole cache, every layer | 48.0 MiB | the step measured below |
+| f32 words one cell occupies | 128 | 128 | 34 |
+| Bytes per token per layer | 1,024 B | 1,024 B | 272 B |
+| Bytes per token, all 24 layers | 24.0 KiB | 24.0 KiB | 6.4 KiB |
+| Region at 4k tokens | 96.0 MiB | 96.0 MiB | 25.5 MiB |
+| Region at 8k tokens | 192.0 MiB | 192.0 MiB | 51.0 MiB |
+| Region at 32k tokens | 768.0 MiB | 768.0 MiB | 204.0 MiB |
+| Share of the weights at 8k | 41.0 per cent | 41.0 per cent | 10.9 per cent |
+| Read per decode step at 4k | 96.0 MiB | 48.0 MiB | 25.5 MiB |
+
+The first three rows are `row_elems x 4 x 2` - f32 words per cell, bytes per word, and the two regions K and V. The region rows are the engine's own `kv_footprint` measurement, which `scripts/kv-engine.py` recomputes from `row_elems` and refuses to write when the two disagree. The share divides by the 468.6 MiB file. The last row is the payload actually read per decode step, not the words reserved for it.
 <!-- /facts -->
 
-The engine computes the same table at load time, in two functions - and the book's numbers are their arithmetic done by hand:
+The engine computes this table at load time in two functions, and every value in it is checked against the engine's own measurement of the same quantity:
 
 <!-- code: src/graph/kvformat.rs::KvFormat::row_elems@e844591 -->
 ```rust
@@ -268,9 +272,11 @@ pub fn region_bytes(&self) -> usize {
 ```
 <!-- /code -->
 
-Read `row_elems` closely, because it is where a format decision becomes an allocator decision: a Q8_0 cell is `ceil(blocks * 34 / 4)` **f32 words**, rounded up to a word boundary, and the comment says why - so that moving a cell is a plain `copy_within`. Packed cells are therefore slightly larger than their payload, and every subsequent byte offset in the engine is in words, not in quantized blocks. `region_bytes` is the doubling for K and V that the table does by hand.
+Read `row_elems` closely, because it is where a format decision becomes an allocator decision: a Q8_0 cell is `ceil(blocks * 34 / 4)` **f32 words**, rounded up to a word boundary, and the comment says why - so that moving a cell is a plain `copy_within`. Packed cells are therefore slightly larger than their payload, and every subsequent byte offset in the engine is in words, not in quantized blocks. `region_bytes` is the doubling for K and V that the table folds into its per-token row.
 
-Two of those rows are worth deriving rather than reading. The per-token figure is $2 \times n_{kv} \times d \times 2$ - two tensors, two heads, 64 dimensions, two bytes each - which is 512 bytes per token per layer, or 12 KiB per token across 24 layers. And the last row is the one that decides whether a 32,000-token conversation fits: at that length the cache is 375 MiB, which is **80 per cent of the model's 468 MiB of weights**. Attention does not become expensive because the arithmetic grows; it becomes expensive because the state it reads grows, and it is read on every single token.
+Read that table by columns, because the columns are the lesson. **f32 and f16 reserve exactly the same bytes.** `row_elems` returns `nkt` for both, so a cell is 128 f32 words per region whether the value inside it is 32 bits or 16: f16 writes half a cell and leaves the other half unused - 256 unused bytes per cell per region, which is the `unused_bytes_per_cell` the engine reports. What f16 buys is **bytes read**, not bytes reserved: 48 MiB per decode step at a 4k context against 96 for f32, on the same 96 MiB reservation. Only q8_0 shrinks the reservation, to 34 words a cell - 272 bytes per token per layer, a quarter of f32's - which is what the packed-region path and its format gate exist for.
+
+The reservation is the row that decides whether a long conversation fits. At 32,000 tokens f32 and f16 need **768 MiB**, which is **164 per cent of the model's 468 MiB of weights**: the cache stops being a footnote and becomes the resident set, and the weights are no longer the thing you are short of. q8_0 brings the same conversation to 204 MiB, 43 per cent. Attention does not become expensive because the arithmetic grows; it becomes expensive because the state it reads grows, and it is read on every single token.
 
 ### Lesson 4 · Prefill attention versus decode attention: one big masked matmul against a streamed reduction
 
@@ -452,15 +458,23 @@ Now the honest part, and it is a negative result this chapter keeps rather than 
 
 ## Cache arithmetic for one model
 
-<!-- facts: attn.cache-size -->
-| Quantity | Formula | Value for this model | Measured or derived |
+<!-- facts: kvengine.kv-cache-size -->
+| Quantity | f32 | f16 | q8_0 |
 |---|---|---|---|
-| Bytes per token per layer | 2 x n_kv x head_dim x 2 (f16) | 512 B | derived from 2 KV heads x 64 dims |
-| Bytes per token, all layers | previous x n_layer | 12288 B (12.0 KiB) | 24 layers |
-| Bytes per 4k context | previous x 4096 | 48.0 MiB | the buffer the instrument allocates |
-| Bytes per 8k context | previous x 2 | 96.0 MiB | doubling, not measured |
-| Share of the weights at 8k | cache / 469 MiB file | 20.5 per cent | both are facts about this file |
-| Attention reads per decode step at 4k | the whole cache, every layer | 48.0 MiB | the step measured below |
+| f32 words one cell occupies | 128 | 128 | 34 |
+| Bytes per token per layer | 1,024 B | 1,024 B | 272 B |
+| Bytes per token, all 24 layers | 24.0 KiB | 24.0 KiB | 6.4 KiB |
+| Region at 4k tokens | 96.0 MiB | 96.0 MiB | 25.5 MiB |
+| Region at 8k tokens | 192.0 MiB | 192.0 MiB | 51.0 MiB |
+| Region at 32k tokens | 768.0 MiB | 768.0 MiB | 204.0 MiB |
+| Share of the weights at 8k | 41.0 per cent | 41.0 per cent | 10.9 per cent |
+| Read per decode step at 4k | 96.0 MiB | 48.0 MiB | 25.5 MiB |
+
+The first three rows are `row_elems x 4 x 2` - f32 words per cell, bytes per word, and the two regions K and V. The region rows are the engine's own `kv_footprint` measurement, which `scripts/kv-engine.py` recomputes from `row_elems` and refuses to write when the two disagree. The share divides by the 468.6 MiB file. The last row is the payload actually read per decode step, not the words reserved for it.
+<!-- /facts -->
+
+<!-- facts: kvengine.provenance -->
+*`scripts/kv-engine.py`; runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree; on **Darwin 27.2.0, arm64**; one run of the engine's own measurement tests; the derived column is recomputed from `KvFormat::row_elems` and must equal the measured one. Command: `cd ~/git/mine/minfer && cargo test --release measure -- --nocapture`. Raw numbers: `facts/kvengine.json`.*
 <!-- /facts -->
 
 <!-- facts: attn.provenance -->
