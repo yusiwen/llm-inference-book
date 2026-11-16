@@ -76,16 +76,9 @@ Rules that follow:
    open an issue here naming the page, the paragraph, the figures and the re-measurement, and link it from
    the prose. A comment on minfer's own issue is not enough: that repository's tracker is about minfer, and
    this is about a page. Chapter 10's Q8_0 paragraph and issue 2 are the pattern.
-
-## Open evidence gaps
-
-Claims that are in the book, measured once, and known not to be settled. Read this list before re-auditing a
-chapter for accuracy, and close an entry by changing the page rather than the issue:
-
-| Issue | What is unsettled |
-|---|---|
-| [#2](https://github.com/yusiwen/llm-inference-book/issues/2) | ch10's Q8_0 KV paragraph - the negative result stands, but the packed-decode stall in minfer makes the ratio provisional |
-| [#3](https://github.com/yusiwen/llm-inference-book/issues/3) | three content claims: the f16 attention bound is measured on layer 0 only (ch10), a single-turn `--session` write is unrecorded (ch18/ch20), and the AVX-512 shortfall has no clock evidence (ch7). That issue also records two items verified during the 2026-11-16 pass - ch13's reproducibility table and ch15's 23 `Op` variants - so they are not audited twice |
+6. **Before re-auditing a chapter for accuracy, run `gh issue list`.** An unsettled claim is tracked there, not
+   in this file: a list of open issues pasted into these rules goes stale the day one is closed, and no gate
+   reads GitHub, so the copy would be quietly wrong. The tracker is the only place that can be right.
 
 ## Non-negotiables
 
