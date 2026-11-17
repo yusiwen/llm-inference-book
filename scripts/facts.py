@@ -1756,7 +1756,16 @@ def render_loop_cost(f):
            f"| Graph build, once per shape | {build_pre:.1f} / {build_dec:.1f} ms | build + backend assign + "
            f"alloc, for the prompt shape then the decode shape |"]
     out.append("")
-    out.append(f"Two numbers to keep. The build is **{build_dec / t['forward_ms'] * 100:.1f}% of one decode "
+    # Both spread figures come from the runs in the artifact, not from the author remembering them.
+    pre_rates = [r["nums"]["prefill"]["tok_s"] for r in f["prefill"]["runs"]]
+    dec_rates = [r["nums"]["generated"]["tok_s"] for r in d["runs"]]
+    out.append(f"Three runs, because one is not a distribution: the prefill-only runs moved between "
+               f"{min(pre_rates):.0f} and {max(pre_rates):.0f} tok/s, the decode runs between {min(dec_rates):.0f} "
+               f"and {max(dec_rates):.0f}. The per-run rows in the table further down are whole runs, so their "
+               f"prefill column carries the first graph build as well and spreads wider. Every figure in this "
+               f"chapter is the median of its own three runs.")
+    out.append("")
+    out.append(f"Two numbers to keep. The build is **{build_dec / d['ms_per_token'] * 100:.1f}% of one decode "
                f"step** even though it happens once, so it cannot be what makes a decode step slow - a graph "
                f"that never got reused would cost 24 builds for 24 tokens, which is "
                f"{24 * build_dec:.1f} ms of {24 * d['ms_per_token']:.0f} ms. And the sampler is "

@@ -16,8 +16,8 @@ are where the loop's bookkeeping becomes visible.
 
 The measured loop on this engine and a 0.5B model:
 
-- a **prompt token costs 4.31 ms** in prefill, where 34 tokens go through one graph;
-- a **generated token costs 12.50 ms** in steady decode, and **99.2 per cent of that is the forward pass** - the
+- a **prompt token costs 3.98 ms** in prefill, where 34 tokens go through one graph;
+- a **generated token costs 10.49 ms** in steady decode, and **99.2 per cent of that is the forward pass** - the
   sampler is 0.09 ms, which is why optimising it is optimising noise;
 - a **graph build costs 0.9 ms and 0.4 ms**, once for the prompt shape and once for the decode shape, and every
   run builds exactly two of them whether it generates one token or twenty-four;
@@ -96,14 +96,16 @@ What that costs and what it does not:
 | of which: the sampler | 0.08 ms (0.8%) | top-k, top-p, the penalties, one token |
 | Graph build, once per shape | 0.5 / 0.4 ms | build + backend assign + alloc, for the prompt shape then the decode shape |
 
-Two numbers to keep. The build is **3.9% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 252 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
+Three runs, because one is not a distribution: the prefill-only runs moved between 214 and 284 tok/s, the decode runs between 93 and 106. The per-run rows in the table further down are whole runs, so their prefill column carries the first graph build as well and spreads wider. Every figure in this chapter is the median of its own three runs.
+
+Two numbers to keep. The build is **3.8% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 252 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
 <!-- /facts -->
 
-The per-run rows carry the spread - prefill ranged 210 to 253 tok/s across three runs on an idle laptop - which
-is why every number in this chapter is a median and why the chapter prints the runs rather than only their middle.
-Read the last line of that table twice. A build is **3.1 per cent of one decode step**, so a loop that rebuilt
-every step would lose about 3 per cent - annoying, not fatal - and the reason to build a reuse cache is not the
-3 per cent: it is that the build also **re-allocates the transient pool** (Chapter 17), and an allocator that is
+The per-run rows carry the spread, and the block above states it in the artifact's own numbers - which is why
+every figure in this chapter is a median and why the chapter prints the runs rather than only their middle.
+Read the last line of that table twice. A build is **3.8 per cent of one decode step**, so a loop that rebuilt
+every step would lose about 4 per cent - annoying, not fatal - and the reason to build a reuse cache is not the
+4 per cent: it is that the build also **re-allocates the transient pool** (Chapter 17), and an allocator that is
 re-entered every step cannot keep the pool warm, cannot serve a second session from the same arena, and cannot
 capture a device graph. The reuse cache is a structural precondition for everything in Part 6, and its direct
 saving is the smallest thing about it.
@@ -433,10 +435,10 @@ That is what makes two engines in one process possible - and it is why the measu
 
 | Phase | What dominates | Measured on this model | What would reduce it |
 |---|---|---|---|
-| first prefill (cold) | the prompt's forward pass, one graph | 4.31 ms per prompt token (34 tokens, 231.8 tok/s) | a shorter prompt, or chunked prefill across steps |
-| prefill (warm) | the same; the weights are resident | the same 4.31 ms within run-to-run noise | nothing in the loop: this is the model |
-| first decode step (build) | build + assign + allocate, once | 0.4-0.6 ms, 3.1 per cent of a step | fewer parameter changes (Chapter 16's assignment is the cost) |
-| steady decode step | the forward pass, 99.2 per cent of it | 12.50 ms: 12.98 forward, 0.09 sampler | nothing in the loop; Chapter 28 is the memory-traffic answer |
+| first prefill (cold) | the prompt's forward pass, one graph | 3.98 ms per prompt token (34 tokens, 251.5 tok/s) | a shorter prompt, or chunked prefill across steps |
+| prefill (warm) | the same; the weights are resident | the same 3.98 ms within run-to-run noise | nothing in the loop: this is the model |
+| first decode step (build) | build + assign + allocate, once | 0.4-0.5 ms, 3.8 per cent of a step | fewer parameter changes (Chapter 16's assignment is the cost) |
+| steady decode step | the forward pass, 99.2 per cent of it | 10.49 ms: 10.35 forward, 0.08 sampler | nothing in the loop; Chapter 28 is the memory-traffic answer |
 | multi-turn append | the new suffix's forward pass | 14 prompt tokens on turn 2, not 46 | an append-only prefix, which is what this is |
 
 Every row is either the model or the build, and the loop's own share - the sampler, the bookkeeping, the string
