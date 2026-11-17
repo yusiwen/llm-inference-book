@@ -34,7 +34,7 @@
   <text class="g-lbl" x="586" y="87" text-anchor="middle">4 int8 matmul</text>
   <text class="g-m" x="586" y="118" text-anchor="middle">reuse M</text>
   <text class="g-m" x="586" y="133" text-anchor="middle">__dp4a, 4 per instr</text>
-  <text class="g-m" x="586" y="148" text-anchor="middle">bound: scalar unpack</text>
+  <text class="g-m" x="586" y="148" text-anchor="middle">bound: unpack amortised</text>
   <rect x="678" y="66" width="106" height="34" rx="2" class="fig-a-r5"/>
   <text class="g-lbl" x="731" y="87" text-anchor="middle">5 matrix-vector</text>
   <text class="g-m" x="731" y="118" text-anchor="middle">reuse 1</text>

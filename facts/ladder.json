@@ -6,7 +6,7 @@
  "kernels": [
   {
    "name": "eltwise_relu",
-   "ms": 1.0989,
+   "ms": 1.0945,
    "bytes": 268435456,
    "gflops": 0.0,
    "max_abs_diff": 0,
@@ -15,7 +15,7 @@
   },
   {
    "name": "gather_embed",
-   "ms": 0.0043,
+   "ms": 0.0046,
    "bytes": 262144,
    "gflops": 0.0,
    "max_abs_diff": 0,
@@ -24,9 +24,9 @@
   },
   {
    "name": "gemm_naive",
-   "ms": 0.163,
+   "ms": 0.1634,
    "bytes": 1572864,
-   "gflops": 1647.0,
+   "gflops": 1643.2,
    "max_abs_diff": 0,
    "tolerance": 0.002,
    "passes": true
@@ -35,25 +35,43 @@
    "name": "gemm_tiled",
    "ms": 0.1192,
    "bytes": 1572864,
-   "gflops": 2252.1,
+   "gflops": 2251.9,
    "max_abs_diff": 0,
    "tolerance": 0.002,
    "passes": true
   },
   {
+   "name": "gemm_naive_2048",
+   "ms": 9.5164,
+   "bytes": 25165824,
+   "gflops": 1805.3,
+   "max_abs_diff": 0,
+   "tolerance": 0,
+   "passes": true
+  },
+  {
+   "name": "gemm_tiled_2048",
+   "ms": 7.0633,
+   "bytes": 25165824,
+   "gflops": 2432.3,
+   "max_abs_diff": 0,
+   "tolerance": 0,
+   "passes": true
+  },
+  {
    "name": "gemv_q4_decode",
-   "ms": 0.2534,
+   "ms": 0.2522,
    "bytes": 9453568,
-   "gflops": 132.4,
+   "gflops": 133.0,
    "max_abs_diff": 0,
    "tolerance": 0.005,
    "passes": true
   },
   {
    "name": "gemm_q4_prefill16",
-   "ms": 3.9498,
+   "ms": 1.6939,
    "bytes": 9699328,
-   "gflops": 135.9,
+   "gflops": 316.9,
    "max_abs_diff": 0,
    "tolerance": 0.005,
    "passes": true
@@ -62,7 +80,7 @@
  "tiling": {
   "tile": 16,
   "reuse_per_loaded_element": 16,
-  "naive_ms": 0.163,
+  "naive_ms": 0.1634,
   "tiled_ms": 0.1192,
   "speedup": 1.37,
   "predicted_speedup_upper_bound": 16,
@@ -71,17 +89,17 @@
  "shapes": {
   "decode": {
    "m": 1,
-   "ms": 0.2534,
-   "ms_per_token": 0.2534,
+   "ms": 0.2522,
+   "ms_per_token": 0.2522,
    "weights_mb": 9.5
   },
   "prefill": {
    "m": 16,
-   "ms": 3.9498,
-   "ms_per_token": 0.247,
+   "ms": 1.6939,
+   "ms_per_token": 0.106,
    "weights_mb": 9.7
   },
-  "per_token_ratio": 0.97
+  "per_token_ratio": 0.42
  },
  "artifact": "ladder",
  "host": "yusiwen@192.168.2.40",

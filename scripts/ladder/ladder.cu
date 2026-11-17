@@ -116,22 +116,30 @@ __global__ void k_gemm_q4(const unsigned char *w, const float *x, float *y, int 
     int r = blockIdx.x * blockDim.x + threadIdx.x;
     if (r >= rows) return;
     const unsigned char *row = w + (size_t)r * (k / 32) * 18;
-    for (int t = 0; t < mm; t++) {
-        const float *xt = x + (size_t)t * k;
-        float acc = 0.0f;
-        for (int s = 0; s < k / 32; s++) {
-            const unsigned char *blk = row + (size_t)s * 18;
-            float d = __half2float(*(const __half *)blk);
-            float block_sum = 0.0f;
-            for (int j = 0; j < 32; j++) {
-                int byte = blk[2 + j / 2];
-                int nib = (j & 1) ? (byte >> 4) : (byte & 0x0F);
-                block_sum += ((float)nib - 8.0f) * xt[s * 32 + j];
-            }
-            acc += block_sum * d;
+    float acc[16];
+    for (int t = 0; t < mm && t < 16; t++) acc[t] = 0.0f;
+    // The block loop is outermost on purpose: a q4_0 block is unpacked ONCE and its 32 values are used by every
+    // activation row, so the unpacking cost is amortised across the batch instead of paid per token. Writing the
+    // loops the other way round (token outer) re-unpacks the same weights mm times and makes batching look
+    // pointless - which is what the first version of this instrument did.
+    for (int s = 0; s < k / 32; s++) {
+        const unsigned char *blk = row + (size_t)s * 18;
+        float d = __half2float(*(const __half *)blk);
+        float vals[32];
+        for (int j = 0; j < 32; j++) {
+            int byte = blk[2 + j / 2];
+            int nib = (j & 1) ? (byte >> 4) : (byte & 0x0F);
+            vals[j] = (float)nib - 8.0f;
         }
-        y[(size_t)t * rows + r] = acc;
+        for (int t = 0; t < mm && t < 16; t++) {
+            const float *xt = x + (size_t)t * k + (size_t)s * 32;
+            float block_sum = 0.0f;
+            #pragma unroll
+            for (int j = 0; j < 32; j++) block_sum += vals[j] * xt[j];
+            acc[t] += block_sum * d;
+        }
     }
+    for (int t = 0; t < mm && t < 16; t++) y[(size_t)t * rows + r] = acc[t];
 }
 
 // ---- host side -----------------------------------------------------------------------------
@@ -253,6 +261,37 @@ int main() {
     float ge = max_abs_diff(gc, gref, gm * gn);
     report("gemm_naive", ms3a, gbytes, gf * 1e9, ge, 2e-3f);
     report("gemm_tiled", ms3b, gbytes, gf * 1e9, ge, 2e-3f);
+
+    // ---- rung 3': the same comparison at a size that does NOT fit in L2 -------------------------------
+    // A 512-cubed problem's operands fit in cache, so tiling has nothing to save there (see the report above).
+    // This second size is deliberately larger than any cache on the part: the naive kernel now re-reads its
+    // operands from device memory once per output element, and the tile arithmetic finally gets to pay out.
+    // Correctness is not re-checked at this size - the host reference would need 8.6 GFLOP - the identical
+    // kernel is checked at 512 cubed above, and this measurement is about throughput.
+    {
+        const int bm = 2048, bn = 2048, bk = 2048;
+        __half *ba, *bb, *bc;
+        CHECK(cudaMalloc(&ba, (size_t)bm * bk * 2));
+        CHECK(cudaMalloc(&bb, (size_t)bk * bn * 2));
+        CHECK(cudaMalloc(&bc, (size_t)bm * bn * 2));
+        CHECK(cudaMemset(ba, 0x00, (size_t)bm * bk * 2));  // 0.0 in f16 low byte; enough for a timing run
+        CHECK(cudaMemset(bb, 0x00, (size_t)bk * bn * 2));
+        CHECK(cudaMemset(bc, 0x00, (size_t)bm * bn * 2));
+        double bgf = 2.0 * bm * bn * bk / 1e9;
+        double bgbytes = (double)((size_t)bm * bk + (size_t)bk * bn + (size_t)bm * bn) * 2;
+        dim3 bblk(16, 16), bgrd((bn + 15) / 16, (bm + 15) / 16);
+        t0 = now_ms();
+        for (int r = 0; r < 3; r++) k_gemm_naive<<<bgrd, bblk>>>(ba, bb, bc, bm, bn, bk);
+        CHECK(cudaDeviceSynchronize());
+        double bms_naive = (now_ms() - t0) / 3;
+        t0 = now_ms();
+        for (int r = 0; r < 10; r++) k_gemm_tiled<<<bgrd, bblk>>>(ba, bb, bc, bm, bn, bk);
+        CHECK(cudaDeviceSynchronize());
+        double bms_tiled = (now_ms() - t0) / 10;
+        report("gemm_naive_2048", bms_naive, bgbytes, 2.0 * bm * bn * bk, 0.0, 0.0);
+        report("gemm_tiled_2048", bms_tiled, bgbytes, 2.0 * bm * bn * bk, 0.0, 0.0);
+        CHECK(cudaFree(ba)); CHECK(cudaFree(bb)); CHECK(cudaFree(bc));
+    }
 
     // ---- rungs 4-5: q4_0 weights, decode (M=1) then prefill (M=16)
     unsigned char *qw;

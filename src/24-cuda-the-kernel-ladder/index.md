@@ -14,12 +14,14 @@ Every rung here is measured **and checked**, because a fast wrong kernel is wors
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,099 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 4 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,647 | 0.0e+00 | 2e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,094 us | 0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 5 us | 0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643 | 0.0e+00 | 2e-03 | yes |
 | `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,252 | 0.0e+00 | 2e-03 | yes |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 253 us | 132 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 3,950 us | 136 | 0.0e+00 | 5e-03 | yes |
+| `gemm_naive_2048` | - | 9,516 us | 1,805 | 0.0e+00 | 0e+00 | yes |
+| `gemm_tiled_2048` | - | 7,063 us | 2,432 | 0.0e+00 | 0e+00 | yes |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 317 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
@@ -102,12 +104,14 @@ The measured cost of doing it this way, on a real shape:
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,099 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 4 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,647 | 0.0e+00 | 2e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,094 us | 0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 5 us | 0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643 | 0.0e+00 | 2e-03 | yes |
 | `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,252 | 0.0e+00 | 2e-03 | yes |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 253 us | 132 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 3,950 us | 136 | 0.0e+00 | 5e-03 | yes |
+| `gemm_naive_2048` | - | 9,516 us | 1,805 | 0.0e+00 | 0e+00 | yes |
+| `gemm_tiled_2048` | - | 7,063 us | 2,432 | 0.0e+00 | 0e+00 | yes |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 317 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
@@ -121,16 +125,17 @@ A GEMM's inner loop is `C[i][j] += A[i][k] * B[k][j]`. A naive kernel gives each
 The tile arithmetic, which is the part to write down before the code: with a TILE x TILE block, each element loaded into shared memory feeds **TILE** multiply-accumulates, so the number of global loads drops by a factor of TILE and the ceiling on the speedup is TILE. For a 16 x 16 tile that ceiling is 16x. The measurement:
 
 <!-- facts: ladder.ladder-tiling -->
-| 512 x 512 x 512 f16 GEMM | Time | GFLOP/s |
-|---|---|---|
-| naive - every thread reads its own row and column | 163 us | 1,647 |
-| shared-memory tiled, 16 x 16 | **119 us** | 2,252 |
-| speedup | **1.37x** | |
+| f16 GEMM, naive against 16 x 16 tiled | Time | GFLOP/s | Speedup |
+|---|---|---|---|
+| 512 cubed - operands about 1 MB, L2-resident | 163 -> **119 us** | 1,643 -> 2,252 | **1.37x** |
+| 2,048 cubed - operands about 24 MB, past most of the cache | 9,516 -> **7,063 us** | 1,805 -> 2,432 | **1.35x** |
 
-The tile arithmetic says each element loaded into shared memory can feed 16 multiply-accumulates, so the ceiling for this change is 16x. The measurement gives **1.37x**, and the gap is the honest lesson: a 512-cubed problem's operands fit in L2 (about 1 MB of f16), so the naive kernel is not actually starved of bandwidth - it is starved of *latency hiding*, which shared memory helps with only partly. Tile reuse pays the full dividend on a problem too big for cache, and this is not that problem.
+Both rows land near **1.35x**, against a ceiling of 16x, and the honest reading is that this instrument does not isolate what tiling is worth. Reason: all four kernels give each thread exactly one output element, so the arithmetic intensity is 1 - one multiply-accumulate per pair of loads - and at that intensity the shared-memory tile saves the same fraction whatever the problem size, because L2 was already absorbing the difference. A production GEMM (the engine's `mmq_nt_kernel`, and `gemm_wmma` before it) gives each thread a whole sub-tile of outputs held in registers, which is what turns a 16 x 16 shared tile into a reuse factor in the hundreds.
 <!-- /facts -->
 
-**1.37x, against a ceiling of 16x.** That gap is not a bug and it is not a failed lesson - it is the most useful number in the chapter, because it says what the tile arithmetic is actually predicting. The reuse factor is an *upper bound on the reduction in global traffic*, and it only becomes a speedup if the naive kernel was waiting on that traffic. A 512-cubed f16 problem needs about 1 MB for its operands, which fits in L2 comfortably, so the naive kernel is not starved of bandwidth - it is starved of latency hiding, and shared memory helps with that only insofar as it replaces long-latency loads with short ones.
+**Both rows land near 1.35x, against a ceiling of 16x** - and the honest reading is that *this instrument does not isolate what tiling is worth*. The reason is in the kernels, not the machine: all four give each thread exactly **one** output element, so the arithmetic intensity is one multiply-accumulate per pair of loads. At that intensity the shared tile saves the same fraction at any problem size, because the loads it saves were already being served by L2 - and the 2,048-cubed row proves it, since making the problem eight times larger changed the speedup by two per cent.
+
+What a production GEMM does differently is give each thread a *sub-tile* of outputs held in registers, so one load of a shared-memory value feeds eight or sixteen multiply-accumulates instead of one. That is what `mmq_nt_kernel`'s double-buffered arena below is for, and it is why a real kernel's reuse factor is in the hundreds while this chapter's is sixteen. The tile arithmetic is still the right thing to write down first - it just needs to be applied to a kernel that has been written to collect on it.
 
 The engine's own tiling is bigger, and the comment says why:
 
@@ -196,23 +201,23 @@ Then the shape. The same packed weights, at one token and at sixteen:
 <!-- facts: ladder.ladder-shapes -->
 | q4_0 4096 x 4096 weights | Time | Per token | Weights read |
 |---|---|---|---|
-| decode, M = 1 | 253 us | **253 us** | 9.5 MB |
-| prefill, M = 16 | 3,950 us | **247 us** | 9.7 MB |
-| per-token ratio | | **0.97x** | |
+| decode, M = 1 | 252 us | **252 us** | 9.5 MB |
+| prefill, M = 16 | 1,694 us | **106 us** | 9.7 MB |
+| per-token ratio | | **0.42x** | |
 
-Sixteen tokens at once cost almost exactly sixteen times one token - **0.97x per token** - so this kernel gained nothing from batching. That is not a mistake in the measurement; it is what a kernel does when it is *already* compute-bound on scalar unpacking: the weights are read once per row either way, and the extra arithmetic is real work, not reused work. Batching pays when the kernel is bandwidth-bound and the loads are amortised - which is precisely why the real engine's decode path uses `__dp4a` and its prefill path uses tensor cores, and why the threshold between them is a measurement rather than a preference.
+Sixteen tokens at once cost **0.42x of one token per token**, so the batch paid: the same weight bytes were unpacked once and used sixteen times. That is the whole economy of a prefill kernel, and it is a *loop-order* property, not a hardware one - unpack the q4_0 block outside the activation loop and the cost is amortised; unpack it inside and batching looks pointless. The first version of this instrument had the loops the wrong way round and reported 0.97x: the wrong number is easy to produce, and the right one requires knowing which loop the unpacking belongs outside of.
 <!-- /facts -->
 
-**Batching sixteen tokens gained nothing: 0.97x per token.** The weights are read once per row either way, so the load side of the ledger is identical - and the arithmetic side is sixteen times larger, because unpacking a nibble does not get cheaper when you have more activations to multiply it by. This kernel is compute-bound, so the batch is pure work.
+**And the engine's two families amortise different things**, which is what makes them two families rather than one with a flag: `mmvq` amortises the weight *fetch* across a warp, `mmq` amortises the *unpack* across a block of activations. Batching pays to exactly the extent that the expensive per-weight work - fetch, unpack, scale - sits outside the activation loop.
 
-That is the *opposite* of the folklore, and it is the real content of the "small-M problem". Batching pays only when the kernel is **bandwidth-bound**: if the row of weights is being fetched for the first time, sixteen activations reuse that fetch and the per-token cost collapses. The engine's decode path is bandwidth-bound (that is what `mmvq` is for), so for *it* batching helps - but the moment a kernel becomes compute-bound on scalar unpacking, more tokens stop being free.
+The first version of this instrument had the loops the other way round and produced **0.97x**, which reads as "batching does not help" and is the kind of wrong answer a measurement hands you when the kernel looks innocent. It is worth keeping for that reason: a kernel with transposed loops still returns the right answer, still passes the identity gate, and still produces a number worth acting on - in the wrong direction.
 
 Which gives the threshold the chapter asks for, as a measurement rather than a copied constant:
 
 | Shape | Kernel that wins | Why |
 |---|---|---|
 | 1 token, 1 request | `mmvq` (matrix-vector) | bandwidth-bound: read each weight once, use it once |
-| a few tokens, one request | `mmvq` still | the weight fetch is amortised only slightly; arithmetic dominates |
+| 2-16 tokens, one request | `mmvq` still | the unpack is amortised 16x (0.42x per token), but the fetch is not |
 | hundreds of tokens | `mmq` with `__dp4a` (matrix-matrix) | enough reuse per load to hide the unpacking behind int8 dot products |
 | thousands of tokens | tensor-core f16 GEMM | the f16 conversion cost is paid once and the M x N output is huge |
 
@@ -227,7 +232,7 @@ Filled in, with the shape and the bound for each rung:
 | elementwise | 32 Mi floats | bandwidth | 1,099 us | yes (exact) |
 | gather / embedding | 32 x 1024 | dependency, not bandwidth | 4 us | yes (exact) |
 | tiled f16 GEMM | 512 cubed | latency hiding (L2-resident) | 119 us, 2,252 GFLOP/s | yes (0 deviation) |
-| int8 matmul (prefill) | 4096 x 4096, M=16 | scalar unpacking | 3,950 us | yes |
+| int8 matmul (prefill) | 4096 x 4096, M=16 | unpacking, amortised across 16 rows | 1,694 us | yes |
 | matrix-vector (decode) | 4096 x 4096, M=1 | strided reads, 37 GB/s | 253 us | yes |
 
 ## Project
@@ -264,4 +269,4 @@ Record the shape, the tile size and the throughput for every kernel. A number wi
 - [x] Question 1: Where does the time go? (compute-bound or bandwidth-bound, and how do I tell?) - every rung in this chapter is labelled with its bound, and Lesson 5 shows the two shapes of the same kernel landing on different sides of the line.
 - [x] Question 2: Why are the weights bytes instead of floats? (what quantization buys and costs) - Lesson 2: 9 MB instead of 64 MB, materialised never, unpacked with one mask per four values and multiplied with `__dp4a`.
 - [x] Question 3: Where does the boundary between the engine and the device live? (graph, backend seam, dispatch) - Lesson 5's dispatch table: the graph emits one matmul and the backend picks the kernel from the shape, which is Chapter 16's `supports_op` earning its keep.
-- [x] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement) - the deviation and tolerance columns beside every timing in this chapter, and the tile arithmetic that predicted 16x and explained 1.37x.
+- [x] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement) - the deviation and tolerance columns beside every timing, and the two shapes that showed a loop order is worth 2.4x while a tile is worth 1.35x in a kernel written to collect on neither.

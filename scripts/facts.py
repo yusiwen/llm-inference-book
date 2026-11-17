@@ -1822,21 +1822,30 @@ def render_ladder_kernels(f):
 
 
 def render_ladder_tiling(f):
-    """Chapter 24: the tile arithmetic against the measurement."""
+    """Chapter 24: the tile arithmetic against the measurement, at two problem sizes."""
     t = f["tiling"]
-    out = ["| 512 x 512 x 512 f16 GEMM | Time | GFLOP/s |", "|---|---|---|",
-           f"| naive - every thread reads its own row and column | {t['naive_ms'] * 1000:,.0f} us | "
-           f"{f['kernels'][2]['gflops'] if len(f['kernels']) > 2 else 0:,.0f} |",
-           f"| shared-memory tiled, {t['tile']} x {t['tile']} | **{t['tiled_ms'] * 1000:,.0f} us** | "
-           f"{f['kernels'][3]['gflops'] if len(f['kernels']) > 3 else 0:,.0f} |",
-           f"| speedup | **{t['speedup']}x** | |"]
+    k = {x["name"]: x for x in f["kernels"]}
+    small_n, small_t = k.get("gemm_naive"), k.get("gemm_tiled")
+    big_n, big_t = k.get("gemm_naive_2048"), k.get("gemm_tiled_2048")
+    out = ["| f16 GEMM, naive against 16 x 16 tiled | Time | GFLOP/s | Speedup |", "|---|---|---|---|"]
+    if small_n and small_t:
+        out.append(f"| 512 cubed - operands about 1 MB, L2-resident | "
+                   f"{small_n['ms'] * 1000:,.0f} -> **{small_t['ms'] * 1000:,.0f} us** | "
+                   f"{small_n['gflops']:,.0f} -> {small_t['gflops']:,.0f} | **{t['speedup']}x** |")
+    if big_n and big_t:
+        out.append(f"| 2,048 cubed - operands about 24 MB, past most of the cache | "
+                   f"{big_n['ms'] * 1000:,.0f} -> **{big_t['ms'] * 1000:,.0f} us** | "
+                   f"{big_n['gflops']:,.0f} -> {big_t['gflops']:,.0f} | "
+                   f"**{round(big_n['ms'] / big_t['ms'], 2)}x** |")
     out.append("")
-    out.append(f"The tile arithmetic says each element loaded into shared memory can feed {t['reuse_per_loaded_element']} "
-               f"multiply-accumulates, so the ceiling for this change is {t['predicted_speedup_upper_bound']}x. The "
-               f"measurement gives **{t['speedup']}x**, and the gap is the honest lesson: a 512-cubed problem's "
-               f"operands fit in L2 (about 1 MB of f16), so the naive kernel is not actually starved of bandwidth "
-               f"- it is starved of *latency hiding*, which shared memory helps with only partly. Tile reuse pays "
-               f"the full dividend on a problem too big for cache, and this is not that problem.")
+    out.append(f"Both rows land near **1.35x**, against a ceiling of {t['predicted_speedup_upper_bound']}x, and the "
+               f"honest reading is that this instrument does not isolate what tiling is worth. Reason: all four "
+               f"kernels give each thread exactly one output element, so the arithmetic intensity is 1 - one "
+               f"multiply-accumulate per pair of loads - and at that intensity the shared-memory tile saves the "
+               f"same fraction whatever the problem size, because L2 was already absorbing the difference. A "
+               f"production GEMM (the engine's `mmq_nt_kernel`, and `gemm_wmma` before it) gives each thread a "
+               f"whole sub-tile of outputs held in registers, which is what turns a 16 x 16 shared tile into a "
+               f"reuse factor in the hundreds.")
     return out
 
 
@@ -1850,13 +1859,13 @@ def render_ladder_shapes(f):
            f"**{s['prefill']['ms_per_token'] * 1000:,.0f} us** | {s['prefill']['weights_mb']} MB |",
            f"| per-token ratio | | **{s['per_token_ratio']}x** | |"]
     out.append("")
-    out.append(f"Sixteen tokens at once cost almost exactly sixteen times one token - **{s['per_token_ratio']}x per "
-               f"token** - so this kernel gained nothing from batching. That is not a mistake in the measurement; "
-               f"it is what a kernel does when it is *already* compute-bound on scalar unpacking: the weights are "
-               f"read once per row either way, and the extra arithmetic is real work, not reused work. Batching "
-               f"pays when the kernel is bandwidth-bound and the loads are amortised - which is precisely why the "
-               f"real engine's decode path uses `__dp4a` and its prefill path uses tensor cores, and why the "
-               f"threshold between them is a measurement rather than a preference.")
+    out.append(f"Sixteen tokens at once cost **{s['per_token_ratio']}x of one token per token**, so the batch paid: "
+               f"the same weight bytes were unpacked once and used sixteen times. That is the whole economy of a "
+               f"prefill kernel, and it is a *loop-order* property, not a hardware one - unpack the q4_0 block "
+               f"outside the activation loop and the cost is amortised; unpack it inside and batching looks "
+               f"pointless. The first version of this instrument had the loops the wrong way round and reported "
+               f"0.97x: the wrong number is easy to produce, and the right one requires knowing which loop the "
+               f"unpacking belongs outside of.")
     return out
 
 
