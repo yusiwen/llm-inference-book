@@ -531,11 +531,15 @@ the engine left behind.
 <!-- facts: loop.loop-session-measured -->
 | | Bytes |
 |---|---|
-| The file the engine wrote, on disk | **101,058,161** |
+| The two-turn file the engine wrote, on disk | **101,058,161** |
 | Header, 24 layer records, arena bookkeeping, checksum | 101,057,232 |
 | Difference: the host state blob | **929** |
+| The one-turn file, on disk | 101,057,857 |
+| Its host blob, for a single exchange | 625 |
 
-The difference is the host blob - a 4-byte length and 925 bytes of the conversation's JSON - which the byte map shows as `4 + n` because its size belongs to the caller, not the container. Everything else matches to the byte, which is what makes the arithmetic in this section a measurement rather than a model of one.
+The difference is the host blob - a 4-byte length and 925 bytes the container does not interpret - which the byte map shows as `4 + n` because its size belongs to the caller, not the container. Everything else matches to the byte, which is what makes the arithmetic in this section a measurement rather than a model of one.
+
+That blob is **not** the history file beside it: one exchange writes 144 bytes of `s.json` and 625 bytes of host state, because `snapshot_to_json` carries the token stream, the three positions and three flags as well as the messages. The `.kv` is a snapshot of the conversation's *machine* state, with a copy of its history in it.
 <!-- /facts -->
 
 The header's fields are the eight the byte map lists, in the order `create` writes them, and the one line the

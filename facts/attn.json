@@ -15,12 +15,12 @@
   "over_f32_exp": 0
  },
  "decode_step": {
-  "128": 2.6333e-05,
-  "256": 5.3e-05,
-  "512": 0.000105667,
-  "1024": 0.000211667
+  "128": 2.6667e-05,
+  "256": 5.3333e-05,
+  "512": 0.000108,
+  "1024": 0.000218
  },
- "softmax_only_s": 2.3667e-05,
+ "softmax_only_s": 2.7667e-05,
  "mask_effect": {
   "max_abs_out": 0.088061,
   "off_by_one_max_abs": 0.000406,
@@ -29,8 +29,14 @@
   "unmasked_relative": 0.222118,
   "self_weight": 0.002401
  },
+ "cache": {
+  "per_token_per_layer_f16": 512,
+  "all_layers_4k": 50331648,
+  "all_layers_8k": 100663296,
+  "share_of_weights_at_8k": 0.2048
+ },
  "rebuild": {
-  "recompute_kv_s": 0.105109,
+  "recompute_kv_s": 0.110329667,
   "read_kv_s": 6.3667e-05,
   "runs": 5,
   "reps": 3
@@ -46,5 +52,213 @@
  "compiler": "clang -O2",
  "runs": 5,
  "invocation": "clang -O2 -o attn scripts/attn.c -lm ; ./attn qwen2.5-0.5b-instruct-q4_k_m.gguf attn.conf --json facts/attn.json",
- "note": "Weight matrices, activations and the KV cache are all f32 and the dots accumulate in double, on purpose: the chapter is about the shape of attention, not about a kernel. The prefix is 1,024 tokens - a real embedding row per position, normalised as the residual stream would be - and the score scan covers every (head, position) pair."
+ "note": "Weight matrices, activations and the KV cache are all f32 and the dots accumulate in double, on purpose: the chapter is about the shape of attention, not about a kernel. The prefix is 1,024 tokens - a real embedding row per position, normalised as the residual stream would be - and the score scan covers every (head, position) pair. The line-by-line measurement is layer 0; `sweep` repeats the score scan on all 24 layers, which is what makes the bound statement model-wide.",
+ "sweep": {
+  "layers": [
+   {
+    "layer": 0,
+    "n": 14336,
+    "abs_mean": 0.4369,
+    "abs_max": 4.6688,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 1,
+    "n": 14336,
+    "abs_mean": 0.5393,
+    "abs_max": 4.3523,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 2,
+    "n": 14336,
+    "abs_mean": 0.6336,
+    "abs_max": 4.8292,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 3,
+    "n": 14336,
+    "abs_mean": 0.5293,
+    "abs_max": 4.4387,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 4,
+    "n": 14336,
+    "abs_mean": 0.5498,
+    "abs_max": 3.0281,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 5,
+    "n": 14336,
+    "abs_mean": 0.7008,
+    "abs_max": 4.9218,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 6,
+    "n": 14336,
+    "abs_mean": 0.5496,
+    "abs_max": 3.3861,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 7,
+    "n": 14336,
+    "abs_mean": 0.6466,
+    "abs_max": 3.9565,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 8,
+    "n": 14336,
+    "abs_mean": 0.7327,
+    "abs_max": 7.9999,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 9,
+    "n": 14336,
+    "abs_mean": 1.1652,
+    "abs_max": 7.0783,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 10,
+    "n": 14336,
+    "abs_mean": 1.025,
+    "abs_max": 8.6098,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 11,
+    "n": 14336,
+    "abs_mean": 1.6518,
+    "abs_max": 9.4706,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 12,
+    "n": 14336,
+    "abs_mean": 1.1396,
+    "abs_max": 7.8646,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 13,
+    "n": 14336,
+    "abs_mean": 2.0525,
+    "abs_max": 17.0992,
+    "over_f16_exp": 75,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 14,
+    "n": 14336,
+    "abs_mean": 1.1909,
+    "abs_max": 6.7768,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 15,
+    "n": 14336,
+    "abs_mean": 1.2529,
+    "abs_max": 10.4905,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 16,
+    "n": 14336,
+    "abs_mean": 2.5038,
+    "abs_max": 17.3226,
+    "over_f16_exp": 51,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 17,
+    "n": 14336,
+    "abs_mean": 1.0474,
+    "abs_max": 12.2685,
+    "over_f16_exp": 1,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 18,
+    "n": 14336,
+    "abs_mean": 0.8505,
+    "abs_max": 5.2693,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 19,
+    "n": 14336,
+    "abs_mean": 0.777,
+    "abs_max": 4.4567,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 20,
+    "n": 14336,
+    "abs_mean": 0.8676,
+    "abs_max": 4.9393,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 21,
+    "n": 14336,
+    "abs_mean": 0.9832,
+    "abs_max": 6.1869,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 22,
+    "n": 14336,
+    "abs_mean": 1.546,
+    "abs_max": 9.3305,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   },
+   {
+    "layer": 23,
+    "n": 14336,
+    "abs_mean": 1.625,
+    "abs_max": 9.8733,
+    "over_f16_exp": 0,
+    "over_f32_exp": 0
+   }
+  ],
+  "max_abs_over_all": 17.3226,
+  "layer_of_max": 16,
+  "min_abs_max": 3.0281,
+  "pairs_total": 344064,
+  "above_f16_total": 127,
+  "above_f32_total": 0,
+  "layers_above_f16_bound": [
+   13,
+   16,
+   17
+  ],
+  "layers_above_f32_bound": []
+ }
 }

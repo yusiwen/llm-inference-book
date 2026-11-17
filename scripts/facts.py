@@ -857,14 +857,25 @@ def render_provenance(f, name=None):
 def render_attention_scores(f):
     """How large the scores actually are, on the model's own weights."""
     sc = f["scores"]
-    return ["| Quantity | Value |", "|---|---|",
-            f"| (head, cached position) pairs | {sc['n']:,} - 14 heads over a {f.get('geometry', {}).get('n_layer', 24)}-layer "
-            f"model's first layer, 1,024 positions |",
-            f"| Mean absolute score | {sc['abs_mean']:.3f} |",
-            f"| Root mean square | {sc['abs_rms']:.3f} |",
-            f"| Largest absolute score | {sc['abs_max']:.2f} |",
-            f"| Pairs above the f16 exp bound (11.09) | {sc['over_f16_exp']} |",
-            f"| Pairs above the f32 exp bound (88.72) | {sc['over_f32_exp']} |"]
+    out = ["| Quantity | Value |", "|---|---|",
+           f"| (head, cached position) pairs | {sc['n']:,} - 14 heads over a {f.get('geometry', {}).get('n_layer', 24)}-layer "
+           f"model's first layer, 1,024 positions |",
+           f"| Mean absolute score | {sc['abs_mean']:.3f} |",
+           f"| Root mean square | {sc['abs_rms']:.3f} |",
+           f"| Largest absolute score, layer 0 | {sc['abs_max']:.2f} |",
+           f"| Pairs above the f16 exp bound (11.09), layer 0 | {sc['over_f16_exp']} |",
+           f"| Pairs above the f32 exp bound (88.72), layer 0 | {sc['over_f32_exp']} |"]
+    # The sweep is what turns "the scores are small" from a statement about one layer into one about the model.
+    sw = f.get("sweep")
+    if sw:
+        worst = max(sw["layers"], key=lambda r: r["abs_max"])
+        over = ", ".join(str(l) for l in sw["layers_above_f16_bound"]) or "none"
+        out += [f"| Largest absolute score, all {len(sw['layers'])} layers | **{sw['max_abs_over_all']:.2f}**, at layer "
+                f"{sw['layer_of_max']} |",
+                f"| Pairs above the f16 exp bound, all layers | **{sw['above_f16_total']}** of {sw['pairs_total']:,}, "
+                f"in layers {over} |",
+                f"| Pairs above the f32 exp bound, all layers | {sw['above_f32_total']} |"]
+    return out
 
 
 def render_decode_step(f):
@@ -1689,15 +1700,42 @@ def render_loop_session_measured(f):
     s = session_bytes(h["n_layer"], h["n_ctx"], h["row_elems"])
     measured = m["kv_bytes"]
     delta = measured - s["total_empty_host"]
+    one = f.get("single_turn") or {}
     out = ["| | Bytes |", "|---|---|",
-           f"| The file the engine wrote, on disk | **{measured:,}** |",
+           f"| The two-turn file the engine wrote, on disk | **{measured:,}** |",
            f"| Header, {h['n_layer']} layer records, arena bookkeeping, checksum | {s['total_empty_host']:,} |",
            f"| Difference: the host state blob | **{delta:,}** |"]
+    if one.get("kv_bytes"):
+        out.append(f"| The one-turn file, on disk | {one['kv_bytes']:,} |")
+        out.append(f"| Its host blob, for a single exchange | {one['host_blob']:,} |")
     out.append("")
-    out.append(f"The difference is the host blob - a 4-byte length and {delta - 4:,} bytes of the conversation's "
-               f"JSON - which the byte map shows as `4 + n` because its size belongs to the caller, not the "
+    out.append(f"The difference is the host blob - a 4-byte length and {delta - 4:,} bytes the container does not "
+               f"interpret - which the byte map shows as `4 + n` because its size belongs to the caller, not the "
                f"container. Everything else matches to the byte, which is what makes the arithmetic in this "
                f"section a measurement rather than a model of one.")
+    if one.get("history_bytes"):
+        out.append("")
+        out.append(f"That blob is **not** the history file beside it: one exchange writes {one['history_bytes']} bytes "
+                   f"of `s.json` and {one['host_blob']:,} bytes of host state, because `snapshot_to_json` carries the "
+                   f"token stream, the three positions and three flags as well as the messages. The `.kv` is a "
+                   f"snapshot of the conversation's *machine* state, with a copy of its history in it.")
+    return out
+
+
+def render_loop_single_turn(f):
+    """Chapter 20: when the save happens, and what one exchange is worth in bytes."""
+    s1, m = f["single_turn"], f["multi_turn"]
+    out = ["| | One turn | Two turns |", "|---|---|---|",
+           f"| History file, `s.json` | **{s1['history_bytes']:,} B** | {m['history_bytes']:,} B |",
+           f"| KV companion, `s.json.kv` | **{s1['kv_bytes']:,} B** | {m['kv_bytes']:,} B |",
+           f"| Host state blob inside the KV | {s1['host_blob']:,} B | {m['host_blob']:,} B |"]
+    out.append("")
+    out.append(f"One exchange already writes both files, so the save happens on **exit**, not on the second turn - "
+               f"and the second exchange adds only {m['kv_bytes'] - s1['kv_bytes']:,} bytes, all of them host state: "
+               f"the KV region itself is the same size in both files because it is sized by the context, not by "
+               f"the conversation. That {s1['host_blob']:,}-byte blob is also {s1['host_blob'] - s1['history_bytes']:,} "
+               f"bytes larger than the {s1['history_bytes']}-byte history file beside it, which is what Chapter 18 "
+               f"means by a snapshot: the messages, the token stream, the three positions and three flags.")
     return out
 
 
@@ -2007,6 +2045,7 @@ BLOCKS = {
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
     "loop-session-measured": render_loop_session_measured,
+    "loop-single-turn": render_loop_single_turn,
     "loop-runs": render_loop_runs,
     "loop-turns": render_loop_turns,
     "loop-stops": render_loop_stops,

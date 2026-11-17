@@ -73,10 +73,10 @@ builds, and `MINFER_TIMING=1` splits each decode step into sample and forward ti
 <!-- facts: loop.loop-runs -->
 | Run | Shapes built | Build cost | Prefill | Decode |
 |---|---|---|---|---|
-| prefill-only, 34 prompt tokens, `-n 1` | nt=34, nt=1 | 0.9 / 0.4 ms | 231.8 tok/s | - |
-| run 1: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 233.7 tok/s | 78.7 tok/s |
-| run 2: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 210.3 tok/s | 80.0 tok/s |
-| run 3: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 253.4 tok/s | 84.7 tok/s |
+| prefill-only, 34 prompt tokens, `-n 1` | nt=34, nt=1 | 0.5 / 0.4 ms | 251.5 tok/s | - |
+| run 1: 36 prompt + 24 generated | nt=36, nt=1 | 0.5 ms / 0.4 ms | 195.9 tok/s | 95.3 tok/s |
+| run 2: 36 prompt + 24 generated | nt=36, nt=1 | 0.6 ms / 0.4 ms | 299.3 tok/s | 106.4 tok/s |
+| run 3: 36 prompt + 24 generated | nt=36, nt=1 | 0.5 ms / 0.4 ms | 268.2 tok/s | 93.1 tok/s |
 
 Every run builds **exactly two graphs**, whether it generates one token or twenty-four: the prompt's shape and the decode shape. That is the reuse cache working - 24 decode steps, one build for decode - and it is why the second rebuild's `nt=1` is the interesting line: the shape of a step that repeats.
 <!-- /facts -->
@@ -90,13 +90,13 @@ What that costs and what it does not:
 <!-- facts: loop.loop-cost -->
 | Phase | Per token | What it is |
 |---|---|---|
-| Prefill, 34 tokens in one graph | **4.31 ms** | one forward over the whole prompt |
-| Decode, steady | **12.50 ms** | one forward over one token, re-reading the weights |
-| of which: the forward pass | 12.98 ms (99.2%) | the model's arithmetic and memory traffic |
-| of which: the sampler | 0.09 ms (0.8%) | top-k, top-p, the penalties, one token |
-| Graph build, once per shape | 0.9 / 0.4 ms | build + backend assign + alloc, for the prompt shape then the decode shape |
+| Prefill, 34 tokens in one graph | **3.98 ms** | one forward over the whole prompt |
+| Decode, steady | **10.49 ms** | one forward over one token, re-reading the weights |
+| of which: the forward pass | 10.35 ms (99.2%) | the model's arithmetic and memory traffic |
+| of which: the sampler | 0.08 ms (0.8%) | top-k, top-p, the penalties, one token |
+| Graph build, once per shape | 0.5 / 0.4 ms | build + backend assign + alloc, for the prompt shape then the decode shape |
 
-Two numbers to keep. The build is **3.1% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 300 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
+Two numbers to keep. The build is **3.9% of one decode step** even though it happens once, so it cannot be what makes a decode step slow - a graph that never got reused would cost 24 builds for 24 tokens, which is 9.6 ms of 252 ms. And the sampler is **0.8%**: a decode step on this engine is the forward pass, and optimising the sampler is optimising noise.
 <!-- /facts -->
 
 The per-run rows carry the spread - prefill ranged 210 to 253 tok/s across three runs on an idle laptop - which
@@ -218,6 +218,19 @@ The session file is also the honest end of Chapter 18's story: the byte map that
 writer's field order is here read out of a file the engine wrote, and its header matches - `MINFERKV`, version 2,
 f16 flag clear, backend tag 0, 24 layers, `n_ctx` 4096, `n_embd` 128, `row_elems` 128.
 
+**When is the file written?** A two-turn run cannot answer that on its own - a save per turn and a save on exit
+both leave a file behind. One exchange can:
+
+<!-- facts: loop.loop-single-turn -->
+| | One turn | Two turns |
+|---|---|---|
+| History file, `s.json` | **144 B** | 276 B |
+| KV companion, `s.json.kv` | **101,057,857 B** | 101,058,161 B |
+| Host state blob inside the KV | 625 B | 929 B |
+
+One exchange already writes both files, so the save happens on **exit**, not on the second turn - and the second exchange adds only 304 bytes, all of them host state: the KV region itself is the same size in both files because it is sized by the context, not by the conversation. That 625-byte blob is also 481 bytes larger than the 144-byte history file beside it, which is what Chapter 18 means by a snapshot: the messages, the token stream, the three positions and three flags.
+<!-- /facts -->
+
 ### Lesson 4 · Cancellation, stop ids and a drain that finishes the token in flight
 
 A loop can end for more reasons than "it finished", and an engine that returns a string has thrown that
@@ -295,7 +308,7 @@ The four ends of this loop, with the evidence each leaves behind:
 |---|---|---|
 | the model chose its end-of-generation token | 0 | `Generated:` line in every ordinary run |
 | `n_predict` reached | 0 | `[turn 1] stopped by n_predict / context limit` - printed by the conversation frontend |
-| cancelled (SIGINT) | 130 | `[cancelled] SIGINT - 1 of 600 requested tokens` |
+| cancelled (SIGINT) | 130 | `[cancelled] SIGINT - 3 of 600 requested tokens` |
 | context overflow | 101 | `position 59 exceeds n_ctx 59 (KV region overflow)` |
 
 Exit 130 is 128 + SIGINT, and it is a *decision*: the CLI prints its summary, says how many of the requested tokens it produced (with an em dash the book prints as a hyphen, because its figures and pages are ASCII), and exits with the shell's cancellation code so a script can tell a cancelled run from a finished one. Exit 101 is Rust's panic code, and it is not a decision the loop made - it is the KV region's own assertion firing, because the prompt filled the region exactly and the first generated token had nowhere to go.

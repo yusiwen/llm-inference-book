@@ -115,12 +115,28 @@ The arithmetic on this model's own weights, over every head and every cached pos
 | (head, cached position) pairs | 14,336 - 14 heads over a 24-layer model's first layer, 1,024 positions |
 | Mean absolute score | 0.437 |
 | Root mean square | 0.656 |
-| Largest absolute score | 4.67 |
-| Pairs above the f16 exp bound (11.09) | 0 |
-| Pairs above the f32 exp bound (88.72) | 0 |
+| Largest absolute score, layer 0 | 4.67 |
+| Pairs above the f16 exp bound (11.09), layer 0 | 0 |
+| Pairs above the f32 exp bound (88.72), layer 0 | 0 |
+| Largest absolute score, all 24 layers | **17.32**, at layer 16 |
+| Pairs above the f16 exp bound, all layers | **127** of 344,064, in layers 13, 16, 17 |
+| Pairs above the f32 exp bound, all layers | 0 |
 <!-- /facts -->
 
-Two things to read out of that table. The scores are **small**: a mean magnitude of 0.44 and a maximum of 4.67. And that means the f16 softmax overflow Chapter 9 measured the bound for - `exp` of 11.09 - **does not happen here**. Zero pairs, on real weights, at layer 0. That is not a licence to skip the max subtraction: Chapter 9's point was that the bound belongs to the format, not to the data, and this model at this layer is one sample. A different model, a different layer, or a prompt whose logits concentrate can cross it; the subtraction costs one pass and one register, and the alternative is an `inf` that propagates into every layer above.
+Two things to read out of that table, and then a third that the first reading got wrong.
+
+The scores at layer 0 are **small**: a mean magnitude of 0.44 and a maximum of 4.67, below the f16 `exp` bound
+of 11.09 that Chapter 9 measured, with zero pairs over it. It is tempting to stop there and conclude that the
+max subtraction is unnecessary for this model. The last three rows are why that conclusion is wrong: swept over
+**all 24 layers**, the largest score is **17.32, at layer 16**, and **127 pairs cross the f16 bound**, in layers
+13, 16 and 17 - 75 of them in layer 13 alone. Layer 0 is one of the *safest* layers in the model, not a typical
+one, which is exactly the mistake a single-layer measurement invites.
+
+So the bound does not belong to the data - it belongs to the format, as Chapter 9 said, and this model crosses
+it in three of its twenty-four layers. Without the max subtraction those 127 exponents overflow to `inf` and
+propagate into every layer above them. The subtraction costs one pass and one register, and this is the
+measurement that says the pass is not optional: the same weights that look harmless at the front of the network
+are not harmless in the middle of it.
 
 What the numbers *do* say is where the time goes. The softmax over a 1,024-wide row, measured alone, is 24 microseconds for fourteen heads; the step it belongs to is 212. So the exponent is **11 per cent** of a decode step, and the two matmuls are the other 89 per cent. Compare that with Chapter 9, where the softmax was 95 per cent of the *pointwise* work at 4,096 tokens: both statements are true, because "the pointwise work" and "the step" are different denominators. The chapter that measures has to say which one it means.
 
@@ -342,10 +358,10 @@ The measurement that separates them is the next table read the other way: one de
 | Cached prefix | One decode step | Per 100 tokens of prefix | Softmax share of the step |
 |---|---|---|---|
 | tokens | microseconds | nanoseconds | per cent |
-| 128 | 26.3 | 21 | 90 |
-| 256 | 53.0 (2.0x the previous row) | 21 | 45 |
-| 512 | 105.7 (2.0x the previous row) | 21 | 22 |
-| 1,024 | 211.7 (2.0x the previous row) | 21 | 11 |
+| 128 | 26.7 | 21 | 104 |
+| 256 | 53.3 (2.0x the previous row) | 21 | 52 |
+| 512 | 108.0 (2.0x the previous row) | 21 | 26 |
+| 1,024 | 218.0 (2.0x the previous row) | 21 | 13 |
 <!-- /facts -->
 
 The softmax column is the one to keep. Its share of the step **falls** as the prefix grows - most of a step at 128 tokens, 11 per cent at 1,024 - because the exponential is linear in the row while the two matmuls are linear in the row for every element. At small prefixes the softmax dominates a step; at long ones the multiplies do. A chapter that optimised the softmax and stopped would have optimised the part that stops mattering.
@@ -449,9 +465,9 @@ Now the honest part, and it is a negative result this chapter keeps rather than 
 <!-- facts: attn.rebuild -->
 | Operation | Time | Bytes | What it replaces |
 |---|---|---|---|
-| Recompute K and V for 1,024 positions | 105.1 ms | 1.00 MiB written | what an engine without a cache does on every token |
-| Read the same K and V | 64 us | 1.00 MiB read | 1,651x cheaper than recomputing |
-| Attend over the cached prefix | 212 us | the same bytes | 497x cheaper than recomputing |
+| Recompute K and V for 1,024 positions | 110.3 ms | 1.00 MiB written | what an engine without a cache does on every token |
+| Read the same K and V | 64 us | 1.00 MiB read | 1,733x cheaper than recomputing |
+| Attend over the cached prefix | 218 us | the same bytes | 506x cheaper than recomputing |
 <!-- /facts -->
 
 105 milliseconds to rebuild a 1,024-token prefix against 64 microseconds to read it back, and 212 microseconds to do the entire attention step over it. The cache is worth 500x on this model at this length, and the ratio grows with the prefix because the rebuild is quadratic while the read is linear. That is also the honest cost of the correctness gate: the naive oracle costs 105 milliseconds per step if you run it on every token, so the oracle is a test and not a mode. Run it on a short prompt, compare the cache path against it, and measure performance with the cache alone.

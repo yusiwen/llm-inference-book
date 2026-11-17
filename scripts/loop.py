@@ -28,6 +28,8 @@ import subprocess
 import tempfile
 import time
 
+import facts as bookfacts  # the session byte map, so the host blob is a subtraction rather than a guess
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RUNS = 3
 PREFILL_PROMPT = "The capital of France is"
@@ -117,8 +119,13 @@ def multi_turn(binary, model):
         header = {"magic": magic.decode("ascii", "replace"), "version": version, "flags": flags,
                   "backend_tag": backend, "n_layer": n_layer, "n_ctx": n_ctx,
                   "n_embd": n_embd, "row_elems": row_elems}
+    blob = None
+    if kv.exists() and header:
+        empty = bookfacts.session_bytes(header["n_layer"], header["n_ctx"], header["row_elems"])
+        blob = kv.stat().st_size - empty["total_empty_host"]
     return {"turns": turns, "history_bytes": session.stat().st_size if session.exists() else None,
             "kv_bytes": kv.stat().st_size if kv.exists() else None, "header": header,
+            "host_blob": blob, "host_blob_after_length": blob - 4 if blob else None,
             "layer_record_bytes": 3 * 4 + 2 * (header.get("n_ctx", 0) * header.get("row_elems", 0) * 4)
             if header else None}
 
@@ -161,6 +168,35 @@ def stop_reason(binary, model):
     shot = run(binary, model, ["--backend", "cpu", "-n", "3", "--greedy", GENERATE_PROMPT])
     shot_note = [l.strip() for l in (shot["stdout"] + shot["stderr"]).splitlines() if "stopped by" in l]
     return {"cnv_note": note[-1] if note else None, "single_shot_note": shot_note[-1] if shot_note else None}
+
+
+def single_turn(binary, model):
+    """One turn through `--session`: is the file written at all?
+
+    The two-turn run proves the file exists; it cannot prove *when* it is written, because both a per-turn
+    save and an exit-only save produce a file at the end of a two-turn run. One turn ends the conversation
+    after a single exchange, so the file's presence is the answer - and its size is the answer to a second
+    question, how much of the host blob is the token stream rather than the messages.
+    """
+    work = pathlib.Path(tempfile.mkdtemp(prefix="loop-single-"))
+    session = work / "s.json"
+    r = run(binary, model, ["--backend", "cpu", "--cnv", "-st", "--session", str(session),
+                            "-n", "8", "--greedy", "My name is Ada."])
+    kv = pathlib.Path(str(session) + ".kv")
+    header, blob = {}, None
+    if kv.exists():
+        magic, version, flags, backend, n_layer, n_ctx, n_embd, row_elems = struct.unpack("<8s7I", kv.read_bytes()[:36])
+        header = {"magic": magic.decode("ascii", "replace"), "version": version, "flags": flags,
+                  "backend_tag": backend, "n_layer": n_layer, "n_ctx": n_ctx,
+                  "n_embd": n_embd, "row_elems": row_elems}
+        blob = kv.stat().st_size - bookfacts.session_bytes(n_layer, n_ctx, row_elems)["total_empty_host"]
+    saved = re.search(r"saved (\d+) message", r["stderr"])
+    return {"turns": 1, "exit": r["exit"],
+            "history_bytes": session.stat().st_size if session.exists() else None,
+            "kv_bytes": kv.stat().st_size if kv.exists() else None,
+            "messages": int(saved.group(1)) if saved else None,
+            "header": header,
+            "host_blob": blob, "host_blob_after_length": blob - 4 if blob else None}
 
 
 def main():
@@ -208,6 +244,7 @@ def main():
                              "forward_pct": generate_timed[0]["nums"]["timing"]["forward_pct"]}},
         "prefill_ms_per_token": round(1000 / median([r["nums"]["prefill"]["tok_s"] for r in prefill]), 2),
         "multi_turn": turns,
+        "single_turn": single_turn(binary, model),
         "overflow": overflow(binary, model),
         "n_predict_stop": n_predict_stop(binary, model),
         "stop_reason": stop_reason(binary, model),
