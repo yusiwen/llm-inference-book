@@ -448,14 +448,6 @@
   },
   {
    "pages": [
-    "ch 25"
-   ],
-   "path": "docs/inference_e2e_walkthrough/15-cuda-backend.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "ch 20"
    ],
    "path": "src/advanced.rs",
@@ -492,7 +484,8 @@
   {
    "pages": [
     "appendix/home",
-    "ch 23"
+    "ch 23",
+    "ch 25"
    ],
    "path": "src/cuda.rs",
    "resolved": true,
@@ -544,14 +537,6 @@
     "ch 24"
    ],
    "path": "src/cuda/kernels/ops_elementwise.cu",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "ch 25"
-   ],
-   "path": "src/cuda/methods/capture.rs",
    "resolved": true,
    "symbol": null
   },
@@ -708,7 +693,6 @@
   },
   {
    "pages": [
-    "ch 25",
     "ch 26"
    ],
    "path": "src/graph/cuda_backend.rs",

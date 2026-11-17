@@ -11,6 +11,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | Artifact | Instrument | What it measures | Machine | Runs | Statistic |
 |---|---|---|---|---|---|
 | `alloc` | `scripts/alloc.py` | runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the end, views extending their parent); charges the transient nodes to a first-fit arena and the `kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with `/usr/bin/time -l` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the busiest step, and the class-rounded total; the RSS is the OS's own number for the same run |
+| `attn-dev` | `scripts/attn/attn_dev.cu` | computes one causal prefill row twice - once materialising the score matrix and once with a running max and sum - then runs decode attention against 128 and 8,192 keys, then times 100 small kernels as launches and as one captured CUDA graph replayed | not machine-dependent | - | milliseconds for each path, the score buffer's size, the maximum deviation between the two prefill paths, the bytes read by decode at both context lengths, and the per-launch and per-replay microseconds |
 | `attn` | `scripts/attn.c` | runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it | arm64, Darwin 27.2.0 | 5 | median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position |
 | `cuda-launch` | `scripts/cuda/launch_sheet.cu` | compiles five kernels with the machine's own `nvcc` and times each one with CUDA events over 20 repetitions, the streaming copy first because every later prediction divides by it | not machine-dependent | 20 | per-kernel milliseconds, the byte count it moved, and the implied GB/s; the prediction is computed from the first row, so the table is self-referential by construction |
 | `cuda-seam` | `scripts/seam/seam.cu` | asks the device for a terabyte, then runs one two-second kernel twice - once behind `cudaStreamSynchronize`, once behind a `cudaStreamQuery` poll with a host-owned deadline - and reads `ldd` off the resulting binary | not machine-dependent | - | the error name and string for the failed allocation, the host's blocked milliseconds, the poll's elapsed milliseconds and outcome, and the library list |
@@ -51,6 +52,18 @@ The command behind each row, in full:
 
 ```bash
 python3 scripts/alloc.py ~/git/mine/minfer/target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer ~/git/mine/minfer
+```
+
+### attn-dev
+
+`scripts/attn/attn_dev.cu` - computes one causal prefill row twice - once materialising the score matrix and once with a running max and sum - then runs decode attention against 128 and 8,192 keys, then times 100 small kernels as launches and as one captured CUDA graph replayed.
+
+- **Machine**: not machine-dependent
+- **Runs**: -; milliseconds for each path, the score buffer's size, the maximum deviation between the two prefill paths, the bytes read by decode at both context lengths, and the per-launch and per-replay microseconds
+- **Raw numbers**: `facts/attn-dev.json`
+
+```bash
+scp scripts/attn/attn_dev.cu yusiwen@192.168.2.40:/tmp/ch25-attn/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o attn_dev attn_dev.cu ; ./attn_dev
 ```
 
 ### attn

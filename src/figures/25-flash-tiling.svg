@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 330" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="Attention prefill tiled so the score matrix never materializes: the causal triangle of a 1024-token prompt, the tiles that cover it, and the running max and sum that replace a full row.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .95; }
+    .fig-a-tri  { fill: #4d86b8; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-skip { fill: #4a6577; fill-opacity: .12; stroke: var(--quote-border, #4a6577); stroke-width: .5; }
+    .fig-a-run  { fill: #3f7f76; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+    .g-arrow { stroke: var(--quote-border, #4a6577); stroke-width: 1.1; opacity: .75; fill: none; }
+  </style>
+  <text class="g-cap" x="24" y="24">THE SCORE MATRIX THAT NEVER EXISTS</text>
+  <text class="g-s" x="24" y="44">a row of scores is needed by the softmax and by nothing else, so it is consumed as it is produced</text>
+  <text class="g-lbl" x="40" y="72">query rows</text>
+  <text class="g-lbl" x="120" y="66">keys -></text>
+  <g>
+    <rect x="120" y="76" width="24" height="24" class="fig-a-tri"/><rect x="146" y="76" width="24" height="24" class="fig-a-skip"/><rect x="172" y="76" width="24" height="24" class="fig-a-skip"/><rect x="198" y="76" width="24" height="24" class="fig-a-skip"/><rect x="224" y="76" width="24" height="24" class="fig-a-skip"/>
+    <rect x="120" y="102" width="24" height="24" class="fig-a-tri"/><rect x="146" y="102" width="24" height="24" class="fig-a-tri"/><rect x="172" y="102" width="24" height="24" class="fig-a-skip"/><rect x="198" y="102" width="24" height="24" class="fig-a-skip"/><rect x="224" y="102" width="24" height="24" class="fig-a-skip"/>
+    <rect x="120" y="128" width="24" height="24" class="fig-a-tri"/><rect x="146" y="128" width="24" height="24" class="fig-a-tri"/><rect x="172" y="128" width="24" height="24" class="fig-a-tri"/><rect x="198" y="128" width="24" height="24" class="fig-a-skip"/><rect x="224" y="128" width="24" height="24" class="fig-a-skip"/>
+    <rect x="120" y="154" width="24" height="24" class="fig-a-tri"/><rect x="146" y="154" width="24" height="24" class="fig-a-tri"/><rect x="172" y="154" width="24" height="24" class="fig-a-tri"/><rect x="198" y="154" width="24" height="24" class="fig-a-tri"/><rect x="224" y="154" width="24" height="24" class="fig-a-skip"/>
+    <rect x="120" y="180" width="24" height="24" class="fig-a-tri"/><rect x="146" y="180" width="24" height="24" class="fig-a-tri"/><rect x="172" y="180" width="24" height="24" class="fig-a-tri"/><rect x="198" y="180" width="24" height="24" class="fig-a-tri"/><rect x="224" y="180" width="24" height="24" class="fig-a-tri"/>
+  </g>
+  <text class="g-m" x="40" y="150">one block</text>
+  <text class="g-m" x="40" y="166">per query</text>
+  <text class="g-m" x="262" y="92">scored tile: kept in registers</text>
+  <text class="g-m" x="262" y="108">skipped: the causal bound says</text>
+  <text class="g-m" x="262" y="122">these keys are in the future</text>
+  <text class="g-m" x="262" y="146">the triangle is one square of scores per</text>
+  <text class="g-m" x="262" y="160">prompt, and at long context it is</text>
+  <text class="g-m" x="262" y="174">megabytes that exist only to be multiplied once</text>
+  <rect x="480" y="76" width="150" height="52" rx="2" class="fig-a-run"/>
+  <text class="g-lbl" x="555" y="96" text-anchor="middle">running max m</text>
+  <text class="g-lbl" x="555" y="112" text-anchor="middle">running sum l</text>
+  <text class="g-m" x="480" y="146">updated once per tile, in</text>
+  <text class="g-m" x="480" y="160">registers; the old sum is</text>
+  <text class="g-m" x="480" y="174">rescaled by exp(m_old - m_new)</text>
+  <path class="g-arrow" d="M410 100 L474 100"/>
+  <path class="g-arrow" d="M240 110 L274 110"/>
+  <line class="g-rule" x1="24" y1="216" x2="786" y2="216"/>
+  <text class="g-m" x="24" y="240">The chapter's measurement: the same row computed with the matrix materialised was nine times slower and</text>
+  <text class="g-m" x="24" y="256">wrote megabytes of scores; computed this way it wrote nothing, and the two agree exactly. At long context</text>
+  <text class="g-m" x="24" y="272">the matrix outgrows the device, which is why this is not an optimisation but the way prefill works at all.</text>
+  <text class="g-m" x="24" y="298">The same identity scales outward: a tile inside a kernel, a split across kernels (Lesson 4), a request</text>
+  <text class="g-m" x="24" y="314">across a server (Chapter 27) - each is one more level of "rescale the old sum when the max moves".</text>
+</svg>

@@ -1,0 +1,84 @@
+{
+ "device": "NVIDIA GB10",
+ "compute_cap": "12.1",
+ "sm_count": 48,
+ "head_dim": 64,
+ "prefill_seq": 1024,
+ "block": 64,
+ "results": [
+  {
+   "name": "prefill_materialised",
+   "ms": 3.5804,
+   "bytes": 4194304,
+   "value": 0.0
+  },
+  {
+   "name": "prefill_streamed",
+   "ms": 0.3899,
+   "bytes": 0,
+   "value": 0.0
+  },
+  {
+   "name": "decode_attn_ctx128",
+   "ms": 0.0122,
+   "bytes": 32768,
+   "value": 0.0
+  },
+  {
+   "name": "decode_attn_ctx8192",
+   "ms": 0.2203,
+   "bytes": 2097152,
+   "value": 0.0
+  },
+  {
+   "name": "hundred_launches",
+   "ms": 0.2444,
+   "bytes": 0,
+   "value": 100.0
+  },
+  {
+   "name": "graph_replay",
+   "ms": 0.079,
+   "bytes": 0,
+   "value": 100.0
+  }
+ ],
+ "prefill": {
+  "materialised_ms": 3.5804,
+  "streamed_ms": 0.3899,
+  "speedup": 9.18,
+  "score_buffer_mb": 4.2,
+  "max_abs_diff": 0.0,
+  "note": "both compute the same causal row; the difference is that one writes a seq x seq score matrix to device memory and reads it back three times, and the other keeps the row in registers with a running max and a running sum"
+ },
+ "decode": {
+  "contexts": [
+   {
+    "ctx": 128,
+    "ms": 0.0122,
+    "bytes_read": 32768,
+    "gb_s": 2.69
+   },
+   {
+    "ctx": 8192,
+    "ms": 0.2203,
+    "bytes_read": 2097152,
+    "gb_s": 9.52
+   }
+  ],
+  "byte_ratio_8k_over_128": 64.0,
+  "time_ratio_8k_over_128": 18.06
+ },
+ "graph": {
+  "kernels": 100,
+  "launch_ms": 0.2444,
+  "replay_ms": 0.079,
+  "per_launch_us": 2.44,
+  "per_replay_us": 0.79,
+  "saved_pct": 67.7
+ },
+ "artifact": "attn-dev",
+ "host": "yusiwen@192.168.2.40",
+ "arch": "sm_121",
+ "invocation": "scp scripts/attn/attn_dev.cu yusiwen@192.168.2.40:/tmp/ch25-attn/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o attn_dev attn_dev.cu ; ./attn_dev"
+}

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 300" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="A hundred small kernel launches per decode step against one captured graph replayed, on the same time axis. Launched one at a time the host pays a round trip per kernel; replayed, the driver walks a recorded dependency graph.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .95; }
+    .fig-a-host { fill: #b85c4d; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .fig-a-gpu  { fill: #3f7f76; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .fig-a-cap  { fill: #4d86b8; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+    .g-axis { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .6; }
+  </style>
+  <text class="g-cap" x="24" y="24">A HUNDRED LAUNCHES, THEN ONE REPLAY</text>
+  <text class="g-s" x="24" y="44">the graph does not change a kernel; it removes the host round trip between them</text>
+  <text class="g-lbl" x="24" y="86">launched</text>
+  <g>
+    <rect x="110" y="70" width="14" height="22" class="fig-a-host"/><rect x="134" y="70" width="14" height="22" class="fig-a-gpu"/><rect x="158" y="70" width="14" height="22" class="fig-a-host"/><rect x="182" y="70" width="14" height="22" class="fig-a-gpu"/><rect x="206" y="70" width="14" height="22" class="fig-a-host"/><rect x="230" y="70" width="14" height="22" class="fig-a-gpu"/><rect x="254" y="70" width="14" height="22" class="fig-a-host"/><rect x="278" y="70" width="14" height="22" class="fig-a-gpu"/><rect x="302" y="70" width="14" height="22" class="fig-a-host"/><rect x="326" y="70" width="14" height="22" class="fig-a-gpu"/><rect x="350" y="70" width="14" height="22" class="fig-a-host"/><rect x="374" y="70" width="14" height="22" class="fig-a-gpu"/>
+  </g>
+  <text class="g-m" x="396" y="86">host submits, GPU runs, host submits ...</text>
+  <text class="g-m" x="24" y="112">one round trip per kernel, most of the cost before the GPU does any work</text>
+  <text class="g-lbl" x="24" y="152">replayed</text>
+  <rect x="110" y="136" width="30" height="22" class="fig-a-cap"/>
+  <text class="g-m" x="145" y="152">capture once</text>
+  <g>
+    <rect x="230" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="248" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="266" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="284" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="302" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="320" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="338" y="136" width="14" height="22" class="fig-a-gpu"/><rect x="356" y="136" width="14" height="22" class="fig-a-gpu"/>
+  </g>
+  <text class="g-m" x="378" y="152">the same 100 kernels, submitted as one unit, no round trips</text>
+  <line class="g-axis" x1="110" y1="182" x2="700" y2="182"/>
+  <text class="g-m" x="110" y="198">0</text>
+  <text class="g-m" x="690" y="198" text-anchor="end">time</text>
+  <text class="g-m" x="24" y="220">The bars are drawn to the measured ratio, not to scale in absolute time: what matters is that the same work</text>
+  <text class="g-m" x="24" y="236">costs two thirds less to submit as a graph than as individual launches. At a hundred kernels a step that is the</text>
+  <text class="g-m" x="24" y="252">difference between a quarter of a millisecond and a third of it, per token.</text>
+  <line class="g-rule" x1="24" y1="264" x2="786" y2="264"/>
+  <text class="g-m" x="24" y="284">Capture is unsafe when the buffers are reallocated, when a kernel's arguments change per step, or when a</text>
+  <text class="g-m" x="24" y="298">host synchronisation sits inside the captured region - and the engine refuses rather than replaying a stale graph.</text>
+</svg>

@@ -667,6 +667,14 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "attn-dev": ("scripts/attn/attn_dev.cu",
+                 "computes one causal prefill row twice - once materialising the score matrix and once with a "
+                 "running max and sum - then runs decode attention against 128 and 8,192 keys, then times 100 "
+                 "small kernels as launches and as one captured CUDA graph replayed",
+                 "milliseconds for each path, the score buffer's size, the maximum deviation between the two "
+                 "prefill paths, the bytes read by decode at both context lengths, and the per-launch and "
+                 "per-replay microseconds",
+                 ),
     "ladder": ("scripts/ladder/ladder.cu",
                "compiles six kernels - elementwise, gather, naive f16 GEMM, tiled f16 GEMM, q4_0 GEMV at M=1 and "
                "the same q4_0 weights at M=16 - and checks each against a host reference from the same bytes "
@@ -1735,6 +1743,64 @@ def render_fam_deltas(f):
     return out
 
 
+def render_attn_prefill(f):
+    """Chapter 25: the score matrix, materialised and not."""
+    p = f["prefill"]
+    out = ["| Prefill attention, 1,024 keys, head dim 64 | Time | Score buffer | Agrees with the other path |",
+           "|---|---|---|---|",
+           f"| materialised - the row written to device memory and read back | {p['materialised_ms'] * 1000:,.0f} us | "
+           f"**{p['score_buffer_mb']} MB** | - |",
+           f"| streamed - running max and running sum, the row never leaves registers | "
+           f"**{p['streamed_ms'] * 1000:,.0f} us** | 0 | max abs diff {p['max_abs_diff']:.1e} |",
+           f"| speedup | **{p['speedup']}x** | | |"]
+    out.append("")
+    out.append(f"The buffer is the whole story: {p['score_buffer_mb']} MB of scores for a 1,024-token prompt with "
+               f"one head, written once and read back three times, to compute an output of 64 floats per row. The "
+               f"streamed version computes the same numbers - the last column says the two agree exactly - and "
+               f"never allocates the matrix at all, which is what makes **{p['speedup']}x** a memory-traffic "
+               f"result rather than an arithmetic one. At 8,192 tokens the buffer would be 256 MB and the ratio "
+               f"would be worse; that growth is why flash attention is not an optimisation but the only way "
+               f"prefill works at long context.")
+    return out
+
+
+def render_attn_decode(f):
+    """Chapter 25: decode attention over a cache that grows."""
+    cs = f["decode"]["contexts"]
+    out = ["| Decode attention, one query | Time | K read | Effective bandwidth |", "|---|---|---|---|"]
+    for c in cs:
+        out.append(f"| cache of {c['ctx']:,} keys | {c['ms'] * 1000:,.0f} us | {c['bytes_read'] / 1e6:.2f} MB | "
+                   f"{c['gb_s']:.1f} GB/s |")
+    out.append(f"| 8,192 keys against 128 | | {f['decode']['byte_ratio_8k_over_128']:.0f}x the bytes | "
+               f"{f['decode']['time_ratio_8k_over_128']:.0f}x the time |")
+    out.append("")
+    out.append(f"Sixty-four times the cache costs sixty-four times the time: decode attention is linear in "
+               f"context, with no economy of scale, because every key must be read and scored once. The bandwidth "
+               f"column is the interesting one - **{cs[-1]['gb_s']:.1f} GB/s** against the machine's 247 - and it "
+               f"is not a bug in the kernel: one block on one multiprocessor cannot saturate a device's memory "
+               f"system. That is the case for split-KV (Lesson 4): cut the cache into pieces, give each piece a "
+               f"block on its own SM, and reduce the partials afterwards.")
+    return out
+
+
+def render_attn_graph(f):
+    """Chapter 25: what a captured graph saves per decode step."""
+    g = f["graph"]
+    out = ["| 100 small kernels | Time for all 100 | Per kernel |", "|---|---|---|",
+           f"| launched one at a time | {g['launch_ms'] * 1000:,.0f} us | {g['per_launch_us']} us |",
+           f"| captured once, replayed as one graph | **{g['replay_ms'] * 1000:,.0f} us** | "
+           f"**{g['per_replay_us']} us** |",
+           f"| saved | **{g['saved_pct']}%** | |"]
+    out.append("")
+    out.append(f"The per-launch figures are the host-side cost of asking the driver to start a kernel - "
+               f"{g['per_launch_us']} us of it, before the GPU does any work - and a decode step of a real model "
+               f"issues a hundred or more. The graph removes **{g['saved_pct']} per cent** of that, because the "
+               f"sequence is recorded once as a dependency DAG and submitted as a single unit: the driver walks a "
+               f"list instead of a hundred round trips. It is not a kernel optimisation at all, which is why it "
+               f"stacks with every other chapter in this part.")
+    return out
+
+
 def render_ladder_kernels(f):
     """Chapter 24: the five rungs, each with its own tolerance and its own deviation from the host reference."""
     shapes = {"eltwise_relu": "32 Mi floats", "gather_embed": "32 rows x 1024",
@@ -2318,6 +2384,9 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "attn-prefill": render_attn_prefill,
+    "attn-decode": render_attn_decode,
+    "attn-graph": render_attn_graph,
     "ladder-kernels": render_ladder_kernels,
     "ladder-tiling": render_ladder_tiling,
     "ladder-shapes": render_ladder_shapes,

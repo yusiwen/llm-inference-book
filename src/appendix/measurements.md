@@ -12,12 +12,12 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Chapters | 29 | `ls -d src/[0-9][0-9]-*/ \| wc -l` |
 | Lessons (checklist items under `## Lessons`) | 146 | counted per page by `scripts/probe.py` |
 | Pages under `src/` | 44 | `find src -name '*.md' \| wc -l` |
-| Prose bytes under `src/` | 907039 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
-| Status | 24 written / 0 draft / 5 stub | `rg -o --no-filename 'Status\*\*: \S+' src/[0-9][0-9]-*/index.md \| sort \| uniq -c` |
+| Prose bytes under `src/` | 925852 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
+| Status | 25 written / 0 draft / 4 stub | `rg -o --no-filename 'Status\*\*: \S+' src/[0-9][0-9]-*/index.md \| sort \| uniq -c` |
 | Sources in the reference index | 30 | `python3 scripts/references.py` (prints the count) |
-| minfer citations tracked | 133 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
+| minfer citations tracked | 131 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
 | Behaviour probes recorded | 1 run, 1 probe executed / 7 defined | `ls runs/*.json`, `bash scripts/contract-probes.sh --list` |
-| Figures planned / drawn | 51 / 37 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
+| Figures planned / drawn | 51 / 39 | `FIGURES.md`, `ls src/figures/*.svg \| wc -l` |
 | Reader starter skeleton | 6 crates, 0 dependencies, builds offline | `cp -R starter /tmp/x && cd /tmp/x && cargo build && cargo test` |
 
 None of these are performance numbers. A chapter count is a fact about an outline, not evidence that the book teaches anything.
