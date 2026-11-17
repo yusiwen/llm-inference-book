@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 340" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The GPU memory hierarchy: registers, shared memory and L1, L2, and device memory, with the approximate cost of each and the two levels a decode kernel spends its life in.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; }
+    .fig-a-reg { fill: #4d86b8; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-shm { fill: #3f7f76; fill-opacity: .40; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-l2  { fill: #8f7ad1; fill-opacity: .32; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-hbm { fill: #8a6a10; fill-opacity: .30; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+    .fig-a-hot { stroke: #b85c4d; stroke-width: 1.6; fill: none; }
+  </style>
+  <text class="g-cap" x="24" y="24">THE FUNNEL, AND THE TWO LEVELS DECODE LIVES IN</text>
+  <text class="g-s" x="24" y="44">cost rises as you go down; capacity rises faster, which is the whole design</text>
+  <text class="g-lbl" x="24" y="88">registers</text>
+  <rect x="150" y="68" width="150" height="30" rx="2" class="fig-a-reg"/>
+  <text class="g-m" x="162" y="88">~1 cycle, per thread</text>
+  <text class="g-m" x="330" y="80">what an accumulator lives in - a GEMV's 32 partial sums</text>
+  <text class="g-m" x="330" y="94">are registers, and never leave them</text>
+  <text class="g-lbl" x="24" y="138">shared + L1</text>
+  <rect x="150" y="118" width="210" height="30" rx="2" class="fig-a-shm"/>
+  <text class="g-m" x="162" y="138">tens of cycles, one block</text>
+  <text class="g-m" x="330" y="130">a scratchpad you declare, and the only level treated as</text>
+  <text class="g-m" x="330" y="144">an array in a kernel (32 banks, 4 bytes each)</text>
+  <text class="g-lbl" x="24" y="188">L2</text>
+  <rect x="150" y="168" width="270" height="30" rx="2" class="fig-a-l2"/>
+  <text class="g-m" x="162" y="188">hundreds of cycles, whole device</text>
+  <text class="g-m" x="330" y="180">shared by every SM; where a weight goes when two</text>
+  <text class="g-m" x="330" y="194">layers read it, and the reason locality still matters</text>
+  <text class="g-lbl" x="24" y="238">device memory</text>
+  <rect x="150" y="218" width="330" height="30" rx="2" class="fig-a-hbm"/>
+  <text class="g-m" x="162" y="238">500-800 cycles, 247 GB/s here</text>
+  <text class="g-m" x="330" y="230">every weight is read from here once per token, which</text>
+  <text class="g-m" x="330" y="244">is why a decode step is a bandwidth measurement</text>
+  <line class="g-rule" x1="24" y1="266" x2="786" y2="266"/>
+  <path class="fig-a-hot" d="M136 76 L136 232"/>
+  <text class="g-m" x="144" y="262">decode touches these two</text>
+  <text class="g-m" x="24" y="292">The horizontal width is capacity, not speed: registers are kilobytes, HBM here is 128 GB. A kernel that</text>
+  <text class="g-m" x="24" y="308">keeps its accumulation in registers and streams its weights through HBM is using the machine as built;</text>
+  <text class="g-m" x="24" y="324">one that spills to shared memory or re-reads L2 has moved work to a slower level without being asked to.</text>
+</svg>

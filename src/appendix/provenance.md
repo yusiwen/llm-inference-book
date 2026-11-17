@@ -12,6 +12,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 |---|---|---|---|---|---|
 | `alloc` | `scripts/alloc.py` | runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the end, views extending their parent); charges the transient nodes to a first-fit arena and the `kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with `/usr/bin/time -l` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the busiest step, and the class-rounded total; the RSS is the OS's own number for the same run |
 | `attn` | `scripts/attn.c` | runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it | arm64, Darwin 27.2.0 | 5 | median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position |
+| `cuda-launch` | `scripts/cuda/launch_sheet.cu` | compiles five kernels with the machine's own `nvcc` and times each one with CUDA events over 20 repetitions, the streaming copy first because every later prediction divides by it | not machine-dependent | 20 | per-kernel milliseconds, the byte count it moved, and the implied GB/s; the prediction is computed from the first row, so the table is self-referential by construction |
 | `dequant-check` | `scripts/dequant-check.py` | decodes each block format back to f32 and compares it against a second decoder (gguf-py) on the same bytes | not machine-dependent | - | max relative error per format; the bit-exact counts are exhaustive over the blocks sampled |
 | `dispatch` | `scripts/dispatch.py` | runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md` | Darwin 27.2.0, arm64 | per machine | counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised |
 | `dotbench` | `scripts/dotbench.c` | times three scalar kernels on 8,192 real rows of the book's file | Apple M4 Pro | 7 | median of the runs, with the full range beside it |
@@ -60,6 +61,18 @@ python3 scripts/alloc.py ~/git/mine/minfer/target/release/minfer ~/.cache/myfer/
 
 ```bash
 clang -O2 -o attn scripts/attn.c -lm ; ./attn qwen2.5-0.5b-instruct-q4_k_m.gguf attn.conf --json facts/attn.json
+```
+
+### cuda-launch
+
+`scripts/cuda/launch_sheet.cu` - compiles five kernels with the machine's own `nvcc` and times each one with CUDA events over 20 repetitions, the streaming copy first because every later prediction divides by it.
+
+- **Machine**: not machine-dependent
+- **Runs**: 20; per-kernel milliseconds, the byte count it moved, and the implied GB/s; the prediction is computed from the first row, so the table is self-referential by construction
+- **Raw numbers**: `facts/cuda-launch.json`
+
+```bash
+scp scripts/cuda/launch_sheet.cu yusiwen@192.168.2.40:/tmp/ch22-launch-sheet/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o launch_sheet launch_sheet.cu ; ./launch_sheet 20
 ```
 
 ### dequant-check

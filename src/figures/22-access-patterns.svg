@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 400" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="Three warps reading 32 values each: coalesced reads one cache line in one transaction, strided reads 32 lines in 32 transactions, and diverged executes both sides of a branch serially.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; }
+    .fig-a-hit  { fill: #3f7f76; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .7; }
+    .fig-a-miss { fill: #b85c4d; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .7; }
+    .fig-a-idle { fill: #4a6577; fill-opacity: .18; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">THREE WARPS, 32 LOADS EACH</text>
+  <text class="g-s" x="24" y="44">the same number of loads, a different number of memory transactions - which is the whole of coalescing</text>
+  <text class="g-lbl" x="24" y="80">coalesced</text>
+  <text class="g-m" x="24" y="95">lane i reads i</text>
+  <g>
+    <rect x="150" y="70" width="18" height="18" class="fig-a-hit"/><rect x="169" y="70" width="18" height="18" class="fig-a-hit"/><rect x="188" y="70" width="18" height="18" class="fig-a-hit"/><rect x="207" y="70" width="18" height="18" class="fig-a-hit"/><rect x="226" y="70" width="18" height="18" class="fig-a-hit"/><rect x="245" y="70" width="18" height="18" class="fig-a-hit"/><rect x="264" y="70" width="18" height="18" class="fig-a-hit"/><rect x="283" y="70" width="18" height="18" class="fig-a-hit"/>
+    <rect x="150" y="88" width="151" height="3" class="fig-a-hit"/>
+  </g>
+  <text class="g-m" x="344" y="84">32 contiguous floats = one 128-byte line</text>
+  <text class="g-m" x="344" y="98">1 transaction, 100 per cent of it useful</text>
+  <text class="g-lbl" x="24" y="140">strided</text>
+  <text class="g-m" x="24" y="155">lane i reads i x K</text>
+  <g>
+    <rect x="150" y="130" width="18" height="18" class="fig-a-miss"/><rect x="264" y="130" width="18" height="18" class="fig-a-miss"/>
+  </g>
+  <text class="g-m" x="344" y="146">32 floats, 32 different lines, K apart</text>
+  <text class="g-m" x="300" y="142">...</text>
+  <text class="g-m" x="344" y="160">32 transactions, 4 bytes of each useful</text>
+  <text class="g-m" x="344" y="174">what a decode matmul does if written naively</text>
+  <text class="g-lbl" x="24" y="206">diverged</text>
+  <text class="g-m" x="24" y="221">half a warp each way</text>
+  <g>
+    <rect x="150" y="190" width="18" height="18" class="fig-a-hit"/><rect x="169" y="190" width="18" height="18" class="fig-a-hit"/><rect x="188" y="190" width="18" height="18" class="fig-a-hit"/><rect x="207" y="190" width="18" height="18" class="fig-a-hit"/>
+    <rect x="245" y="190" width="18" height="18" class="fig-a-idle"/><rect x="264" y="190" width="18" height="18" class="fig-a-idle"/><rect x="283" y="190" width="18" height="18" class="fig-a-idle"/><rect x="302" y="190" width="18" height="18" class="fig-a-idle"/>
+  </g>
+  <g>
+    <rect x="150" y="214" width="18" height="18" class="fig-a-idle"/><rect x="169" y="214" width="18" height="18" class="fig-a-idle"/><rect x="188" y="214" width="18" height="18" class="fig-a-idle"/><rect x="207" y="214" width="18" height="18" class="fig-a-idle"/>
+    <rect x="245" y="214" width="18" height="18" class="fig-a-hit"/><rect x="264" y="214" width="18" height="18" class="fig-a-hit"/><rect x="283" y="214" width="18" height="18" class="fig-a-hit"/><rect x="302" y="214" width="18" height="18" class="fig-a-hit"/>
+  </g>
+  <text class="g-m" x="344" y="204">two passes over the warp, one per side</text>
+  <text class="g-m" x="344" y="218">cost = the sum of the paths, not the longer one</text>
+  <text class="g-m" x="344" y="232">free when both sides wait on the same loads</text>
+  <line class="g-rule" x1="24" y1="258" x2="786" y2="258"/>
+  <text class="g-m" x="24" y="282">The chapter measured all three on a GB10. The strided warp cost 1.56x its byte count; the divergent</text>
+  <text class="g-m" x="24" y="298">warp cost 1.02x, because a kernel waiting on memory has nothing to serialise. A slogan that names the</text>
+  <text class="g-m" x="24" y="314">pattern without naming the bottleneck will mislead you in both directions - slow where it is not, and</text>
+  <text class="g-m" x="24" y="330">silent where it is.</text>
+</svg>

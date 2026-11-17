@@ -1,17 +1,9 @@
 {
  "baseline": {
   "commit": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
-  "ref": "e844591"
+  "ref": "e8445913064e2871ee3edb1582cb8af49e1c8cbd"
  },
  "citations": [
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "crates/minfer-cli/src",
-   "resolved": true,
-   "symbol": null
-  },
   {
    "pages": [
     "ch 28"
@@ -310,24 +302,7 @@
    "pages": [
     "appendix/home"
    ],
-   "path": "docs/adr",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
    "path": "docs/adr/README.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home",
-    "ch 26"
-   ],
-   "path": "docs/cuda_optimization_steps",
    "resolved": true,
    "symbol": null
   },
@@ -352,14 +327,6 @@
     "ch 29"
    ],
    "path": "docs/cuda_optimization_steps/83-d5-r-stage1-spec-loop.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "docs/cuda_tutorial",
    "resolved": true,
    "symbol": null
   },
@@ -400,14 +367,6 @@
     "ch 27"
    ],
    "path": "docs/debug-dump.md",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "docs/inference_e2e_walkthrough",
    "resolved": true,
    "symbol": null
   },
@@ -534,15 +493,6 @@
   {
    "pages": [
     "appendix/home",
-    "ch 20"
-   ],
-   "path": "src/cuda",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home",
     "ch 23"
    ],
    "path": "src/cuda.rs",
@@ -555,14 +505,6 @@
     "ch 23"
    ],
    "path": "src/cuda/ffi_runtime.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "src/cuda/kernels",
    "resolved": true,
    "symbol": null
   },
@@ -595,14 +537,6 @@
     "ch 24"
    ],
    "path": "src/cuda/kernels/ops_elementwise.cu",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "src/cuda/methods",
    "resolved": true,
    "symbol": null
   },
@@ -644,14 +578,6 @@
     "ch 27"
    ],
    "path": "src/dump.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "src/engine",
    "resolved": true,
    "symbol": null
   },
@@ -703,14 +629,6 @@
     "ch 13"
    ],
    "path": "src/grammar.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "src/graph",
    "resolved": true,
    "symbol": null
   },
@@ -897,14 +815,6 @@
   },
   {
    "pages": [
-    "appendix/home"
-   ],
-   "path": "src/kernel",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "ch 6",
     "ch 8"
    ],
@@ -940,6 +850,14 @@
    "pages": [
     "ch 21"
    ],
+   "path": "src/metal.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
    "path": "src/metal/encode.rs",
    "resolved": true,
    "symbol": null
@@ -962,23 +880,6 @@
   },
   {
    "pages": [
-    "appendix/home",
-    "ch 20"
-   ],
-   "path": "src/metal",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "ch 21"
-   ],
-   "path": "src/metal.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "ch 19"
    ],
    "path": "src/models/mod.rs",
@@ -987,27 +888,9 @@
   },
   {
    "pages": [
-    "appendix/home",
-    "ch 19"
-   ],
-   "path": "src/models/qwen2",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "ch 19"
    ],
    "path": "src/models/qwen2/graph.rs",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
-    "appendix/home",
-    "ch 19"
-   ],
-   "path": "src/models/qwen3",
    "resolved": true,
    "symbol": null
   },
@@ -1066,14 +949,6 @@
    "path": "src/quantize/mix.rs",
    "resolved": true,
    "symbol": "use_more_bits"
-  },
-  {
-   "pages": [
-    "appendix/home"
-   ],
-   "path": "src/quants",
-   "resolved": true,
-   "symbol": null
   },
   {
    "pages": [
@@ -1227,14 +1102,6 @@
   },
   {
    "pages": [
-    "ch 9"
-   ],
-   "path": "src/vec_ops",
-   "resolved": true,
-   "symbol": null
-  },
-  {
-   "pages": [
     "appendix/home",
     "ch 9"
    ],
@@ -1250,5 +1117,5 @@
   "step_records": 110,
   "tests": 758
  },
- "generated": "2026-11-16"
+ "generated": "2026-11-17"
 }
