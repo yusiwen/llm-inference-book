@@ -1,0 +1,821 @@
+// Metal backend L1 device runtime (pre-split `src/metal.rs`).
+//
+// Moved verbatim by the #265 layout split: the `MpsState` singleton and the
+// compile/load paths (`try_new` builds the pipeline cache; the embedded
+// metallib is preferred and the SAME concatenated source build.rs compiled is
+// the fallback). `MpsState` itself stays declared in `src/metal.rs`, the parent
+// module, so its private `inner` field stays reachable here with no visibility
+// edit — the same shape as `CudaState` in `src/cuda.rs`.
+
+use super::*;
+use dispatch2::DispatchData;
+use objc2_foundation::NSString;
+use objc2_metal::{
+    MTLCaptureDescriptor, MTLCaptureDestination, MTLCaptureManager, MTLCreateSystemDefaultDevice,
+    MTLResourceOptions,
+};
+
+// ─── MpsState (global singleton) ─────────────────────────────────────
+
+/// Compile the shader source at runtime (fallback when the build-time metallib is
+/// unavailable — see try_new). ~0.3-1 s per process start.
+///
+/// The source is the SAME concatenation `build.rs` compiles into the metallib:
+/// build.rs writes `$OUT_DIR/minfer.metal` from its `SHADER_SOURCES` list (#265),
+/// so the two compile entry points cannot drift apart.
+/// Why [`MpsState::get`] answered `None`.
+///
+/// Two causes used to share one message ("Metal shader compilation failed"), which
+/// sent a reader into `src/metal/kernels/*.metal` on a machine that has no GPU at
+/// all ([#676](https://github.com/yusiwen/minfer/issues/676), measured on GitHub's
+/// hosted `macos-14`: 13 device tests failed with that text while no `MPS:` line
+/// was logged, because `MTLCreateSystemDefaultDevice` returned nil before anything
+/// was compiled). `GPU_SAFETY.md` requires a guard failure to carry the actual
+/// value, so the two are recorded and printed separately.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Unavailable {
+    /// `MTLCreateSystemDefaultDevice()` returned nil: this machine exposes no
+    /// Metal device (a hosted CI runner does not).
+    NoDevice,
+    /// A device exists and the shader source failed to compile; the string is the
+    /// `NSError` description.
+    Compile(String),
+}
+
+/// The sentence a caller prints for a recorded [`Unavailable`].
+pub fn unavailable_message(reason: &Unavailable) -> String {
+    match reason {
+        Unavailable::NoDevice => "no Metal device (MTLCreateSystemDefaultDevice returned nil) — \
+             this machine cannot run Metal kernels at all"
+            .to_string(),
+        Unavailable::Compile(e) => format!("the shader library failed to compile: {e}"),
+    }
+}
+
+static UNAVAILABLE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+fn record_unavailable(reason: Unavailable) {
+    let _ = UNAVAILABLE.set(unavailable_message(&reason));
+}
+
+/// The recorded reason Metal is unavailable, or `""` when it is available (or was
+/// never initialized). Test helpers interpolate it so a failure names its cause.
+pub fn unavailable_detail() -> &'static str {
+    UNAVAILABLE.get().map(|s| s.as_str()).unwrap_or("")
+}
+
+#[cfg(all(target_os = "macos", feature = "metal"))]
+fn compile_metal_source(device: &MetalDevice) -> Option<MetalLibrary> {
+    let src = include_str!(concat!(env!("OUT_DIR"), "/minfer.metal"));
+    match device.newLibraryWithSource_options_error(&*NSString::from_str(src), None) {
+        Ok(l) => Some(l),
+        Err(e) => {
+            let reason = Unavailable::Compile(e.to_string());
+            eprintln!("MPS: {}", unavailable_message(&reason));
+            record_unavailable(reason);
+            None
+        }
+    }
+}
+
+/// Load the embedded precompiled metallib, falling back to a runtime source
+/// compile when it is empty or fails to load.
+#[cfg(all(target_os = "macos", feature = "metal"))]
+fn load_embedded_or_source(device: &MetalDevice, metallib: &[u8]) -> Option<MetalLibrary> {
+    if !metallib.is_empty() {
+        match device.newLibraryWithData_error(&*DispatchData::from_bytes(metallib)) {
+            Ok(l) => return Some(l),
+            Err(e) => eprintln!(
+                "MPS: precompiled metallib load failed ({e}) — falling back to source compile"
+            ),
+        }
+    }
+    compile_metal_source(device)
+}
+
+// L1 device/runtime surface: the singleton, weight registration, f32 buffer
+// allocation and command-buffer creation. The #255 macOS oracle (`cargo check
+// --release`, annotations stripped) reports no dead member here — loaders,
+// `main.rs`, `graph/metal_backend.rs` and `get_or_grow`/`cmd_buffer` all read
+// them — so the former container-level `#[allow(dead_code)]` is deleted rather
+// than narrowed.
+impl MpsState {
+    pub fn try_new() -> Option<Self> {
+        if crate::config::get().disable_mps {
+            eprintln!("MPS: disabled by MINFER_DISABLE_MPS");
+            return None;
+        }
+        // dummy for non-macOS — never called due to cfg
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        return None;
+
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            let device = match MTLCreateSystemDefaultDevice() {
+                Some(d) => d,
+                None => {
+                    let reason = Unavailable::NoDevice;
+                    eprintln!("MPS: {}", unavailable_message(&reason));
+                    record_unavailable(reason);
+                    return None;
+                }
+            };
+
+            // GPU trace capture: set MINFER_METAL_CAPTURE=1
+            if crate::config::get().metal_capture {
+                let capture = unsafe { MTLCaptureManager::sharedCaptureManager() };
+                let desc = MTLCaptureDescriptor::new();
+                desc.set_capture_device(&*device);
+                desc.setDestination(MTLCaptureDestination::DeveloperTools);
+                let _ = capture.startCaptureWithDescriptor_error(&*desc);
+                eprintln!("MPS: GPU capture started");
+            }
+
+            // Prefer the build-time precompiled metallib (build.rs concatenates
+            // src/metal/kernels/*.metal → minfer.metallib, llama-style: embedded
+            // default.metallib, ggml-metal-device.m:128-234). The embedded
+            // file is EMPTY when the Metal toolchain was unavailable at build
+            // time → fall back to newLibraryWithSource (per-process compile,
+            // ~0.3-1 s). Flags must match the runtime source-compile numerics
+            // exactly — see build.rs for the chosen -O level.
+            // MINFER_METALLIB_FILE overrides the embedded library at runtime
+            // (debug/tuning hook to A/B different -O levels without rebuilds).
+            static METALLIB: &[u8] = include_bytes!(env!("MINFER_METALLIB_PATH"));
+            let override_file = crate::config::get().metallib_file.clone();
+            let lib = if let Some(path) = override_file {
+                match std::fs::read(&path).ok().and_then(|b| {
+                    device
+                        .newLibraryWithData_error(&*DispatchData::from_bytes(&b))
+                        .ok()
+                }) {
+                    Some(l) => l,
+                    None => {
+                        eprintln!("MPS: metallib override {path} unreadable — falling back to embedded/source");
+                        load_embedded_or_source(&device, METALLIB)?
+                    }
+                }
+            } else {
+                load_embedded_or_source(&device, METALLIB)?
+            };
+
+            let get_pl = |name: &str| {
+                let f = match lib.newFunctionWithName(&*NSString::from_str(name)) {
+                    Some(f) => f,
+                    None => {
+                        eprintln!("MPS: no function '{}'", name);
+                        return None;
+                    }
+                };
+                match device.newComputePipelineStateWithFunction_error(&*f) {
+                    Ok(p) => Some(p),
+                    Err(e) => {
+                        eprintln!("MPS: pipeline '{}': {}", name, e);
+                        None
+                    }
+                }
+            };
+
+            let pl_q4_0_f32 = get_pl("kernel_q4_0_f32_matmul")?;
+            let pl_q4_0_f32_multi = get_pl("kernel_q4_0_f32_matmul_multi")?;
+            let pl_q4_0_mm_f32 = get_pl("kernel_q4_0_mm_f32")?;
+            let pl_q4_1_f32 = get_pl("kernel_q4_1_f32_matmul")?;
+            let pl_q4_1_mm_f32 = get_pl("kernel_q4_1_mm_f32")?;
+            let pl_q4_1_f32_multi = get_pl("kernel_q4_1_f32_matmul_multi")?;
+            let pl_q8_0_f32 = get_pl("kernel_q8_0_f32_matmul")?;
+            let pl_q8_0_mm_f32 = get_pl("kernel_q8_0_mm_f32")?;
+            let pl_q8_0_f32_multi = get_pl("kernel_q8_0_f32_matmul_multi")?;
+            let pl_q4_k_f32 = get_pl("kernel_q4_k_f32_matmul")?;
+            let pl_q4_k_mm_f32 = get_pl("kernel_q4_k_mm_f32")?;
+            let pl_q4_k_f32_multi = get_pl("kernel_q4_k_f32_matmul_multi")?;
+            let pl_q6_k_f32 = get_pl("kernel_q6_k_f32_matmul")?;
+            let pl_q6_k_mm_f32 = get_pl("kernel_q6_k_mm_f32")?;
+            let pl_q6_k_f32_multi = get_pl("kernel_q6_k_f32_matmul_multi")?;
+            // #673: the few-row MMA arm (2..16 activation rows), four tilings per type.
+            // Twelve per type: [nsg8: nt1_rt1, nt2_rt1, nt4_rt1, nt1_rt2, nt2_rt2, nt4_rt2]
+            // then the same six for nsg16 — NSG is a function constant, so it cannot be
+            // a runtime parameter (that cost 3.5x; see #673).
+            let pl_q4_k_mma = [
+                // nsg = 8
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt1_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt2_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt4_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt1_rt2")?,
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt2_rt2")?,
+                get_pl("kernel_q4_k_f32_mma_nsg8_nt4_rt2")?,
+                // nsg = 16
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt1_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt2_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt4_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt1_rt2")?,
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt2_rt2")?,
+                get_pl("kernel_q4_k_f32_mma_nsg16_nt4_rt2")?,
+            ];
+            let pl_q6_k_mma = [
+                // nsg = 8
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt1_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt2_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt4_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt1_rt2")?,
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt2_rt2")?,
+                get_pl("kernel_q6_k_f32_mma_nsg8_nt4_rt2")?,
+                // nsg = 16
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt1_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt2_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt4_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt1_rt2")?,
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt2_rt2")?,
+                get_pl("kernel_q6_k_f32_mma_nsg16_nt4_rt2")?,
+            ];
+            let pl_q4_k_mma_n1 = [
+                get_pl("kernel_q4_k_f32_mma_nsg1_nt1_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg1_nt2_rt1")?,
+                get_pl("kernel_q4_k_f32_mma_nsg1_nt4_rt1")?,
+            ];
+            let pl_q6_k_mma_n1 = [
+                get_pl("kernel_q6_k_f32_mma_nsg1_nt1_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg1_nt2_rt1")?,
+                get_pl("kernel_q6_k_f32_mma_nsg1_nt4_rt1")?,
+            ];
+            let pl_q5_0_f32 = get_pl("kernel_q5_0_f32_matmul")?;
+            let pl_q5_0_mm_f32 = get_pl("kernel_q5_0_mm_f32")?;
+            let pl_q5_0_f32_multi = get_pl("kernel_q5_0_f32_matmul_multi")?;
+            let pl_q5_1_f32 = get_pl("kernel_q5_1_f32_matmul")?;
+            let pl_q5_1_mm_f32 = get_pl("kernel_q5_1_mm_f32")?;
+            let pl_q5_1_f32_multi = get_pl("kernel_q5_1_f32_matmul_multi")?;
+            let pl_q5_k_f32 = get_pl("kernel_q5_k_f32_matmul")?;
+            let pl_q5_k_mm_f32 = get_pl("kernel_q5_k_mm_f32")?;
+            let pl_q5_k_f32_multi = get_pl("kernel_q5_k_f32_matmul_multi")?;
+            // #164: f16 weight matmul + embedding gather (Metal twin of #141).
+            let pl_f16_f32 = get_pl("kernel_f16_f32_matmul")?;
+            // #317: f32 weight matmul (twin of CUDA's `launch_f32_f32_matmul`).
+            let pl_f32_f32 = get_pl("kernel_f32_f32_matmul")?;
+            // #208: bf16 weight matmul (twin of CUDA's `bf16_f32_matmul_*`).
+            let pl_bf16_f32 = get_pl("kernel_bf16_f32_matmul")?;
+            let pl_get_rows_q4_0 = get_pl("kernel_get_rows_q4_0")?;
+            let pl_get_rows_f32 = get_pl("kernel_get_rows_f32")?;
+            let pl_get_rows_f32_embed = get_pl("kernel_get_rows_f32_embed")?;
+            let pl_get_rows_q4_k = get_pl("kernel_get_rows_q4_k")?;
+            let pl_get_rows_q4_1 = get_pl("kernel_get_rows_q4_1")?;
+            let pl_get_rows_q5_0 = get_pl("kernel_get_rows_q5_0")?;
+            let pl_get_rows_q5_1 = get_pl("kernel_get_rows_q5_1")?;
+            let pl_get_rows_q8_0 = get_pl("kernel_get_rows_q8_0")?;
+            let pl_get_rows_q6_k = get_pl("kernel_get_rows_q6_k")?;
+            let pl_get_rows_q5_k = get_pl("kernel_get_rows_q5_k")?;
+            let pl_get_rows_f16 = get_pl("kernel_get_rows_f16")?;
+            let pl_get_rows_bf16 = get_pl("kernel_get_rows_bf16")?;
+            let pl_rms_norm = get_pl("kernel_rms_norm_f32")?;
+            let pl_rms_norm_256 = get_pl("kernel_rms_norm_f32_256")?;
+            let pl_add = get_pl("kernel_add_f32")?;
+            let pl_add_bias = get_pl("kernel_add_bias_f32")?;
+            let pl_mul = get_pl("kernel_mul_f32")?;
+            let pl_silu = get_pl("kernel_silu_f32")?;
+            let pl_swiglu = get_pl("kernel_swiglu_f32")?;
+            let pl_rope = get_pl("kernel_rope_f32")?;
+            let pl_gqa_attn = get_pl("kernel_gqa_attn_f32")?;
+            let pl_gqa_attn_f16 = get_pl("kernel_gqa_attn_f16")?;
+            // #310: the packed Q8_0 causal attention kernel.
+            let pl_gqa_attn_q8_0 = get_pl("kernel_gqa_attn_q8_0")?;
+            // E1 `attn_span` read path (issue #44, G5a).
+            let pl_gqa_attn_window = get_pl("kernel_gqa_attn_window_f32")?;
+            let pl_gqa_attn_window_f16 = get_pl("kernel_gqa_attn_window_f16")?;
+            let pl_gqa_attn_window_q8_0 = get_pl("kernel_gqa_attn_window_q8_0")?;
+            // C8b S4 `kv_map` read path (issue #362).
+            let pl_gqa_attn_map = get_pl("kernel_gqa_attn_map_f32")?;
+            let pl_gqa_attn_map_f16 = get_pl("kernel_gqa_attn_map_f16")?;
+            let pl_gqa_attn_map_q8_0 = get_pl("kernel_gqa_attn_map_q8_0")?;
+            let pl_gqa_attn_partial = get_pl("kernel_gqa_attn_partial_f32")?;
+            let pl_gqa_attn_partial_f16 = get_pl("kernel_gqa_attn_partial_f16")?;
+            let pl_gqa_attn_combine = get_pl("kernel_gqa_attn_combine_f32")?;
+            let pl_flash_attn = get_pl("kernel_flash_attn_ext_f32")?;
+            let pl_flash_attn_f16 = get_pl("kernel_flash_attn_ext_f16")?;
+            let pl_flash_attn_hd128 = get_pl("kernel_flash_attn_ext_hd128_f32")?;
+            let pl_flash_attn_hd128_f16 = get_pl("kernel_flash_attn_ext_hd128_f16")?;
+            // #310 mechanism A: the packed Q8_0 decode flash twins.
+            let pl_flash_attn_q8_0 = get_pl("kernel_flash_attn_ext_q8_0")?;
+            let pl_flash_attn_hd128_q8_0 = get_pl("kernel_flash_attn_ext_hd128_q8_0")?;
+            let pl_flash_attn_blk = get_pl("kernel_flash_attn_blk_f32")?;
+            let pl_flash_attn_blk_f16 = get_pl("kernel_flash_attn_blk_f16")?;
+            let pl_flash_attn_blk_hd128 = get_pl("kernel_flash_attn_blk_hd128_f32")?;
+            let pl_flash_attn_blk_hd128_f16 = get_pl("kernel_flash_attn_blk_hd128_f16")?;
+            // #359: fast explicit-span prefill (windowed sibling of the causal blk family).
+            let pl_flash_attn_window_blk = get_pl("kernel_flash_attn_window_blk_f32")?;
+            let pl_flash_attn_window_blk_f16 = get_pl("kernel_flash_attn_window_blk_f16")?;
+            let pl_flash_attn_window_blk_hd128 = get_pl("kernel_flash_attn_window_blk_hd128_f32")?;
+            let pl_flash_attn_window_blk_hd128_f16 =
+                get_pl("kernel_flash_attn_window_blk_hd128_f16")?;
+            // #369: the set-valued `kv_map` siblings.
+            let pl_flash_attn_window_map = get_pl("kernel_flash_attn_window_map_f32")?;
+            let pl_flash_attn_window_map_f16 = get_pl("kernel_flash_attn_window_map_f16")?;
+            let pl_flash_attn_window_map_hd128 = get_pl("kernel_flash_attn_window_map_hd128_f32")?;
+            let pl_flash_attn_window_map_hd128_f16 =
+                get_pl("kernel_flash_attn_window_map_hd128_f16")?;
+            let pl_kv_tail_pad = get_pl("kernel_kv_tail_pad")?;
+            let pl_store_kv = get_pl("kernel_store_kv_f32")?;
+            let pl_store_kv_f16 = get_pl("kernel_store_kv_f16")?;
+            let pl_store_kv_q8_0 = get_pl("kernel_store_kv_q8_0")?;
+            // #310 mechanism B: packed cell window -> transient f32 stage.
+            let pl_dequant_kv_q8_0_to_f32 = get_pl("kernel_dequant_kv_q8_0_to_f32")?;
+            let pl_attn_bsr = get_pl("kernel_attn_bias_rope_store")?;
+            let pl_attn_rope_store = get_pl("kernel_attn_rope_store")?;
+            let pl_attn_scores = get_pl("kernel_attn_scores")?;
+            let pl_attn_output = get_pl("kernel_attn_output")?;
+            let pl_softmax_attn = get_pl("kernel_softmax_attn")?;
+            let pl_warmup = get_pl("kernel_warmup_read")?;
+            let dummy_buf = device
+                .newBufferWithLength_options((1) as usize, MTLResourceOptions::StorageModeShared)
+                .unwrap();
+            let m = MpsStateInner {
+                device: device.clone(),
+                max_threadgroup_memory: device.maxThreadgroupMemoryLength() as u64,
+                queue: device.newCommandQueue().unwrap(),
+                pl_q4_0_f32,
+                pl_q4_0_f32_multi,
+                pl_q4_0_mm_f32,
+                pl_q4_1_f32,
+                pl_q4_1_f32_multi,
+                pl_q4_1_mm_f32,
+                pl_q8_0_f32,
+                pl_q8_0_mm_f32,
+                pl_q8_0_f32_multi,
+                pl_q4_k_f32,
+                pl_q4_k_f32_multi,
+                pl_q4_k_mm_f32,
+                pl_q4_k_mma,
+                pl_q6_k_mma,
+                pl_q4_k_mma_n1,
+                pl_q6_k_mma_n1,
+                pl_q6_k_f32,
+                pl_q6_k_f32_multi,
+                pl_q6_k_mm_f32,
+                pl_q5_0_f32,
+                pl_q5_0_f32_multi,
+                pl_q5_0_mm_f32,
+                pl_q5_1_f32,
+                pl_q5_1_f32_multi,
+                pl_q5_1_mm_f32,
+                pl_q5_k_f32,
+                pl_q5_k_f32_multi,
+                pl_q5_k_mm_f32,
+                pl_f16_f32,
+                pl_f32_f32,
+                pl_bf16_f32,
+                pl_get_rows_q4_0,
+                pl_get_rows_f32,
+                pl_get_rows_f32_embed,
+                pl_get_rows_q4_k,
+                pl_get_rows_q4_1,
+                pl_get_rows_q5_0,
+                pl_get_rows_q5_1,
+                pl_get_rows_q8_0,
+                pl_get_rows_q6_k,
+                pl_get_rows_q5_k,
+                pl_get_rows_f16,
+                pl_get_rows_bf16,
+                pl_rms_norm,
+                pl_rms_norm_256,
+                pl_add,
+                pl_add_bias,
+                pl_mul,
+                pl_silu,
+                pl_swiglu,
+                pl_rope,
+                pl_gqa_attn,
+                pl_gqa_attn_f16,
+                pl_gqa_attn_q8_0,
+                pl_gqa_attn_window,
+                pl_gqa_attn_window_f16,
+                pl_gqa_attn_window_q8_0,
+                pl_gqa_attn_map,
+                pl_gqa_attn_map_f16,
+                pl_gqa_attn_map_q8_0,
+                pl_gqa_attn_partial,
+                pl_gqa_attn_partial_f16,
+                pl_gqa_attn_combine,
+                pl_flash_attn,
+                pl_flash_attn_f16,
+                pl_flash_attn_hd128,
+                pl_flash_attn_hd128_f16,
+                pl_flash_attn_q8_0,
+                pl_flash_attn_hd128_q8_0,
+                pl_flash_attn_blk,
+                pl_flash_attn_blk_f16,
+                pl_flash_attn_blk_hd128,
+                pl_flash_attn_blk_hd128_f16,
+                pl_flash_attn_window_blk,
+                pl_flash_attn_window_blk_f16,
+                pl_flash_attn_window_blk_hd128,
+                pl_flash_attn_window_blk_hd128_f16,
+                pl_flash_attn_window_map,
+                pl_flash_attn_window_map_f16,
+                pl_flash_attn_window_map_hd128,
+                pl_flash_attn_window_map_hd128_f16,
+                pl_kv_tail_pad,
+                pl_store_kv,
+                pl_store_kv_f16,
+                pl_store_kv_q8_0,
+                pl_dequant_kv_q8_0_to_f32,
+                pl_attn_bsr,
+                pl_attn_rope_store,
+                pl_attn_scores,
+                pl_attn_output,
+                pl_softmax_attn,
+                pl_warmup,
+                weights: std::sync::Mutex::new(std::collections::HashMap::new()),
+                mmap_parts: std::sync::Mutex::new(Vec::new()),
+                next_registration: std::sync::atomic::AtomicU64::new(0),
+                current_registration: std::sync::atomic::AtomicU64::new(0),
+                buf_attn_partial: std::sync::Mutex::new(dummy_buf.clone()),
+                buf_positions: std::sync::Mutex::new(dummy_buf.clone()),
+                buf_attn_scores: std::sync::Mutex::new(dummy_buf.clone()),
+                buf_attn_pad: std::sync::Mutex::new(dummy_buf.clone()),
+                buf_kv_stage_k: std::sync::Mutex::new(dummy_buf.clone()),
+                buf_kv_stage_v: std::sync::Mutex::new(dummy_buf.clone()),
+                dispatch_trace: std::sync::Mutex::new(std::collections::VecDeque::new()),
+            };
+            eprintln!(
+                "MPS: using Metal on {} (unified: {})",
+                device.name().to_string(),
+                if device.hasUnifiedMemory() {
+                    "yes"
+                } else {
+                    "no"
+                }
+            );
+            Some(MpsState { inner: m })
+        }
+    }
+
+    pub fn get() -> Option<&'static Self> {
+        MPS.get().and_then(|s| s.as_ref())
+    }
+
+    pub fn init() {
+        MPS.get_or_init(|| {
+            let s = Self::try_new();
+            if s.is_some() {
+                eprintln!("MPS: GPU acceleration enabled");
+            } else if unavailable_detail().is_empty() {
+                eprintln!("MPS: not available, using CPU fallback");
+            } else {
+                eprintln!(
+                    "MPS: not available ({}), using CPU fallback",
+                    unavailable_detail()
+                );
+            }
+            s
+        });
+    }
+
+    /// [#745] Start a model-scoped registration: the parts and weights created
+    /// until this model is dropped are tagged with a fresh id. The loader calls
+    /// this before `register_part`/`register_weight`, and the model holds the
+    /// returned handle; its drop removes the buffers before the mapping handles.
+    #[cfg(all(target_os = "macos", feature = "metal"))]
+    pub fn begin_registration(&self) -> std::sync::Arc<crate::metal::ModelRegistration> {
+        let id = self
+            .inner
+            .next_registration
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1;
+        self.inner
+            .current_registration
+            .store(id, std::sync::atomic::Ordering::Relaxed);
+        std::sync::Arc::new(crate::metal::ModelRegistration::new(id))
+    }
+
+    /// [#745] Remove one model's registrations. Weight buffers go first so no
+    /// `MTLBuffer` outlives the mapping it aliases; the `mmap_parts` retain then
+    /// drops the part buffers and, last, the `Arc<MmapFile>` handles.
+    #[cfg(all(target_os = "macos", feature = "metal"))]
+    pub fn release_registration(&self, id: u64) {
+        {
+            let mut weights = self.inner.weights.lock().unwrap();
+            weights.retain(|_, (_, _, _, reg)| *reg != id);
+        }
+        {
+            let mut parts = self.inner.mmap_parts.lock().unwrap();
+            parts.retain(|(_, _, _, _, reg)| *reg != id);
+        }
+    }
+
+    pub fn has_weight(&self, name: &str) -> bool {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            false
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            self.inner.weights.lock().unwrap().contains_key(name)
+        }
+    }
+
+    /// Look up a registered weight's (buffer, byte offset) — used by the graph
+    /// Metal backend to dispatch per-op kernels without holding the Tensor.
+    pub fn weight_buf(&self, name: &str) -> Option<(MetalBuffer, u64)> {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            let _ = name;
+            None
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            self.inner
+                .weights
+                .lock()
+                .unwrap()
+                .get(name)
+                .map(|(buf, off, _len, _reg)| (buf.clone(), *off))
+        }
+    }
+
+    /// Bytes of device-resident weights this state registered (E4: the feasibility
+    /// gate charges the budget for them, so "weights + activations" is one
+    /// comparison — issue #299). Sums the registry; each entry's length is the
+    /// tensor's own registered extent (2 B/element for f16/bf16, the block size for
+    /// a quant), whether it is mmap-backed (`NoCopy`) or a per-weight copy.
+    ///
+    /// A poisoned lock is recovered rather than answered with `0`, the same reason
+    /// as `CudaState::weights_bytes`: reporting 0 would silently under-charge the
+    /// budget by every resident weight (issue #122's fail-open twin).
+    pub fn weights_bytes(&self) -> usize {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            0
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            crate::graph::alloc::weights_from_lock(
+                self.inner.weights.lock(),
+                "Metal weight registry",
+                |w| w.values().map(|(_, _, len, _)| *len).sum(),
+            )
+        }
+    }
+
+    /// Allocate a shared-memory f32 buffer (visible to both CPU and GPU) for
+    /// the graph backend's buffer pool.
+    pub fn new_f32_buffer(&self, n_elements: usize) -> MetalBuffer {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            unreachable!()
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            let bytes = (n_elements * 4) as u64;
+            self.inner
+                .device
+                .newBufferWithLength_options(
+                    (bytes) as usize,
+                    MTLResourceOptions::StorageModeShared,
+                )
+                .unwrap()
+        }
+    }
+
+    /// F5 (#137): a fresh `MTLSharedEvent` for one cross-backend staging copy.
+    ///
+    /// Each copy gets its own event, so the event's value space never has to be
+    /// shared between copies that may be in flight at the same time. `None` means
+    /// the device refused to create one — a loud error at the call site, never a
+    /// silent fallback to the synchronous path.
+    pub fn new_shared_event(&self) -> Option<MetalSharedEvent> {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            let _ = self;
+            None
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            self.inner.device.newSharedEvent()
+        }
+    }
+
+    /// Register an mmap'd GGUF part for zero-copy weight wrapping. The part
+    /// data pointer must be page-aligned (mmap returns page-aligned addresses):
+    /// newBufferWithBytesNoCopy requires a page-aligned base (llama
+    /// ggml_metal_buffer_map, ggml-metal-device.m:1701). Weights from this part
+    /// are then registered as (buffer, offset) into this one buffer.
+    /// [#745] `owner` is the GGUF part's mapping. The zero-copy buffer below makes
+    /// the GPU read the mapped pages directly, so the mapping must outlive the
+    /// `MTLBuffer`; holding a handle here is what makes that true. The registration
+    /// is **model-scoped** (ADR-0077): the loader's `ModelRegistration` tags this
+    /// entry, and dropping the model removes it — buffers first, then the mapping.
+    ///
+    /// `data` is a plain borrow: the buffer keeps the pointer and the owner keeps
+    /// the pages mapped, so no `'static` slice is needed (or stored).
+    pub fn register_part(&self, data: &[u8], owner: crate::gguf::PartBytes) {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            let _ = (data, owner);
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            if data.is_empty() {
+                return;
+            }
+            let base = data.as_ptr() as usize;
+            let mapped = owner.mapping().is_some();
+            // A mapped part's pages are page-aligned and immutable, so the GPU can
+            // alias them (#745). An owned part (#797) has neither property — a
+            // `Vec`'s allocation is arbitrarily aligned and its lifetime is the
+            // `Arc`'s — so it is copied once here and every weight of it becomes a
+            // (buffer, offset) range of that copy, exactly like the mmap case.
+            // (The per-weight copy in `register_weight` is the fallback for slices
+            // outside any registered part; this spends one allocation per part
+            // instead of one per tensor.)
+            let buf = unsafe {
+                if mapped {
+                    let page = 16384; // macOS page size on Apple Silicon
+                    debug_assert!(base % page == 0, "mmap'd GGUF part not page-aligned");
+                    self.inner
+                        .device
+                        .newBufferWithBytesNoCopy_length_options_deallocator(
+                            NonNull::new(data.as_ptr() as *const std::ffi::c_void as *mut c_void)
+                                .unwrap(),
+                            (data.len() as u64) as usize,
+                            MTLResourceOptions::StorageModeShared,
+                            None,
+                        )
+                        .unwrap()
+                } else {
+                    let b = self
+                        .inner
+                        .device
+                        .newBufferWithLength_options(
+                            (data.len() as u64) as usize,
+                            MTLResourceOptions::StorageModeShared,
+                        )
+                        .unwrap();
+                    std::ptr::copy_nonoverlapping(
+                        data.as_ptr(),
+                        b.contents().as_ptr() as *mut u8,
+                        data.len(),
+                    );
+                    b
+                }
+            };
+            self.inner.mmap_parts.lock().unwrap().push((
+                base,
+                data.len(),
+                buf.clone(),
+                owner,
+                self.inner
+                    .current_registration
+                    .load(std::sync::atomic::Ordering::Relaxed),
+            ));
+            // GPU-side warm-up (METAL_OPTIMIZATIONS #39): the FIRST GPU access to
+            // file-backed (mmap) pages costs ~44 ms of one-time page/TLB setup.
+            // Doing a dummy full-buffer read HERE (at model load, outside the
+            // CLI's Total timing) moves that cost out of the first prefill —
+            // llama-bench's numbers are equally warm. ~5 ms bandwidth + the
+            // setup, amortized into load. An owned part is already resident host
+            // memory (just copied), so there is no fault to warm.
+            if mapped {
+                let cb = self.cmd_buffer();
+                cb.trace_op("part_warmup");
+                cb.enc.setComputePipelineState(&*self.inner.pl_warmup);
+                unsafe {
+                    cb.enc
+                        .setBuffer_offset_atIndex(Some(&*buf), (0) as usize, (0) as usize)
+                };
+                let tiny = self.inner.buf_positions.lock().unwrap().clone();
+                unsafe {
+                    cb.enc
+                        .setBuffer_offset_atIndex(Some(&*tiny), (0) as usize, (1) as usize)
+                };
+                let n = (buf.length() / 4) as u64;
+                cb.dispatch_1d((n + 255) / 256, 256);
+                let _ = cb.submit();
+            }
+        }
+    }
+
+    pub fn register_weight(&self, name: &str, data: &[u8]) {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {}
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            if data.is_empty() {
+                return;
+            }
+            let ptr = data.as_ptr() as usize;
+            let force_copy = crate::config::get().weight_copy;
+            // Zero-copy path: the weight is a slice of a registered mmap'd part
+            // → (part buffer, offset). The GPU reads the mapped file pages
+            // directly (llama's shared mmap buffer, ggml-metal-device.m:1668) —
+            // no CPU→GPU memcpy, no GPU-side allocation.
+            let entry = if !force_copy {
+                let parts = self.inner.mmap_parts.lock().unwrap();
+                parts
+                    .iter()
+                    .find(|(base, len, _, _, _)| ptr >= *base && ptr + data.len() <= base + len)
+                    .map(|(base, _, buf, _, _)| (buf.clone(), (ptr - base) as u64))
+            } else {
+                None
+            };
+            let (buf, off) = match entry {
+                Some(e) => e,
+                None => {
+                    // Fallback: copy into a fresh per-weight buffer (offset 0).
+                    let b = self
+                        .inner
+                        .device
+                        .newBufferWithLength_options(
+                            (data.len() as u64) as usize,
+                            MTLResourceOptions::StorageModeShared,
+                        )
+                        .unwrap();
+                    unsafe {
+                        std::ptr::copy_nonoverlapping(
+                            data.as_ptr(),
+                            b.contents().as_ptr() as *mut u8,
+                            data.len(),
+                        );
+                    }
+                    (b, 0u64)
+                }
+            };
+            self.inner.weights.lock().unwrap().insert(
+                name.to_string(),
+                (
+                    buf,
+                    off,
+                    data.len(),
+                    self.inner
+                        .current_registration
+                        .load(std::sync::atomic::Ordering::Relaxed),
+                ),
+            );
+        }
+    }
+
+    /// Create a command buffer for batching operations.
+    pub fn cmd_buffer(&self) -> MpsCommandBuffer<'_> {
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            unreachable!()
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            let cmd_buf_ref = self.inner.queue.commandBuffer().unwrap();
+            let enc_ref = cmd_buf_ref.computeCommandEncoder().unwrap();
+            // objc2-metal returns owned Retained values — no manual retain/release.
+            MpsCommandBuffer {
+                state: &self.inner,
+                cmd_buf: cmd_buf_ref,
+                enc: enc_ref,
+                enc_open: true,
+            }
+        }
+    }
+
+    /// E4/E5 ([#53](https://github.com/yusiwen/minfer/issues/53)): this device's own
+    /// memory answer, with the query's outcome explicit — the Metal half of the
+    /// three-way [`crate::graph::allocplan::DeviceMemory`] CUDA answers with.
+    ///
+    /// Metal has no `cudaMemGetInfo` equivalent: `recommendedMaxWorkingSetSize` is the
+    /// OS's own ceiling for what this process may hold on the device, which is the
+    /// API-level analogue of CUDA's *free* read and the number llama.cpp's Metal backend
+    /// plans against. It is answered as `Reported { free, total }`, `total` mirroring
+    /// `free` because Apple Silicon's unified-memory `MTLDevice` exposes no separate
+    /// total — so the **pure** `budget_decision` holds back the same quarter it does for
+    /// CUDA and E5's `weight_budget` consumes one number on both backends.
+    ///
+    /// A `recommendedMaxWorkingSetSize` of `0` is "this device gave no figure", **not** a
+    /// measured "0 bytes free": answering `Reported { free: 0 }` would make the E4 gate
+    /// refuse every later allocation while blaming a budget nobody measured ([#122]). It
+    /// is `QueryFailed`, exactly like a failed `cudaMemGetInfo`; `code` is `0` because
+    /// Metal has no numeric error here, and `name` carries the real reason. The
+    /// `MINFER_TEST_CALL_FAIL=metal_device_memory` seam forces the same outcome for the
+    /// gate's mutation check and is off in every default run.
+    pub fn device_memory(&self) -> crate::graph::allocplan::DeviceMemory {
+        use crate::graph::allocplan::DeviceMemory;
+        if let Err(reason) = crate::testfail::guard("metal_device_memory") {
+            return DeviceMemory::QueryFailed {
+                code: 0,
+                name: reason,
+            };
+        }
+        #[cfg(not(all(target_os = "macos", feature = "metal")))]
+        {
+            let _ = self;
+            DeviceMemory::NoDevice
+        }
+        #[cfg(all(target_os = "macos", feature = "metal"))]
+        {
+            let recommended = self.inner.device.recommendedMaxWorkingSetSize();
+            if recommended == 0 {
+                return DeviceMemory::QueryFailed {
+                    code: 0,
+                    name: "MTLDevice.recommendedMaxWorkingSetSize returned 0 (the device \
+                           reports no working-set size)"
+                        .to_string(),
+                };
+            }
+            DeviceMemory::Reported {
+                free: recommended as usize,
+                total: recommended as usize,
+            }
+        }
+    }
+}

@@ -1,0 +1,85 @@
+{
+ "artifact": "metal",
+ "machine": "Darwin 27.2.0, arm64",
+ "baseline": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
+ "model": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+ "prompt": "The quick brown fox",
+ "n_predict": 24,
+ "cpu": {
+  "prefill_tok_s": 252.8,
+  "decode_tok_s": 90.5,
+  "runs": [
+   {
+    "prefill_tok_s": 256.8,
+    "decode_tok_s": 92.7
+   },
+   {
+    "prefill_tok_s": 252.8,
+    "decode_tok_s": 88.5
+   },
+   {
+    "prefill_tok_s": 252.3,
+    "decode_tok_s": 90.5
+   }
+  ]
+ },
+ "metal": {
+  "prefill_tok_s": 693.0,
+  "decode_tok_s": 259.2,
+  "runs": [
+   {
+    "prefill_tok_s": 693.0,
+    "decode_tok_s": 259.2
+   },
+   {
+    "prefill_tok_s": 899.6,
+    "decode_tok_s": 260.7
+   },
+   {
+    "prefill_tok_s": 686.4,
+    "decode_tok_s": 258.7
+   }
+  ]
+ },
+ "identity": {
+  "identical": true,
+  "cpu_sha256": "fd5d17e4a5b9a859b6390ef83d23d45f06bf892d0934cd3edd4440f489ec7ff3",
+  "metal_sha256": "fd5d17e4a5b9a859b6390ef83d23d45f06bf892d0934cd3edd4440f489ec7ff3",
+  "text": "The quick brown fox jumps over the lazy dog. This is a classic English saying that has been used for centuries to describe",
+  "tokens": 24
+ },
+ "timing": {
+  "cpu": {
+   "tokens": 24,
+   "sample_ms": 0.08,
+   "forward_ms": 10.54
+  },
+  "metal": {
+   "tokens": 24,
+   "sample_ms": 0.08,
+   "forward_ms": 3.8
+  }
+ },
+ "weight_copy": {
+  "off_tok_s": 259.2,
+  "on_tok_s": 248.4,
+  "runs": [
+   {
+    "decode_tok_s": 244.9
+   },
+   {
+    "decode_tok_s": 248.4
+   },
+   {
+    "decode_tok_s": 256.4
+   }
+  ],
+  "delta_pct": -4.2
+ },
+ "invocation": "/tmp/mf21-target/release/minfer qwen2.5-0.5b-instruct-q4_k_m.gguf 'The quick brown fox' --backend {cpu,metal} -n 24 --greedy  (x3 each; plus MINFER_TIMING=1 once per backend and MINFER_WEIGHT_COPY=1 x3 on metal)",
+ "note": "One machine, one model, one prompt, one binary. The identity column is the gate this chapter cares about: greedy decoding must produce the same bytes on both backends before any speed number means anything.",
+ "speedup": {
+  "prefill": 2.74,
+  "decode": 2.86
+ }
+}

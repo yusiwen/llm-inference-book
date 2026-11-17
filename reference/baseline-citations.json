@@ -938,6 +938,30 @@
   },
   {
    "pages": [
+    "ch 21"
+   ],
+   "path": "src/metal/encode.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "src/metal/policy.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
+    "ch 21"
+   ],
+   "path": "src/metal/runtime.rs",
+   "resolved": true,
+   "symbol": null
+  },
+  {
+   "pages": [
     "appendix/home",
     "ch 20"
    ],

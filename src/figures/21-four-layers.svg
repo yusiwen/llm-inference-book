@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 400" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The four layers every backend has, drawn for three machines. The executor layer is the only polymorphic one: one Backend trait, three implementations. Kernels, launch and runtime differ between CPU, Metal and CUDA in their APIs, not in their shape.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; letter-spacing: .04em; }
+    .fig-a-exec { fill: #4d86b8; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: 1.4; }
+    .fig-a-kern { fill: #3f7f76; fill-opacity: .34; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-launch { fill: #8f7ad1; fill-opacity: .30; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-rt { fill: #8a6a10; fill-opacity: .28; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+    .g-seam { stroke: var(--quote-border, #4a6577); stroke-width: 1.2; stroke-dasharray: 5 4; opacity: .85; fill: none; }
+  </style>
+  <text class="g-cap" x="24" y="24">FOUR LAYERS, THREE MACHINES</text>
+  <text class="g-s" x="24" y="44">one Backend trait at the top, three of everything else - the layers do not multiply, the APIs do</text>
+  <!-- column heads -->
+  <text class="g-lbl" x="228" y="76" text-anchor="middle">CPU</text>
+  <text class="g-lbl" x="456" y="76" text-anchor="middle">Metal</text>
+  <text class="g-lbl" x="684" y="76" text-anchor="middle">CUDA</text>
+  <!-- row EXECUTOR (the polymorphic one) -->
+  <text class="g-lbl" x="24" y="112">executor</text>
+  <text class="g-m" x="24" y="128">the seam</text>
+  <rect x="138" y="96" width="582" height="40" rx="3" class="fig-a-exec"/>
+  <text class="g-m" x="228" y="121" text-anchor="middle">CpuBackend</text>
+  <text class="g-m" x="456" y="121" text-anchor="middle">MetalBackend</text>
+  <text class="g-m" x="684" y="121" text-anchor="middle">CudaBackend</text>
+  <!-- row KERNELS -->
+  <text class="g-lbl" x="24" y="182">kernels</text>
+  <text class="g-m" x="24" y="198">one op each</text>
+  <rect x="150" y="166" width="180" height="40" rx="2" class="fig-a-kern"/>
+  <rect x="378" y="166" width="180" height="40" rx="2" class="fig-a-kern"/>
+  <rect x="606" y="166" width="180" height="40" rx="2" class="fig-a-kern"/>
+  <text class="g-m" x="240" y="191" text-anchor="middle">Rust loops + SIMD</text>
+  <text class="g-m" x="468" y="191" text-anchor="middle">.metal shaders</text>
+  <text class="g-m" x="696" y="191" text-anchor="middle">.cu kernels</text>
+  <!-- row LAUNCH -->
+  <text class="g-lbl" x="24" y="252">launch</text>
+  <text class="g-m" x="24" y="268">batching</text>
+  <rect x="150" y="236" width="180" height="40" rx="2" class="fig-a-launch"/>
+  <rect x="378" y="236" width="180" height="40" rx="2" class="fig-a-launch"/>
+  <rect x="606" y="236" width="180" height="40" rx="2" class="fig-a-launch"/>
+  <text class="g-m" x="240" y="261" text-anchor="middle">thread pool (Ch 8)</text>
+  <text class="g-m" x="468" y="261" text-anchor="middle">one command buffer</text>
+  <text class="g-m" x="696" y="261" text-anchor="middle">streams</text>
+  <!-- row RUNTIME -->
+  <text class="g-lbl" x="24" y="322">runtime</text>
+  <text class="g-m" x="24" y="338">device, memory</text>
+  <rect x="150" y="306" width="180" height="40" rx="2" class="fig-a-rt"/>
+  <rect x="378" y="306" width="180" height="40" rx="2" class="fig-a-rt"/>
+  <rect x="606" y="306" width="180" height="40" rx="2" class="fig-a-rt"/>
+  <text class="g-m" x="240" y="331" text-anchor="middle">host memory</text>
+  <text class="g-m" x="468" y="331" text-anchor="middle">MpsState, zero copy</text>
+  <text class="g-m" x="696" y="331" text-anchor="middle">context, HBM copy</text>
+  <line class="g-rule" x1="24" y1="356" x2="786" y2="356"/>
+  <text class="g-m" x="24" y="378">The top band is the seam: the executor is chosen once, by the registry, and everything below it is fixed per backend.</text>
+  <text class="g-m" x="24" y="394">A discrete GPU changes the bottom row only - its weights must be copied into memory the host cannot see (Chapter 22).</text>
+</svg>
