@@ -29,7 +29,9 @@ running against a different numpy every week cannot back a number that claims a 
 nix the fallback is `uv run --python 3.15 --with regex --with jinja2 --with numpy --with tokenizers python3 ...`.
 A bare `pkgs.python3` in `flake.nix` is how three measurement runs died on a missing `regex` while this gate
 reported "all checks passed" - the instruments are not part of the gate, so nothing noticed. Step 18 reports
-which of the four are importable and never fails.
+which of the four are importable and never fails. The first `nix develop` after a flake change builds them
+(23 s on this machine); every later one enters in under 2 s, which is worth knowing before calling a slow
+start a hang.
 
 ## Numbers come from artifacts, not from the author
 
