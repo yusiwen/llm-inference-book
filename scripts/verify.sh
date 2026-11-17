@@ -173,4 +173,12 @@ else
 fi
 
 echo
+echo "== 20. a verdict in an artifact is a claim that an assertion ran =="
+# `passes: true` next to `tolerance: null` is the shape a vacuous assertion takes: nothing was compared, and the
+# page still renders a verdict. Chapter 24 shipped exactly that for two timed-only GEMMs. Every entry must say
+# which of three things it is - a bounded comparison, an exact one (`exact: true` with zero tolerance), or
+# nothing compared at all (`passes: null`, `tolerance: null`).
+python3 scripts/gate-assertions.py
+
+echo
 echo "all checks passed"

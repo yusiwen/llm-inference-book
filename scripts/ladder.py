@@ -75,12 +75,19 @@ def main():
     doc["note"] = ("Each rung prints its own tolerance and maximum absolute deviation from a host reference; "
                    "`passes` is that comparison, not an assertion about the kernel's intent. Rungs 4 and 5 use "
                    "the same packed q4_0 bytes, so their difference is the shape, not the data.")
-    # The two 2048-cubed rungs are timed, not checked: a host reference at that size would need 8.6 GFLOP, so the
-    # identical kernel is validated at 512 cubed and these rows must not be read as passing an identity gate.
+    # Every rung states which of the three things it is (see scripts/gate-assertions.py): a bounded comparison
+    # ran, an exact comparison ran, or nothing was compared. The two 2048-cubed rungs are timed, not checked - a
+    # host reference at that size would need 8.6 GFLOP - so they carry no verdict at all rather than a vacuous
+    # one, and the identical kernel is validated at 512 cubed instead.
     for k in kernels.values():
         if k["name"].endswith("_2048"):
             k["checked"] = False
             k["tolerance"] = None
+            k["passes"] = None
+            k["exact"] = False
+        else:
+            k["checked"] = True
+            k["exact"] = k["tolerance"] == 0  # zero tolerance is a deliberate exact comparison
     doc["kernels"] = list(kernels.values())
 
     path = pathlib.Path(args.out)
@@ -91,8 +98,9 @@ def main():
     print(f"wrote {path.relative_to(ROOT)}: {doc['device']} sm_{doc['compute_cap']}")
     for k in doc["kernels"]:
         print(f"  {k['name']:<20} {k['ms'] * 1000:8.1f} us  {k['gflops']:7.1f} GFLOP/s  "
-              + ("timing only (not checked at this size)" if k.get("tolerance") is None else
-                 f"diff {k['max_abs_diff']:.2e} (tol {k['tolerance']:.0e})  {'ok' if k['passes'] else 'FAIL'}"))
+              + ("timing only (nothing compared at this size)" if k.get("passes") is None else
+                 f"diff {k['max_abs_diff']:.2e} (tol {k['tolerance']:.0e}"
+                 f"{', exact' if k.get('exact') else ''})  {'ok' if k['passes'] else 'FAIL'}"))
     if doc.get("tiling"):
         t = doc["tiling"]
         print(f"  tiling: naive {t['naive_ms'] * 1000:.0f} us -> tiled {t['tiled_ms'] * 1000:.0f} us "

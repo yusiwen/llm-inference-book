@@ -55,6 +55,8 @@ Every factual sentence in this book is one of five things, and the reader is tol
 
 An arithmetic estimate is not a measurement, and a reported number is not something this book reproduced. Upgrading one into the other is the one mistake that makes the whole artifact untrustworthy, because every other number inherits it.
 
+**A verdict is a claim that an assertion ran.** An artifact entry that reports `passes` states one of three things, and says which: a bounded comparison ran (`checked: true` with a numeric `tolerance`), an exact comparison ran (`tolerance: 0` with `exact: true`), or nothing was compared (`passes: null`, `tolerance: null`). The forbidden fourth state is the one that reads best and means nothing - `passes: true` beside `tolerance: null`, which renders as a pass and is the shape a vacuous assertion takes. `scripts/gate-assertions.py` (gate step 20) refuses it, because a table that says "passed" for a comparison nobody ran is the same failure as an estimated number presented as measured, only easier to miss.
+
 ## Code citations
 
 - **Path plus symbol.** Write `src/graph/alloc.rs::GraphAllocator` inside backticks. The path alone is allowed only when the sentence really is about a whole file (the kernel sources, the ADR directory); a sentence about a behaviour names the symbol, because the symbol is what the sentence is actually claiming.

@@ -14,14 +14,14 @@ Every rung here is measured **and checked**, because a fast wrong kernel is wors
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,094 us | 0.0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 5 us | 0.0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643.2 | 0.0e+00 | 2e-03 | yes |
-| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,251.9 | 0.0e+00 | 2e-03 | yes |
-| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,516 us | 1,805.3 | - | not checked | timing only |
-| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,063 us | 2,432.3 | - | not checked | timing only |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133.0 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 316.9 | 0.0e+00 | 5e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,101 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 4 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 162 us | 1,655.5 | 0.0e+00 | 2e-03 | yes |
+| `gemm_tiled` | 512 x 512 x 512 | 117 us | 2,287.1 | 0.0e+00 | 2e-03 | yes |
+| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,466 us | 1,814.9 | - | not checked | timing only |
+| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,099 us | 2,420.1 | - | not checked | timing only |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 253 us | 132.7 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,697 us | 316.4 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
@@ -104,14 +104,14 @@ The measured cost of doing it this way, on a real shape:
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,094 us | 0.0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 5 us | 0.0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643.2 | 0.0e+00 | 2e-03 | yes |
-| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,251.9 | 0.0e+00 | 2e-03 | yes |
-| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,516 us | 1,805.3 | - | not checked | timing only |
-| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,063 us | 2,432.3 | - | not checked | timing only |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133.0 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 316.9 | 0.0e+00 | 5e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,101 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 4 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 162 us | 1,655.5 | 0.0e+00 | 2e-03 | yes |
+| `gemm_tiled` | 512 x 512 x 512 | 117 us | 2,287.1 | 0.0e+00 | 2e-03 | yes |
+| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,466 us | 1,814.9 | - | not checked | timing only |
+| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,099 us | 2,420.1 | - | not checked | timing only |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 253 us | 132.7 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,697 us | 316.4 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
@@ -127,8 +127,8 @@ The tile arithmetic, which is the part to write down before the code: with a TIL
 <!-- facts: ladder.ladder-tiling -->
 | f16 GEMM, naive against 16 x 16 tiled | Time | GFLOP/s | Speedup |
 |---|---|---|---|
-| 512 cubed - operands about 1 MB, L2-resident | 163 -> **119 us** | 1,643 -> 2,252 | **1.37x** |
-| 2,048 cubed - operands about 24 MB, past most of the cache | 9,516 -> **7,063 us** | 1,805 -> 2,432 | **1.35x** |
+| 512 cubed - operands about 1 MB, L2-resident | 162 -> **117 us** | 1,656 -> 2,287 | **1.38x** |
+| 2,048 cubed - operands about 24 MB, past most of the cache | 9,466 -> **7,099 us** | 1,815 -> 2,420 | **1.33x** |
 
 Both rows land near **1.35x**, against a ceiling of 16x, and the honest reading is that this instrument does not isolate what tiling is worth. Reason: all four kernels give each thread exactly one output element, so the arithmetic intensity is 1 - one multiply-accumulate per pair of loads - and at that intensity the shared-memory tile saves the same fraction whatever the problem size, because L2 was already absorbing the difference. A production GEMM (the engine's `mmq_nt_kernel`, and `gemm_wmma` before it) gives each thread a whole sub-tile of outputs held in registers, which is what turns a 16 x 16 shared tile into a reuse factor in the hundreds.
 <!-- /facts -->
@@ -201,8 +201,8 @@ Then the shape. The same packed weights, at one token and at sixteen:
 <!-- facts: ladder.ladder-shapes -->
 | q4_0 4096 x 4096 weights | Time | Per token | Weights read |
 |---|---|---|---|
-| decode, M = 1 | 252 us | **252 us** | 9.5 MB |
-| prefill, M = 16 | 1,694 us | **106 us** | 9.7 MB |
+| decode, M = 1 | 253 us | **253 us** | 9.5 MB |
+| prefill, M = 16 | 1,697 us | **106 us** | 9.7 MB |
 | per-token ratio | | **0.42x** | |
 
 Sixteen tokens at once cost **0.42x of one token per token**, so the batch paid: the same weight bytes were unpacked once and used sixteen times. That is the whole economy of a prefill kernel, and it is a *loop-order* property, not a hardware one - unpack the q4_0 block outside the activation loop and the cost is amortised; unpack it inside and batching looks pointless. The first version of this instrument had the loops the wrong way round and reported 0.97x: the wrong number is easy to produce, and the right one requires knowing which loop the unpacking belongs outside of.

@@ -6,98 +6,112 @@
  "kernels": [
   {
    "name": "eltwise_relu",
-   "ms": 1.0945,
+   "ms": 1.1007,
    "bytes": 268435456,
    "gflops": 0.0,
    "max_abs_diff": 0,
    "tolerance": 0,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": true
   },
   {
    "name": "gather_embed",
-   "ms": 0.0046,
+   "ms": 0.0042,
    "bytes": 262144,
    "gflops": 0.0,
    "max_abs_diff": 0,
    "tolerance": 0,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": true
   },
   {
    "name": "gemm_naive",
-   "ms": 0.1634,
+   "ms": 0.1621,
    "bytes": 1572864,
-   "gflops": 1643.2,
+   "gflops": 1655.5,
    "max_abs_diff": 0,
    "tolerance": 0.002,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": false
   },
   {
    "name": "gemm_tiled",
-   "ms": 0.1192,
+   "ms": 0.1174,
    "bytes": 1572864,
-   "gflops": 2251.9,
+   "gflops": 2287.1,
    "max_abs_diff": 0,
    "tolerance": 0.002,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": false
   },
   {
    "name": "gemm_naive_2048",
-   "ms": 9.5164,
+   "ms": 9.4662,
    "bytes": 25165824,
-   "gflops": 1805.3,
+   "gflops": 1814.9,
    "max_abs_diff": 0,
    "tolerance": null,
-   "passes": true,
-   "checked": false
+   "passes": null,
+   "checked": false,
+   "exact": false
   },
   {
    "name": "gemm_tiled_2048",
-   "ms": 7.0633,
+   "ms": 7.0989,
    "bytes": 25165824,
-   "gflops": 2432.3,
+   "gflops": 2420.1,
    "max_abs_diff": 0,
    "tolerance": null,
-   "passes": true,
-   "checked": false
+   "passes": null,
+   "checked": false,
+   "exact": false
   },
   {
    "name": "gemv_q4_decode",
-   "ms": 0.2522,
+   "ms": 0.2529,
    "bytes": 9453568,
-   "gflops": 133.0,
+   "gflops": 132.7,
    "max_abs_diff": 0,
    "tolerance": 0.005,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": false
   },
   {
    "name": "gemm_q4_prefill16",
-   "ms": 1.6939,
+   "ms": 1.6967,
    "bytes": 9699328,
-   "gflops": 316.9,
+   "gflops": 316.4,
    "max_abs_diff": 0,
    "tolerance": 0.005,
-   "passes": true
+   "passes": true,
+   "checked": true,
+   "exact": false
   }
  ],
  "tiling": {
   "tile": 16,
   "reuse_per_loaded_element": 16,
-  "naive_ms": 0.1634,
-  "tiled_ms": 0.1192,
-  "speedup": 1.37,
+  "naive_ms": 0.1621,
+  "tiled_ms": 0.1174,
+  "speedup": 1.38,
   "predicted_speedup_upper_bound": 16,
   "verdict": "the tiled kernel is faster, and by a factor closer to the ceiling than to 1.0 - the shared memory is doing what the tile arithmetic says it should"
  },
  "shapes": {
   "decode": {
    "m": 1,
-   "ms": 0.2522,
-   "ms_per_token": 0.2522,
+   "ms": 0.2529,
+   "ms_per_token": 0.2529,
    "weights_mb": 9.5
   },
   "prefill": {
    "m": 16,
-   "ms": 1.6939,
+   "ms": 1.6967,
    "ms_per_token": 0.106,
    "weights_mb": 9.7
   },
