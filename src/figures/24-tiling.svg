@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 324" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="Shared memory tiling: a naive GEMM reads its operands from global memory for every output element, while a tiled kernel loads a 16 by 16 tile once into shared memory and reuses each element sixteen times.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; }
+    .fig-a-slow { fill: #b85c4d; fill-opacity: .40; stroke: var(--quote-border, #4a6577); stroke-width: .7; }
+    .fig-a-fast { fill: #3f7f76; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .7; }
+    .fig-a-load { fill: #4d86b8; fill-opacity: .45; stroke: var(--quote-border, #4a6577); stroke-width: .7; }
+    .fig-a-cell { fill: #4a6577; fill-opacity: .18; stroke: var(--quote-border, #4a6577); stroke-width: .5; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">ONE TILE, SIXTEEN REUSES</text>
+  <text class="g-s" x="24" y="44">the weight tile is fetched once per block instead of once per output element - that ratio is the whole of tiling</text>
+  <text class="g-lbl" x="40" y="76">naive</text>
+  <text class="g-m" x="40" y="92">every output element</text>
+  <text class="g-m" x="40" y="106">fetches its own row</text>
+  <text class="g-m" x="40" y="120">and column from HBM</text>
+  <text class="g-m" x="40" y="142">16 x 16 outputs</text>
+  <text class="g-m" x="40" y="156">= 512 loads</text>
+  <text class="g-lbl" x="420" y="76">tiled</text>
+  <text class="g-m" x="420" y="92">the same 16 x 16 block</text>
+  <text class="g-m" x="420" y="106">loads 16 + 16 rows once</text>
+  <text class="g-m" x="420" y="120">into shared memory</text>
+  <text class="g-m" x="420" y="142">32 loads, then</text>
+  <text class="g-m" x="420" y="156">16 reuses each</text>
+  <g>
+    <rect x="40" y="170" width="22" height="22" class="fig-a-slow"/><rect x="64" y="170" width="22" height="22" class="fig-a-slow"/><rect x="88" y="170" width="22" height="22" class="fig-a-slow"/><rect x="112" y="170" width="22" height="22" class="fig-a-slow"/>
+    <rect x="40" y="194" width="22" height="22" class="fig-a-slow"/><rect x="64" y="194" width="22" height="22" class="fig-a-slow"/><rect x="88" y="194" width="22" height="22" class="fig-a-slow"/><rect x="112" y="194" width="22" height="22" class="fig-a-slow"/>
+    <rect x="40" y="218" width="22" height="22" class="fig-a-slow"/><rect x="64" y="218" width="22" height="22" class="fig-a-slow"/><rect x="88" y="218" width="22" height="22" class="fig-a-slow"/><rect x="112" y="218" width="22" height="22" class="fig-a-slow"/>
+    <rect x="40" y="242" width="22" height="22" class="fig-a-slow"/><rect x="64" y="242" width="22" height="22" class="fig-a-slow"/><rect x="88" y="242" width="22" height="22" class="fig-a-slow"/><rect x="112" y="242" width="22" height="22" class="fig-a-slow"/>
+  </g>
+  <text class="g-m" x="150" y="200">each cell = one HBM round trip</text>
+  <text class="g-m" x="150" y="216">for a value it then uses once</text>
+  <g>
+    <rect x="420" y="170" width="22" height="22" class="fig-a-load"/><rect x="444" y="170" width="22" height="22" class="fig-a-load"/><rect x="468" y="170" width="22" height="22" class="fig-a-load"/><rect x="492" y="170" width="22" height="22" class="fig-a-load"/>
+    <rect x="420" y="194" width="22" height="22" class="fig-a-load"/><rect x="444" y="194" width="22" height="22" class="fig-a-load"/><rect x="468" y="194" width="22" height="22" class="fig-a-load"/><rect x="492" y="194" width="22" height="22" class="fig-a-load"/>
+  </g>
+  <text class="g-m" x="530" y="188">loaded once</text>
+  <g>
+    <rect x="420" y="226" width="22" height="22" class="fig-a-fast"/><rect x="444" y="226" width="22" height="22" class="fig-a-fast"/><rect x="468" y="226" width="22" height="22" class="fig-a-fast"/><rect x="492" y="226" width="22" height="22" class="fig-a-fast"/>
+    <rect x="420" y="250" width="22" height="22" class="fig-a-fast"/><rect x="444" y="250" width="22" height="22" class="fig-a-fast"/><rect x="468" y="250" width="22" height="22" class="fig-a-fast"/><rect x="492" y="250" width="22" height="22" class="fig-a-fast"/>
+  </g>
+  <text class="g-m" x="530" y="244">reused 16 times from shared</text>
+  <line class="g-rule" x1="24" y1="278" x2="786" y2="278"/>
+  <text class="g-m" x="24" y="298">A 512-cubed f16 GEMM measured 1.37x against a ceiling of 16x, because the whole problem fits in L2: the</text>
+  <text class="g-m" x="24" y="314">arithmetic gives the ceiling, and only the measurement says how much of it the problem was going to pay.</text>
+</svg>

@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "ladder": ("scripts/ladder/ladder.cu",
+               "compiles six kernels - elementwise, gather, naive f16 GEMM, tiled f16 GEMM, q4_0 GEMV at M=1 and "
+               "the same q4_0 weights at M=16 - and checks each against a host reference from the same bytes "
+               "before timing it",
+               "per-kernel milliseconds, GFLOP/s, the maximum absolute deviation from the reference and the "
+               "tolerance it is compared against, plus the tile arithmetic and the per-token cost at both shapes",
+               ),
     "cuda-seam": ("scripts/seam/seam.cu",
                   "asks the device for a terabyte, then runs one two-second kernel twice - once behind "
                   "`cudaStreamSynchronize`, once behind a `cudaStreamQuery` poll with a host-owned deadline - "
@@ -1728,6 +1735,65 @@ def render_fam_deltas(f):
     return out
 
 
+def render_ladder_kernels(f):
+    """Chapter 24: the five rungs, each with its own tolerance and its own deviation from the host reference."""
+    shapes = {"eltwise_relu": "32 Mi floats", "gather_embed": "32 rows x 1024",
+              "gemm_naive": "512 x 512 x 512", "gemm_tiled": "512 x 512 x 512",
+              "gemv_q4_decode": "4096 x 4096, M=1", "gemm_q4_prefill16": "4096 x 4096, M=16"}
+    out = ["| Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |", "|---|---|---|---|---|---|---|"]
+    for k in f["kernels"]:
+        out.append(f"| `{k['name']}` | {shapes.get(k['name'], '-')} | {k['ms'] * 1000:,.0f} us | "
+                   f"{k['gflops']:,.0f} | {k['max_abs_diff']:.1e} | {k['tolerance']:.0e} | "
+                   f"{'yes' if k['passes'] else '**NO**'} |")
+    out.append("")
+    out.append("Every rung is compared with a host reference before it is timed, and the deviation is printed "
+               "beside the speed. The deviations are exactly zero here, which is worth explaining rather than "
+               "celebrating: the test data is small integer multiples, and both paths sum in the same order, so "
+               "there is nothing for the two to disagree about. On real weights the same comparison lands in the "
+               "1e-5 range and the tolerance column is what decides - which is why it is a column and not a "
+               "sentence.")
+    return out
+
+
+def render_ladder_tiling(f):
+    """Chapter 24: the tile arithmetic against the measurement."""
+    t = f["tiling"]
+    out = ["| 512 x 512 x 512 f16 GEMM | Time | GFLOP/s |", "|---|---|---|",
+           f"| naive - every thread reads its own row and column | {t['naive_ms'] * 1000:,.0f} us | "
+           f"{f['kernels'][2]['gflops'] if len(f['kernels']) > 2 else 0:,.0f} |",
+           f"| shared-memory tiled, {t['tile']} x {t['tile']} | **{t['tiled_ms'] * 1000:,.0f} us** | "
+           f"{f['kernels'][3]['gflops'] if len(f['kernels']) > 3 else 0:,.0f} |",
+           f"| speedup | **{t['speedup']}x** | |"]
+    out.append("")
+    out.append(f"The tile arithmetic says each element loaded into shared memory can feed {t['reuse_per_loaded_element']} "
+               f"multiply-accumulates, so the ceiling for this change is {t['predicted_speedup_upper_bound']}x. The "
+               f"measurement gives **{t['speedup']}x**, and the gap is the honest lesson: a 512-cubed problem's "
+               f"operands fit in L2 (about 1 MB of f16), so the naive kernel is not actually starved of bandwidth "
+               f"- it is starved of *latency hiding*, which shared memory helps with only partly. Tile reuse pays "
+               f"the full dividend on a problem too big for cache, and this is not that problem.")
+    return out
+
+
+def render_ladder_shapes(f):
+    """Chapter 24: the same packed weights at M = 1 and M = 16."""
+    s = f["shapes"]
+    out = ["| q4_0 4096 x 4096 weights | Time | Per token | Weights read |", "|---|---|---|---|",
+           f"| decode, M = 1 | {s['decode']['ms'] * 1000:,.0f} us | **{s['decode']['ms_per_token'] * 1000:,.0f} us** | "
+           f"{s['decode']['weights_mb']} MB |",
+           f"| prefill, M = 16 | {s['prefill']['ms'] * 1000:,.0f} us | "
+           f"**{s['prefill']['ms_per_token'] * 1000:,.0f} us** | {s['prefill']['weights_mb']} MB |",
+           f"| per-token ratio | | **{s['per_token_ratio']}x** | |"]
+    out.append("")
+    out.append(f"Sixteen tokens at once cost almost exactly sixteen times one token - **{s['per_token_ratio']}x per "
+               f"token** - so this kernel gained nothing from batching. That is not a mistake in the measurement; "
+               f"it is what a kernel does when it is *already* compute-bound on scalar unpacking: the weights are "
+               f"read once per row either way, and the extra arithmetic is real work, not reused work. Batching "
+               f"pays when the kernel is bandwidth-bound and the loads are amortised - which is precisely why the "
+               f"real engine's decode path uses `__dp4a` and its prefill path uses tensor cores, and why the "
+               f"threshold between them is a measurement rather than a preference.")
+    return out
+
+
 def render_seam_failures(f):
     """Chapter 23: the three failures a seam has to survive, made to happen on purpose."""
     a, b, w = f["alloc"], f["blocking_wait"], f["polled_wait"]
@@ -2252,6 +2318,9 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "ladder-kernels": render_ladder_kernels,
+    "ladder-tiling": render_ladder_tiling,
+    "ladder-shapes": render_ladder_shapes,
     "seam-failures": render_seam_failures,
     "seam-link": render_seam_link,
     "cuda-launch-sheet": render_cuda_launch_sheet,

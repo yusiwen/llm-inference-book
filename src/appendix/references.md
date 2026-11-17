@@ -43,8 +43,8 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 
 | Key | Work | Checked | Used in |
 |---|---|---|---|
-| `[pmpp]` | Kirk and Hwu, *Programming Massively Parallel Processors* (4th edition, 2022) - no arXiv ID (book) | no arXiv ID | 22 |
-| `[sze]` | Sze et al., *Efficient Processing of Deep Neural Networks* (2020) - no arXiv ID (book) | no arXiv ID | 24 |
+| `[pmpp]` | Kirk and Hwu, *Programming Massively Parallel Processors* (4th edition, 2022) - no arXiv ID (book) | no arXiv ID | 22, 24 |
+| `[sze]` | Sze et al., *Efficient Processing of Deep Neural Networks* (2020) - no arXiv ID (book) | no arXiv ID | - |
 | `[caqa]` | Hennessy and Patterson, *Computer Architecture: A Quantitative Approach* (6th edition, 2017) - no arXiv ID (book) | no arXiv ID | 0, 1, 2 |
 | `[jm]` | Jurafsky and Martin, *Speech and Language Processing* (3rd edition draft) - no arXiv ID (book; the tokenization chapter) | no arXiv ID | 11 |
 | `[trpl]` | Klabnik and Nichols, *The Rust Programming Language* - no arXiv ID (book) | no arXiv ID | 0 |
@@ -58,7 +58,7 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 | `[jinja]` | Jinja2 template engine documentation, Pallets Projects - no arXiv ID (documentation) | no arXiv ID | 12 |
 | `[ggml-quant]` | The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification) | no arXiv ID | 3, 4, 5, 6 |
 | `[cuda-guide]` | *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | 22, 23 |
-| `[ptx]` | *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions) | no arXiv ID | 24 |
+| `[ptx]` | *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions) | no arXiv ID | - |
 | `[nsight]` | *Nsight Compute* user guide, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | 26 |
 | `[arm-sdot]` | *Arm Architecture Reference Manual* and the ACLE integer dot-product instructions (`SDOT`, `SMMLA`) - no arXiv ID (vendor manual) | no arXiv ID | 7 |
 | `[metal]` | *Metal Shading Language Specification*, Apple - no arXiv ID (vendor manual) | no arXiv ID | 21 |

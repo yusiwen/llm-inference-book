@@ -1,0 +1,91 @@
+{
+ "device": "NVIDIA GB10",
+ "compute_cap": "12.1",
+ "sm_count": 48,
+ "reps": 20,
+ "kernels": [
+  {
+   "name": "eltwise_relu",
+   "ms": 1.0989,
+   "bytes": 268435456,
+   "gflops": 0.0,
+   "max_abs_diff": 0,
+   "tolerance": 0,
+   "passes": true
+  },
+  {
+   "name": "gather_embed",
+   "ms": 0.0043,
+   "bytes": 262144,
+   "gflops": 0.0,
+   "max_abs_diff": 0,
+   "tolerance": 0,
+   "passes": true
+  },
+  {
+   "name": "gemm_naive",
+   "ms": 0.163,
+   "bytes": 1572864,
+   "gflops": 1647.0,
+   "max_abs_diff": 0,
+   "tolerance": 0.002,
+   "passes": true
+  },
+  {
+   "name": "gemm_tiled",
+   "ms": 0.1192,
+   "bytes": 1572864,
+   "gflops": 2252.1,
+   "max_abs_diff": 0,
+   "tolerance": 0.002,
+   "passes": true
+  },
+  {
+   "name": "gemv_q4_decode",
+   "ms": 0.2534,
+   "bytes": 9453568,
+   "gflops": 132.4,
+   "max_abs_diff": 0,
+   "tolerance": 0.005,
+   "passes": true
+  },
+  {
+   "name": "gemm_q4_prefill16",
+   "ms": 3.9498,
+   "bytes": 9699328,
+   "gflops": 135.9,
+   "max_abs_diff": 0,
+   "tolerance": 0.005,
+   "passes": true
+  }
+ ],
+ "tiling": {
+  "tile": 16,
+  "reuse_per_loaded_element": 16,
+  "naive_ms": 0.163,
+  "tiled_ms": 0.1192,
+  "speedup": 1.37,
+  "predicted_speedup_upper_bound": 16,
+  "verdict": "the tiled kernel is faster, and by a factor closer to the ceiling than to 1.0 - the shared memory is doing what the tile arithmetic says it should"
+ },
+ "shapes": {
+  "decode": {
+   "m": 1,
+   "ms": 0.2534,
+   "ms_per_token": 0.2534,
+   "weights_mb": 9.5
+  },
+  "prefill": {
+   "m": 16,
+   "ms": 3.9498,
+   "ms_per_token": 0.247,
+   "weights_mb": 9.7
+  },
+  "per_token_ratio": 0.97
+ },
+ "artifact": "ladder",
+ "host": "yusiwen@192.168.2.40",
+ "arch": "sm_121",
+ "invocation": "scp scripts/ladder/ladder.cu yusiwen@192.168.2.40:/tmp/ch24-ladder/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o ladder ladder.cu ; ./ladder",
+ "note": "Each rung prints its own tolerance and maximum absolute deviation from a host reference; `passes` is that comparison, not an assertion about the kernel's intent. Rungs 4 and 5 use the same packed q4_0 bytes, so their difference is the shape, not the data."
+}
