@@ -667,6 +667,11 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "dotsimd-freq": ("scripts/dotsimd.c --hold",
+                     "runs one kernel alone on a pinned core for eight seconds while `turbostat` samples `Bzy_MHz` "
+                     "every 200 ms, and keeps only the samples inside the window the binary stamps to stderr",
+                     "median of about seventy samples per kernel; the clock question Chapter 7 left open",
+                     ),
     "membw": ("scripts/membw-run.py",
               "compiles and runs `scripts/membw.c` - a streaming read of two arrays with no model involved - at "
               "each thread count in `--threads`, five runs each, and keeps the median of the reads and of the "
@@ -1703,6 +1708,26 @@ def render_fam_deltas(f):
     return out
 
 
+def render_dotsimd_clock(f):
+    """Chapter 7: the clock, measured, because the chapter said it had not been."""
+    a, b = f["kernels"]
+    d = f["deltas"]
+    out = ["| While the kernel ran alone | " + a["name"] + " | " + b["name"] + " | Difference |",
+           "|---|---|---|---|",
+           f"| Clock, median of {a['samples']} samples over {a['window_s']:.0f} s | "
+           f"**{a['mhz_median']:,.0f} MHz** | **{b['mhz_median']:,.0f} MHz** | {d['clock_pct']:+.1f}% |",
+           f"| Time per row | {a['ns_per_row']} ns | {b['ns_per_row']} ns | **{d['time_pct']:+.1f}%** |"]
+    out.append("")
+    out.append(f"The clock does drop, and it is not the explanation. AVX-512 costs **{abs(d['clock_pct']):.1f} per "
+               f"cent** of frequency and takes **{d['time_pct']:.1f} per cent** more time per row: a gap that small "
+               f"in the clock cannot account for a gap that large in throughput. One caveat before reading too much "
+               f"into the direction: these two runs are separate from the ones in the table above, so the absolute "
+               f"nanoseconds differ by a few per cent between them - the comparison that matters is inside each run, "
+               f"where both kernels saw the same data on the same core. The frequency drop is real, measurable, and "
+               f"the wrong suspect. The kernel is the story.")
+    return out
+
+
 def render_membw_configs(f):
     """Appendix: one instrument, two thread counts, and the reason the machine table quotes a range."""
     cfgs = f.get("configs") or []
@@ -2080,6 +2105,7 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "dotsimd-clock": render_dotsimd_clock,
     "membw-configs": render_membw_configs,
     "loop-session-measured": render_loop_session_measured,
     "loop-single-turn": render_loop_single_turn,

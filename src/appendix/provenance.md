@@ -16,6 +16,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `dispatch` | `scripts/dispatch.py` | runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md` | Darwin 27.2.0, arm64 | per machine | counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised |
 | `dotbench` | `scripts/dotbench.c` | times three scalar kernels on 8,192 real rows of the book's file | Apple M4 Pro | 7 | median of the runs, with the full range beside it |
 | `dotcheck` | `scripts/dotcheck.py` | decomposes the quantized dot product's error into activation, integer and scale parts, and bounds each format's accumulator | not machine-dependent | - | max relative error against f64; the bounds are arithmetic, the worst partial is measured |
+| `dotsimd-freq` | `scripts/dotsimd.c --hold` | runs one kernel alone on a pinned core for eight seconds while `turbostat` samples `Bzy_MHz` every 200 ms, and keeps only the samples inside the window the binary stamps to stderr | Intel i7-11700B @ 3.20GHz, nuc11btmi7 (16 threads) | per machine | median of about seventy samples per kernel; the clock question Chapter 7 left open |
 | `dotsimd` | `scripts/dotsimd.c` | times four SIMD kernels and the scalar reference, one source file compiled for ARM and for x86 | Apple M4 Pro (arm64) and Intel i7-11700B (x86_64) | per machine | median of the runs per machine |
 | `engine-measure` | `scripts/engine-measure.py` | runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree | Darwin 27.2.0, arm64 | per machine | one run of the engine's suite; the derived column must equal the measured one, format by format and context by context |
 | `family` | `scripts/family.py` | runs the binary with its per-node trace on one real file and counts the nodes by op kind, slices one transformer layer out of the graph, runs three byte-patched copies of the same file through the loader to capture its refusals verbatim, and counts lines and `#[test]` functions per family module in the pinned checkout; writes `facts/family.json` | Darwin 27.2.0, arm64 | per machine | node counts and one layer's slice from one trace; the refusals are exit codes and stderr read as values; line and test counts are recomputed from the pinned checkout, not remembered |
@@ -106,6 +107,18 @@ clang -O2 -o dotbench scripts/dotbench.c ; ./dotbench qwen2.5-0.5b-instruct-q4_0
 
 ```bash
 uv run --with gguf python scripts/dotcheck.py --weights facts/gguf-qwen2.5-0.5b-q4_0.json:~/.cache/myfer/qwen2.5-0.5b-instruct-q4_0.gguf --pairs Q4_0,Q8_0 --rows 512
+```
+
+### dotsimd-freq
+
+`scripts/dotsimd.c --hold` - runs one kernel alone on a pinned core for eight seconds while `turbostat` samples `Bzy_MHz` every 200 ms, and keeps only the samples inside the window the binary stamps to stderr.
+
+- **Machine**: Intel i7-11700B @ 3.20GHz, nuc11btmi7 (16 threads)
+- **Runs**: per machine; median of about seventy samples per kernel; the clock question Chapter 7 left open
+- **Raw numbers**: `facts/dotsimd-freq.json`
+
+```bash
+gcc -O3 -mf16c -o dotsimd dotsimd.c -lm; sudo turbostat --cpu 0 --show Time_Of_Day_Seconds,Bzy_MHz,PkgWatt --interval 0.2 & ; for k in avx2 avx512-vnni; do taskset -c 0 ./dotsimd q4_0.gguf 150590816 896 8192 40 --only $k --hold 8; done
 ```
 
 ### dotsimd

@@ -1,0 +1,37 @@
+{
+ "artifact": "dotsimd-freq",
+ "question": "Chapter 7 measures AVX-512 VNNI slower than AVX2 on this CPU and says the clock was not measured. Measured now.",
+ "machine": "Intel i7-11700B @ 3.20GHz, nuc11btmi7 (16 threads)",
+ "clock": "turbostat --cpu 0 --show Time_Of_Day_Seconds,Bzy_MHz,PkgWatt --interval 0.2, sampled while dotsimd held one kernel on CPU 0",
+ "tsc_mhz": 3187.2,
+ "kernels": [
+  {
+   "name": "avx2",
+   "ns_per_row": 45.5,
+   "speedup_vs_scalar": 5.93,
+   "mhz_median": 4781.5,
+   "mhz_min": 4626.0,
+   "mhz_max": 4795.0,
+   "pkg_watt_median": 28.3,
+   "samples": 70,
+   "window_s": 8.005
+  },
+  {
+   "name": "avx512-vnni",
+   "ns_per_row": 58.9,
+   "speedup_vs_scalar": 4.68,
+   "mhz_median": 4600.0,
+   "mhz_min": 4497.0,
+   "mhz_max": 4600.0,
+   "pkg_watt_median": 25.4,
+   "samples": 70,
+   "window_s": 8.002
+  }
+ ],
+ "deltas": {
+  "clock_pct": -3.8,
+  "time_pct": 29.5
+ },
+ "note": "Each kernel ran alone on `taskset -c 0` for eight seconds with `--hold 8`; the frequency samples are the ones whose timestamps fall inside the hold window, which the binary prints to stderr. `--only` keeps the scalar kernel for the denominator but times it once, so the clock belongs to the kernel under test. The CPU reports AVX-512F/BW/DQ/VL/VNNI/IFMA/VBMI/VPOPCNTDQ.",
+ "invocation": "gcc -O3 -mf16c -o dotsimd dotsimd.c -lm; sudo turbostat --cpu 0 --show Time_Of_Day_Seconds,Bzy_MHz,PkgWatt --interval 0.2 & ; for k in avx2 avx512-vnni; do taskset -c 0 ./dotsimd q4_0.gguf 150590816 896 8192 40 --only $k --hold 8; done"
+}

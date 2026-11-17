@@ -309,6 +309,16 @@ int main(int argc, char **argv) {
 
     entry table[6];
     int n = 0;
+    // `--only NAME` keeps the scalar kernel as the denominator and drops the rest: one kernel per run is what
+    // lets a frequency sampler (turbostat) attribute a clock to a kernel instead of to a program.
+    const char *only = NULL;
+    double hold = 0.0;
+    for (int i = 5; i + 1 < argc; i++) {
+        if (strcmp(argv[i], "--only") == 0) only = argv[i + 1];
+        // `--hold S` keeps the chosen kernel running for S seconds after timing, with nothing else on the core:
+        // that window is what an external clock sampler (turbostat) can attribute to this kernel.
+        else if (strcmp(argv[i], "--hold") == 0) hold = atof(argv[i + 1]);
+    }
     table[n++] = (entry){"scalar", dot_scalar, "always"};
 #if defined(HAVE_X86)
     table[n++] = (entry){"avx2", dot_avx2, "avx2+fma"};
@@ -319,6 +329,16 @@ int main(int argc, char **argv) {
     table[n++] = (entry){"neon-sdot", dot_neon_scaled, "armv8.2 dotprod"};
     table[n++] = (entry){"neon-acc", dot_neon_acc, "armv8.2 dotprod, no per-block reduce"};
 #endif
+
+    if (only) {
+        entry keep[6];
+        int m = 0;
+        for (int k = 0; k < n; k++)
+            if (k == 0 || strcmp(table[k].name, only) == 0) keep[m++] = table[k];
+        if (m == 1) { fprintf(stderr, "no kernel named %s on this CPU\n", only); return 1; }
+        for (int k = 0; k < m; k++) table[k] = keep[k];
+        n = m;
+    }
 
     if (runs > 64) runs = 64;
     double med[6], lo[6], hi[6];
@@ -362,10 +382,35 @@ int main(int argc, char **argv) {
     for (int k = 0; k < n; k++) {
         double r[64];
         float sink = 0.0f;
+        if (only && k == 0) {
+            // In `--only` mode the scalar kernel is the denominator, not a subject: one pass over the rows, no
+            // sampler window, so the clock a frequency counter reports belongs to the kernel under test.
+            med[k] = bench(table[k].fn, w, a, nb, rows, 1, &sink);
+            lo[k] = hi[k] = med[k];
+            continue;
+        }
+        struct timespec t0, t1;
+        clock_gettime(CLOCK_REALTIME, &t0);
+        fprintf(stderr, "[stamp] %s start %.3f\n", table[k].name, t0.tv_sec + t0.tv_nsec / 1e9);
         for (int i = 0; i < runs; i++) r[i] = bench(table[k].fn, w, a, nb, rows, 2, &sink);
+        clock_gettime(CLOCK_REALTIME, &t1);
+        fprintf(stderr, "[stamp] %s end %.3f\n", table[k].name, t1.tv_sec + t1.tv_nsec / 1e9);
         qsort(r, runs, sizeof(double), cmp_double);
         med[k] = r[runs / 2]; lo[k] = r[0]; hi[k] = r[runs - 1];
         if (sink == 12345.0f) printf(" ");        // keep the sink alive without printing it
+    }
+
+    if (hold > 0.0 && n > 1) {
+        struct timespec h0, h1;
+        float sink2 = 0.0f;
+        clock_gettime(CLOCK_REALTIME, &h0);
+        fprintf(stderr, "[hold] %s start %.3f\n", table[n - 1].name, h0.tv_sec + h0.tv_nsec / 1e9);
+        do {
+            bench(table[n - 1].fn, w, a, nb, rows, 20, &sink2);
+            clock_gettime(CLOCK_REALTIME, &h1);
+        } while ((h1.tv_sec + h1.tv_nsec / 1e9) - (h0.tv_sec + h0.tv_nsec / 1e9) < hold);
+        fprintf(stderr, "[hold] %s end %.3f\n", table[n - 1].name, h1.tv_sec + h1.tv_nsec / 1e9);
+        if (sink2 == 12345.0f) printf(" ");
     }
 
     const char *machine = 

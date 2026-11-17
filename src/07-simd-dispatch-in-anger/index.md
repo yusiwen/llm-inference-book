@@ -26,6 +26,10 @@ Four kernels, two machines, one data set:
 *`scripts/dotsimd.c`; times four SIMD kernels and the scalar reference, one source file compiled for ARM and for x86; on **Apple M4 Pro (arm64) and Intel i7-11700B (x86_64)**; median of the runs per machine. Command: see [the provenance index](../appendix/provenance.md#dotsimd). Raw numbers: `facts/dotsimd.json`.*
 <!-- /facts -->
 
+<!-- facts: dotsimd-freq.provenance -->
+*`scripts/dotsimd.c --hold`; runs one kernel alone on a pinned core for eight seconds while `turbostat` samples `Bzy_MHz` every 200 ms, and keeps only the samples inside the window the binary stamps to stderr; on **Intel i7-11700B @ 3.20GHz, nuc11btmi7 (16 threads)**; median of about seventy samples per kernel; the clock question Chapter 7 left open. Command: see [the provenance index](../appendix/provenance.md#dotsimd-freq). Raw numbers: `facts/dotsimd-freq.json`.*
+<!-- /facts -->
+
 Three things in that table are worth more than the headline speedups.
 
 **The vector width was not the biggest lever.** The first version of the ARM kernel measured 48.1 ns per row; the final one measures 25.9. Nothing about the multiply changed between them - the difference was that the f16 *scale* was being decoded by a branchy software routine instead of one hardware conversion instruction. Lesson 3 takes that apart, because it is the most common way a hand-written kernel ends up slower than the scalar code it replaced.
@@ -250,7 +254,18 @@ If your engine cannot answer "which kernel just ran, on this machine, for this d
 **Why the narrower one wins.** On the i7-11700B, AVX-512 VNNI is the theoretically better instruction: `vpdpbusd` does what `SDOT` does, on 64 bytes at a time. Measured, it is **4.57x** against AVX2's **6.10x**. Two reasons, both structural:
 
 - The VNNI version needs more non-multiply work per iteration: 64 bytes have to be assembled from two 18-byte blocks (an insert each side), and because AVX-512 has no `sign_epi8` the sign of the weight is applied to the activation with a mask extract, a negate and a blend. At 32 weights per block that prologue is as long as the multiply it feeds.
-- Sustained 512-bit code can also cost clock, which this book did not measure here - one attempt to read `scaling_cur_freq` on the NUC while the kernel ran produced mostly idle samples, and a number produced that way would have been worse than none. The code-level argument is enough to explain the result, so it is the one on record.
+- Sustained 512-bit code can also cost clock. When this chapter was written that was an open question, not an argument: an attempt to read `scaling_cur_freq` on the NUC while the kernel ran produced mostly idle samples, and a number produced that way would have been worse than none. It is measured now - each kernel alone on a pinned core for eight seconds, `turbostat` sampling the core's clock every 200 ms, only the samples inside the window counted:
+
+<!-- facts: dotsimd-freq.dotsimd-clock -->
+| While the kernel ran alone | avx2 | avx512-vnni | Difference |
+|---|---|---|---|
+| Clock, median of 70 samples over 8 s | **4,782 MHz** | **4,600 MHz** | -3.8% |
+| Time per row | 45.5 ns | 58.9 ns | **+29.5%** |
+
+The clock does drop, and it is not the explanation. AVX-512 costs **3.8 per cent** of frequency and takes **29.5 per cent** more time per row: a gap that small in the clock cannot account for a gap that large in throughput. One caveat before reading too much into the direction: these two runs are separate from the ones in the table above, so the absolute nanoseconds differ by a few per cent between them - the comparison that matters is inside each run, where both kernels saw the same data on the same core. The frequency drop is real, measurable, and the wrong suspect. The kernel is the story.
+<!-- /facts -->
+
+  So the clock drops by a few per cent while the time rises by nearly a third. The throttle is real and it is not the reason - which is worth stating plainly, because "AVX-512 throttles" is the explanation everyone reaches for first, and this is the measurement that retires it for this CPU. What remains is the prologue above: at 32 weights a block, the assembly work is the kernel.
 
 That last point is the general lesson and it is uncomfortable: **at 32 weights per block you are not vectorising a big loop, you are vectorising a small loop with a large prologue.** Which is exactly why the formats in Chapter 5 moved to 256-weight super-blocks, and why Chapter 8's block-over-rows layout is the next real win.
 
