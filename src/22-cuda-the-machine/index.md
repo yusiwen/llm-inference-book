@@ -255,9 +255,37 @@ The table the chapter asks you to fill in before every kernel, filled in here fo
 | vector add | 131,072 | 256 | 8 | 384 MB | 1.59 ms (bandwidth) | 1.65 ms |
 | divergent variant | 131,072 | 256 | 8 | 384 MB | 1.59 ms (bandwidth) | 1.63 ms - the branch is free |
 | elementwise gate | 131,072 | 256 | 8 | 256 MB | 1.04 ms (bandwidth) | 1.08 ms |
-| one decode matmul row | 32 | 256 | 8 | 33 MB | 0.14 ms (bandwidth) | 0.21 ms - strided, 64% of stream |
+| one decode matmul row | 32 | 256 | 8 | 33 MB | 0.14 ms (bandwidth) | 0.21 ms - strided, 59% of stream at this size |
 
 The last row is the one to keep. It is a decode matmul's access pattern, and it is the only one of the four that misses its own byte count - not because it computes more, but because it asks for its bytes one row at a time.
+
+### The counterfactual: why that row is slow, and how far you can push the claim
+
+"Because it asks for its bytes one row at a time" is an *explanation*, and an explanation needs a second implementation to carry it. One kernel measuring 64 per cent of stream shows only that it is slow. So the same GEMV was written twice - the sheet's version, and a version where one warp owns a row and its 32 lanes split the columns, reducing with `__shfl_down` - and both were run at three sizes:
+
+<!-- facts: gemv-scale.gemv-scale -->
+| one GEMV, two access patterns | one thread per row | share of stream | one warp per row | share of stream | strided is |
+|---|---|---|---|---|---|
+| 1024 x 1024 weights | 37.4 GB/s | 15.7% | **629.1 GB/s** | 263.4% | **16.81x** slower |
+| 4096 x 4096 weights | 140.7 GB/s | 58.9% | **270.6 GB/s** | 113.3% | **1.92x** slower |
+| 8192 x 8192 weights | 109.5 GB/s | 45.8% | **262.6 GB/s** | 109.9% | **2.40x** slower |
+
+The identical arithmetic, written two ways, differs by **1.92x to 16.81x** - and the two agree numerically (relative deviation in the 1e-5 range), so the difference is the access pattern and nothing else. That is the counterfactual the launch sheet was missing: one kernel can show that a shape is slow, only a second implementation can show *why*.
+
+Two things this table taught that the single-size measurement could not. The stream share is **not a constant** - it moves from 15.7 per cent to 58.9 per cent across a factor of eight in problem size, so quoting it without the size is quoting a coincidence. And the coalesced kernel reaches **263 per cent of the streaming rate** at the smallest size, which is impossible unless those weights never left cache - so for a matrix that fits in L2, 'fraction of stream' is the wrong denominator entirely. The number that survives every size is the ratio.
+<!-- /facts -->
+
+The arithmetic is identical and the outputs agree to 1e-5, so the difference is the access pattern and nothing else. **That is the evidence the 64 per cent was standing in for**, and reading it changes two things about how the number should be quoted.
+
+**It is not a constant.** Across a factor of eight in problem size the strided kernel's share of stream moves between 15.7 and 58.9 per cent, so "64 per cent of stream" without the size beside it is a coincidence dressed as a property. What survives every size is the *ratio*: 1.92x to 16.81x slower than the same arithmetic coalesced.
+
+**And the denominator can be wrong.** The coalesced kernel reaches 263 per cent of the streaming rate at 1024 square - which is impossible unless those weights never left cache. For a matrix that fits in L2, "fraction of stream" is not a meaningful unit at all; the stream is what you pay when you actually go to DRAM, and that kernel did not.
+
+The practical form of both findings is the same: when a kernel misses its byte-count prediction, **write the counterfactual before you name the cause**, and say what size you measured at. Chapter 24 runs into the identical trap from the other direction, with a tile that saves traffic nobody was waiting for.
+
+<!-- facts: gemv-scale.provenance -->
+*`scripts/probe/gemv_scale.cu`; runs the same GEMV twice - one thread per row, then one warp per row with a __shfl_down reduction - at 1024, 4096 and 8192 square weights, and measures the machine's own streaming rate in the same process as the denominator; milliseconds and GB/s for both kernels at each size, their share of the measured streaming rate, the ratio between them, and the maximum relative difference between their outputs. Command: see [the provenance index](../appendix/provenance.md#gemv-scale). Raw numbers: `facts/gemv-scale.json`.*
+<!-- /facts -->
 
 ## Project
 

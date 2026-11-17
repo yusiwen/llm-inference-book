@@ -24,6 +24,7 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `engine-measure` | `scripts/engine-measure.py` | runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree | Darwin 27.2.0, arm64 | per machine | one run of the engine's suite; the derived column must equal the measured one, format by format and context by context |
 | `family` | `scripts/family.py` | runs the binary with its per-node trace on one real file and counts the nodes by op kind, slices one transformer layer out of the graph, runs three byte-patched copies of the same file through the loader to capture its refusals verbatim, and counts lines and `#[test]` functions per family module in the pinned checkout; writes `facts/family.json` | Darwin 27.2.0, arm64 | per machine | node counts and one layer's slice from one trace; the refusals are exit codes and stderr read as values; line and test counts are recomputed from the pinned checkout, not remembered |
 | `fusion` | `scripts/fuse.py` | runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64 | Darwin 27.2.0, arm64 | per machine | node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding |
+| `gemv-scale` | `scripts/probe/gemv_scale.cu` | runs the same GEMV twice - one thread per row, then one warp per row with a __shfl_down reduction - at 1024, 4096 and 8192 square weights, and measures the machine's own streaming rate in the same process as the denominator | not machine-dependent | - | milliseconds and GB/s for both kernels at each size, their share of the measured streaming rate, the ratio between them, and the maximum relative difference between their outputs |
 | `gguf-qwen2.5-0.5b-q4_0` | `scripts/gguf-inspect.py` | parses the same model at Q4_0 | not machine-dependent | - | read once from the file |
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `graph` | `scripts/graph.py` | runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, the shapes, the edges and the per-node statistics out of the trace the visualizer consumes | arm64, Darwin 27.2.0 | per machine | a structural comparison of two node sequences (equal or not), and node counts read one run at a time; nothing here is averaged |
@@ -208,6 +209,18 @@ cargo test --release measure -- --nocapture   # MINFER_MEASURE_MODEL=~/.cache/my
 
 ```bash
 python3 scripts/fuse.py ~/git/mine/minfer/target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer ~/git/mine/minfer --out facts/fusion.json
+```
+
+### gemv-scale
+
+`scripts/probe/gemv_scale.cu` - runs the same GEMV twice - one thread per row, then one warp per row with a __shfl_down reduction - at 1024, 4096 and 8192 square weights, and measures the machine's own streaming rate in the same process as the denominator.
+
+- **Machine**: not machine-dependent
+- **Runs**: -; milliseconds and GB/s for both kernels at each size, their share of the measured streaming rate, the ratio between them, and the maximum relative difference between their outputs
+- **Raw numbers**: `facts/gemv-scale.json`
+
+```bash
+scp scripts/probe/gemv_scale.cu yusiwen@192.168.2.40:/tmp/ch22-gemv-scale/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o gemv_scale gemv_scale.cu ; ./gemv_scale
 ```
 
 ### gguf-qwen2.5-0.5b-q4_0

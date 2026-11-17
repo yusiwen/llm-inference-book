@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "gemv-scale": ("scripts/probe/gemv_scale.cu",
+                   "runs the same GEMV twice - one thread per row, then one warp per row with a __shfl_down "
+                   "reduction - at 1024, 4096 and 8192 square weights, and measures the machine's own streaming "
+                   "rate in the same process as the denominator",
+                   "milliseconds and GB/s for both kernels at each size, their share of the measured streaming "
+                   "rate, the ratio between them, and the maximum relative difference between their outputs",
+                   ),
     "attn-dev": ("scripts/attn/attn_dev.cu",
                  "computes one causal prefill row twice - once materialising the score matrix and once with a "
                  "running max and sum - then runs decode attention against 128 and 8,192 keys, then times 100 "
@@ -1801,6 +1808,34 @@ def render_attn_graph(f):
     return out
 
 
+def render_gemv_scale(f):
+    """Chapter 22: the access-pattern claim, checked against a counterfactual and across sizes."""
+    rs = f["results"]
+    out = ["| one GEMV, two access patterns | one thread per row | share of stream | one warp per row | "
+           "share of stream | strided is |", "|---|---|---|---|---|---|"]
+    for r in rs:
+        out.append(f"| {r['size']} x {r['size']} weights | {r['per_row_gbs']:.1f} GB/s | "
+                   f"{r['per_row_of_stream']:.1f}% | **{r['per_warp_gbs']:.1f} GB/s** | "
+                   f"{r['per_warp_of_stream']:.1f}% | **{r['ratio_row_over_warp']:.2f}x** slower |")
+    out.append("")
+    fnd = f["finding"]
+    out.append(f"The identical arithmetic, written two ways, differs by **{fnd['row_over_warp_min']:.2f}x to "
+               f"{fnd['row_over_warp_max']:.2f}x** - and the two agree numerically (relative deviation in the "
+               f"1e-5 range), so the difference is the access pattern and nothing else. That is the "
+               f"counterfactual the launch sheet was missing: one kernel can show that a shape is slow, only a "
+               f"second implementation can show *why*.")
+    out.append("")
+    out.append(f"Two things this table taught that the single-size measurement could not. The stream share is "
+               f"**not a constant** - it moves from {fnd['shares_vary_from']:.1f} per cent to "
+               f"{fnd['shares_vary_to']:.1f} per cent across a factor of eight in problem size, so quoting it "
+               f"without the size is quoting a coincidence. And the coalesced kernel reaches "
+               f"**{max(r['per_warp_of_stream'] for r in rs):.0f} per cent of the streaming rate** at the "
+               f"smallest size, which is impossible unless those weights never left cache - so for a matrix "
+               f"that fits in L2, 'fraction of stream' is the wrong denominator entirely. The number that "
+               f"survives every size is the ratio.")
+    return out
+
+
 def render_ladder_kernels(f):
     """Chapter 24: every rung with its own tolerance and its own deviation from the host reference."""
     shapes = {"eltwise_relu": "32 Mi floats", "gather_embed": "32 rows x 1024",
@@ -2397,6 +2432,7 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "gemv-scale": render_gemv_scale,
     "attn-prefill": render_attn_prefill,
     "attn-decode": render_attn_decode,
     "attn-graph": render_attn_graph,

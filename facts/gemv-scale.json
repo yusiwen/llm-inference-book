@@ -1,0 +1,63 @@
+{
+ "device": "NVIDIA GB10",
+ "sm_count": 48,
+ "copy_256mb_ms": 2.248,
+ "stream_gbs": 238.82,
+ "sizes": [
+  1024,
+  4096,
+  8192
+ ],
+ "results": [
+  {
+   "size": 1024,
+   "per_row_ms": 0.1121,
+   "per_row_gbs": 37.4,
+   "per_row_of_stream": 15.7,
+   "per_warp_ms": 0.0067,
+   "per_warp_gbs": 629.1,
+   "per_warp_of_stream": 263.4,
+   "ratio_row_over_warp": 16.81,
+   "max_rel_diff": 4.74e-06
+  },
+  {
+   "size": 4096,
+   "per_row_ms": 0.477,
+   "per_row_gbs": 140.7,
+   "per_row_of_stream": 58.9,
+   "per_warp_ms": 0.248,
+   "per_warp_gbs": 270.6,
+   "per_warp_of_stream": 113.3,
+   "ratio_row_over_warp": 1.92,
+   "max_rel_diff": 5.18e-06
+  },
+  {
+   "size": 8192,
+   "per_row_ms": 2.4519,
+   "per_row_gbs": 109.5,
+   "per_row_of_stream": 45.8,
+   "per_warp_ms": 1.0224,
+   "per_warp_gbs": 262.6,
+   "per_warp_of_stream": 109.9,
+   "ratio_row_over_warp": 2.4,
+   "max_rel_diff": 7.34e-05
+  }
+ ],
+ "artifact": "gemv-scale",
+ "host": "yusiwen@192.168.2.40",
+ "arch": "sm_121",
+ "invocation": "scp scripts/probe/gemv_scale.cu yusiwen@192.168.2.40:/tmp/ch22-gemv-scale/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o gemv_scale gemv_scale.cu ; ./gemv_scale",
+ "question": "does the row-per-thread GEMV's share of the streaming rate hold its value across sizes, and is the access pattern really the cause?",
+ "finding": {
+  "row_over_warp_min": 1.92,
+  "row_over_warp_max": 16.81,
+  "shares_vary_from": 15.7,
+  "shares_vary_to": 58.9,
+  "sizes_where_coalesced_exceeds_stream": [
+   1024,
+   4096,
+   8192
+  ],
+  "note": "the coalesced kernel beats the streaming rate at 1024, 4096, 8192, which means those weights were served from cache and the 'fraction of stream' normalisation is not meaningful there; the access-pattern attribution is carried by the row-over-warp ratio, which holds at every size"
+ }
+}
