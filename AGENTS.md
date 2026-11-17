@@ -21,6 +21,16 @@ against the committed inventory, runs `scripts/probe.py` (skeleton sections, lin
 lesson-item pairing, the build ladder's coverage, the starter skeleton's shape, count drift), and
 renders every `<!-- facts: ... -->` block against `facts/*.json` (`scripts/facts.py --check`).
 
+**The gate needs nothing but the standard library; the instruments need four packages.** Every `python3` call
+in `verify.sh` runs a stdlib-only script. The scripts that *write* `facts/*.json` need `regex`, `jinja2`,
+`numpy` and `tokenizers`, and the dev shell provides them through `python3.withPackages`, pinned by
+`flake.lock` - so `nix develop --command python3 scripts/fuse.py ...` is the one path, and an instrument
+running against a different numpy every week cannot back a number that claims a commit. On a machine without
+nix the fallback is `uv run --python 3.15 --with regex --with jinja2 --with numpy --with tokenizers python3 ...`.
+A bare `pkgs.python3` in `flake.nix` is how three measurement runs died on a missing `regex` while this gate
+reported "all checks passed" - the instruments are not part of the gate, so nothing noticed. Step 18 reports
+which of the four are importable and never fails.
+
 ## Numbers come from artifacts, not from the author
 
 A sentence that quotes a type id, an offset or a byte count is quoting a file, and a wrong number typed

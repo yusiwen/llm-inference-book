@@ -26,7 +26,9 @@ import pathlib
 import struct
 import sys
 
-import numpy as np
+import deps
+
+np = deps.need("numpy")
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 

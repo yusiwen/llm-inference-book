@@ -36,8 +36,11 @@ import pathlib
 import platform
 import sys
 
-import regex
 import unicodedata
+
+import deps
+
+regex = deps.need("regex")
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 

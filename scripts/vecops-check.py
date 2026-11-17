@@ -16,7 +16,9 @@ import argparse
 import json
 import sys
 
-import numpy as np
+import deps
+
+np = deps.need("numpy")
 
 
 def rel(a, b, floor=0.0):

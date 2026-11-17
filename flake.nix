@@ -30,7 +30,17 @@
             pkgs.ripgrep
             pkgs.fd
             pkgs.jq
-            pkgs.python3
+            # The gate needs only the standard library; the *instruments* need four packages, and a bare
+            # `pkgs.python3` is how `nix develop --command python3 scripts/fuse.py` came to fail with
+            # `ModuleNotFoundError: No module named 'regex'` while `verify.sh` stayed green - the instruments
+            # are not part of the gate, so nothing noticed. Versions are pinned by flake.lock, which is the
+            # point: an instrument whose numpy can change under it cannot back a number that claims a commit.
+            (pkgs.python3.withPackages (ps: [
+              ps.regex
+              ps.jinja2
+              ps.numpy
+              ps.tokenizers
+            ]))
           ];
 
           shellHook = ''

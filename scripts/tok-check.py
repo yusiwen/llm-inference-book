@@ -27,7 +27,10 @@ import json
 import pathlib
 import sys
 
-import tokenizers
+import deps
+
+deps.need("tokenizers")
+import tokenizers  # noqa: E402,F811  (deps.need gives the message)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 

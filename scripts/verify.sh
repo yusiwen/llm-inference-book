@@ -151,4 +151,18 @@ echo "== 17. no lesson explains the engine without quoting it =="
 python3 scripts/codecheck.py --coverage
 
 echo
+echo "== 18. instrument dependencies (advisory; the gate itself needs none of them) =="
+# Steps 1-17 need nothing but the standard library. The instruments that write `facts/*.json` need regex,
+# jinja2, numpy and tokenizers, and they are not part of this gate - which is how three measurement runs died
+# on `ModuleNotFoundError: No module named 'regex'` while this script reported "all checks passed". This step
+# never fails: a machine that cannot re-measure the book can still build and check it.
+if python3 -c 'import regex, jinja2, numpy, tokenizers' 2>/dev/null; then
+  echo "instruments: regex, jinja2, numpy and tokenizers are importable"
+else
+  echo "note: an instrument dependency is missing in this Python (see scripts/deps.py):"
+  python3 scripts/deps.py || true
+  echo "     building and checking the book does not need them; re-measuring facts/ does."
+fi
+
+echo
 echo "all checks passed"

@@ -37,7 +37,9 @@ import subprocess
 import sys
 import tempfile
 
-import numpy as np
+import deps
+
+np = deps.need("numpy")
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import tok as booktok  # noqa: E402  (the Chapter 11 instrument: the tokenizer, for ids and text)

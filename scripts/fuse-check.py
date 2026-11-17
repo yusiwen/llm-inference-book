@@ -19,7 +19,9 @@ import json
 import pathlib
 import sys
 
-import numpy as np
+import deps
+
+np = deps.need("numpy")
 
 MASK = (1 << 64) - 1
 SEED = 0x9E3779B97F4A7C15

@@ -33,8 +33,10 @@ import sys
 
 import re
 
-import jinja2
-from jinja2.sandbox import ImmutableSandboxedEnvironment
+import deps
+
+jinja2 = deps.need("jinja2")
+from jinja2.sandbox import ImmutableSandboxedEnvironment  # noqa: E402  (deps.need gives the message)
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import tok as booktok  # noqa: E402  (the Chapter 11 instrument: GGUF reader and BPE encoder)
