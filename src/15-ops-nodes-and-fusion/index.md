@@ -1,7 +1,7 @@
 # Chapter 15 · Ops, Nodes, and Fusion
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the op vocabulary is read out of the pinned source and the fused graph is the one the engine actually executed, with the kernel A/B timed over nine runs and its output compared byte for byte (`scripts/fuse.py`). The byte bill beside those numbers is arithmetic on stated shapes and is labelled as arithmetic; what is *not* here is which backend runs the fused node (Chapter 16) or its memory consequences (Chapter 17)
 > - **Build step S15**: An op vocabulary with payloads, one pattern rewritten in place under a capability guard, and the measurement that says what the rewrite is worth on your machine - which is not what the byte count says.
 > - **Rule of this book**: This chapter is the vocabulary and the rewrite. Which backend runs a node is Chapter 16; the memory consequences of fusion are Chapter 17.
 
@@ -19,7 +19,7 @@ reads two buffers and writes one.
 
 The rewrite is where this chapter stops agreeing with the textbook. Fusing three nodes into one removes
 40% of the bytes at this model's FFN width - and on the machine this book measures, it makes the kernel
-**1.06x faster**, not 1.67x, because the kernel was never waiting on memory. The same rewrite on an
+**1.07x faster**, not 1.67x, because the kernel was never waiting on memory. The same rewrite on an
 activation without a transcendental in it is 1.64x faster. Both numbers are in this chapter, measured the
 same way, and the difference between them is the whole of lesson 5.
 
@@ -30,7 +30,7 @@ same way, and the difference between them is the whole of lesson 5.
 - Implement a pattern match with a capability guard, including the two-phase commit that keeps the rewrite
   from corrupting the nodes it has not visited yet.
 - Measure whether a fusion is worth anything **on your machine** before you claim it is, and explain a
-  1.06x where the arithmetic promised 1.67x.
+  1.07x where the arithmetic promised 1.67x.
 
 ## Lessons
 
@@ -364,7 +364,7 @@ The byte count is the reason to do this at all, and it is arithmetic rather than
 | One node, one row | 58,368 |
 | Saved per row | 38,912 (40%) |
 | Saved per token, 24 layers | 933,888 |
-| This machine, one core, streaming copy | 126.3 GB/s |
+| This machine, one core, streaming copy | 121.8 GB/s |
 <!-- /facts -->
 
 97,280 bytes per row become 58,368, which is 40% of the traffic for one FFN activation, 933,888 bytes saved
@@ -382,22 +382,22 @@ the same signature and the same three-node-to-one-node shape.
 <!-- facts: fusion.fs-kernel -->
 | Activation | Rows | Three nodes | One node | Speedup | Output identical |
 |---|---|---|---|---|---|
-| `silu` | 1 | 15 us (6.5 GB/s) | 14 us (4.2 GB/s) | 1.07x | yes |
-| `silu` | 34 | 433 us (7.6 GB/s) | 405 us (4.9 GB/s) | 1.07x | yes |
-| `silu` | 512 | 3,165 us (15.7 GB/s) | 2,927 us (10.2 GB/s) | 1.08x | yes |
-| `silu` | 4,096 | 23,276 us (17.1 GB/s) | 21,871 us (10.9 GB/s) | 1.06x | yes |
+| `silu` | 1 | 9 us (10.8 GB/s) | 8 us (7.3 GB/s) | 1.12x | yes |
+| `silu` | 34 | 267 us (12.4 GB/s) | 249 us (8.0 GB/s) | 1.07x | yes |
+| `silu` | 512 | 2,967 us (16.8 GB/s) | 2,829 us (10.6 GB/s) | 1.05x | yes |
+| `silu` | 4,096 | 23,682 us (16.8 GB/s) | 22,191 us (10.8 GB/s) | 1.07x | yes |
 | `relu` | 1 | 1 us (0.0 GB/s) | 0 us (0.0 GB/s) | n/a | yes |
 | `relu` | 34 | 28 us (118.1 GB/s) | 17 us (116.7 GB/s) | 1.65x | yes |
-| `relu` | 512 | 411 us (121.2 GB/s) | 248 us (120.5 GB/s) | 1.66x | yes |
-| `relu` | 4,096 | 3,324 us (119.9 GB/s) | 2,031 us (117.7 GB/s) | 1.64x | yes |
+| `relu` | 512 | 413 us (120.6 GB/s) | 237 us (126.1 GB/s) | 1.74x | yes |
+| `relu` | 4,096 | 3,543 us (112.5 GB/s) | 2,162 us (110.6 GB/s) | 1.64x | yes |
 <!-- /facts -->
 
-At 4096 rows the fused form is **1.06x** faster on silu and **1.64x** faster on relu. Same rewrite, same
+At 4096 rows the fused form is **1.07x** faster on silu and **1.64x** faster on relu. Same rewrite, same
 40% byte reduction, an order of magnitude apart in payoff. The table also carries the answer to why: the
-achieved bandwidth. silu moves 10 to 17 GB/s; relu moves 115 to 132 GB/s; and this machine's single-core
-streaming copy rate is in the bill table above, at 126.3 GB/s. relu sits *on* that line - it is waiting on
-memory, and removing 40% of the memory work removes about 40% of the time. silu sits at an eighth of it, which
-means the exponential, not the traffic, is the limit; the fusion removes work the kernel was not doing.
+achieved bandwidth. silu moves 8 to 17 GB/s; relu moves 110 to 126 GB/s; and this machine's single-core
+streaming copy rate is in the bill table above, at 121.8 GB/s. relu arrives within a tenth of that line - it is
+waiting on memory, and removing 40% of the memory work removes about 40% of the time. silu sits at an eighth of
+it, which means the exponential, not the traffic, is the limit; the fusion removes work the kernel was not doing.
 
 <figure class="book-figure">{{#include ../figures/15-fusion-cost.svg}}</figure>
 
@@ -525,5 +525,5 @@ it.
 - [ ] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement)
 
 <!-- facts: fusion.provenance -->
-*`scripts/fuse.py`; runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64; on **{'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}**; node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding. Command: see [the provenance index](../appendix/provenance.md#fusion). Raw numbers: `facts/fusion.json`.*
+*`scripts/fuse.py`; runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64; on **Darwin 27.2.0, arm64**; node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding. Command: see [the provenance index](../appendix/provenance.md#fusion). Raw numbers: `facts/fusion.json`.*
 <!-- /facts -->

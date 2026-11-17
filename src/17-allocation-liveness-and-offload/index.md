@@ -1,7 +1,7 @@
 # Chapter 17 · Allocation: Liveness, Arena, and Offload
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the liveness rule is re-implemented over the graph the engine executed and the process's peak RSS is the kernel's own number for the same run (`scripts/alloc.py`); the prediction between them is this book's model and it lands 88.0 MiB too high, which the chapter reports as the result rather than an error. What is *not* here is the cache's internal structure (Chapter 18)
 > - **Build step S17**: A liveness-based allocator that reuses one arena across a graph, keeps KV regions persistent, and decides what fits on a device before running.
 > - **Rule of this book**: The KV cache's internal structure is Chapter 18. This chapter is about memory as a whole: who owns it, when it can be reused, and what happens when it does not fit.
 

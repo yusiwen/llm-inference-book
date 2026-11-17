@@ -13,13 +13,13 @@ What that gate can check is internal agreement. Whether the *measurement* is hon
 | `alloc` | `scripts/alloc.py` | runs the engine with its per-node trace and re-implements `alloc_graph`'s liveness rule over the graph it executed (build order, consumers extend a buffer's life, outputs and inputs pinned to the end, views extending their parent); charges the transient nodes to a first-fit arena and the `kvcache_*` nodes to the persistent region they view; measures the process's peak RSS with `/usr/bin/time -l` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | bytes: the sum over every buffer, the first-fit arena high-water mark, the live-set floor at the busiest step, and the class-rounded total; the RSS is the OS's own number for the same run |
 | `attn` | `scripts/attn.c` | runs one layer of real attention on the model's own weights: scores, one decode step at four prefix lengths, the softmax alone, and rebuilding the cache against reading it | arm64, Darwin 27.2.0 | 5 | median of 5 runs of 3 repetitions; the score scan is exhaustive over every head and position |
 | `dequant-check` | `scripts/dequant-check.py` | decodes each block format back to f32 and compares it against a second decoder (gguf-py) on the same bytes | not machine-dependent | - | max relative error per format; the bit-exact counts are exhaustive over the blocks sampled |
-| `dispatch` | `scripts/dispatch.py` | runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md` | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised |
+| `dispatch` | `scripts/dispatch.py` | runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md` | Darwin 27.2.0, arm64 | per machine | counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised |
 | `dotbench` | `scripts/dotbench.c` | times three scalar kernels on 8,192 real rows of the book's file | Apple M4 Pro | 7 | median of the runs, with the full range beside it |
 | `dotcheck` | `scripts/dotcheck.py` | decomposes the quantized dot product's error into activation, integer and scale parts, and bounds each format's accumulator | not machine-dependent | - | max relative error against f64; the bounds are arithmetic, the worst partial is measured |
 | `dotsimd` | `scripts/dotsimd.c` | times four SIMD kernels and the scalar reference, one source file compiled for ARM and for x86 | Apple M4 Pro (arm64) and Intel i7-11700B (x86_64) | per machine | median of the runs per machine |
 | `engine-measure` | `scripts/engine-measure.py` | runs the engine's own measurement tests (`cargo test --release measure`) and reads the KV geometry and footprint groups out of them, then recomputes every number from `KvFormat::row_elems` and refuses to write the artifact when the two disagree | Darwin 27.2.0, arm64 | per machine | one run of the engine's suite; the derived column must equal the measured one, format by format and context by context |
 | `family` | `scripts/family.py` | runs the binary with its per-node trace on one real file and counts the nodes by op kind, slices one transformer layer out of the graph, runs three byte-patched copies of the same file through the loader to capture its refusals verbatim, and counts lines and `#[test]` functions per family module in the pinned checkout; writes `facts/family.json` | Darwin 27.2.0, arm64 | per machine | node counts and one layer's slice from one trace; the refusals are exit codes and stderr read as values; line and test counts are recomputed from the pinned checkout, not remembered |
-| `fusion` | `scripts/fuse.py` | runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64 | {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'} | per machine | node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding |
+| `fusion` | `scripts/fuse.py` | runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64 | Darwin 27.2.0, arm64 | per machine | node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding |
 | `gguf-qwen2.5-0.5b-q4_0` | `scripts/gguf-inspect.py` | parses the same model at Q4_0 | not machine-dependent | - | read once from the file |
 | `gguf-qwen2.5-0.5b` | `scripts/gguf-inspect.py` | parses the file: header, every metadata key, every tensor record, and the byte range each tensor occupies | not machine-dependent | - | read once from the file; the counts are structure, not samples |
 | `graph` | `scripts/graph.py` | runs the engine's CLI with its per-node trace and its rebuild log on, then reads the node list, the shapes, the edges and the per-node statistics out of the trace the visualizer consumes | arm64, Darwin 27.2.0 | per machine | a structural comparison of two node sequences (equal or not), and node counts read one run at a time; nothing here is averaged |
@@ -75,12 +75,12 @@ uv run --with gguf python scripts/dequant-check.py --real facts/gguf-qwen2.5-0.5
 
 `scripts/dispatch.py` - runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md`.
 
-- **Machine**: {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}
+- **Machine**: Darwin 27.2.0, arm64
 - **Runs**: per machine; counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised
 - **Raw numbers**: `facts/dispatch.json`
 
 ```bash
-python3 scripts/dispatch.py /private/tmp/mf16-target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf16 --out facts/dispatch.json
+python3 scripts/dispatch.py ~/git/mine/minfer/target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer ~/git/mine/minfer --out facts/dispatch.json
 ```
 
 ### dotbench
@@ -147,12 +147,12 @@ cargo test --release measure -- --nocapture   # MINFER_MEASURE_MODEL=~/.cache/my
 
 `scripts/fuse.py` - runs the engine's CLI with its per-node trace on (the fused graph it actually executed), reads the op vocabulary out of the pinned source, runs the engine's own fusion tests, and compiles and runs scripts/fuse.c, which measures the same 3-to-1 rewrite on two activations at four row counts; scripts/fuse-check.py recomputes the C's sampled outputs in f64.
 
-- **Machine**: {'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}
+- **Machine**: Darwin 27.2.0, arm64
 - **Runs**: per machine; node counts and the set of executed node ids from one trace; timings are the median of nine runs of the same kernel; output equality is compared byte for byte, and the numpy witness agrees within float32 rounding
 - **Raw numbers**: `facts/fusion.json`
 
 ```bash
-python3 scripts/fuse.py /private/tmp/mf15-target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf15 --out facts/fusion.json
+python3 scripts/fuse.py ~/git/mine/minfer/target/release/minfer ~/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer ~/git/mine/minfer --out facts/fusion.json
 ```
 
 ### gguf-qwen2.5-0.5b-q4_0

@@ -2,7 +2,7 @@
  "artifact": "dispatch",
  "engine": {
   "version": "minfer v0.0.9",
-  "baseline": "88ffa5d",
+  "baseline": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
   "binary": "minfer",
   "prompt": "The capital of France is",
   "steps": 3
@@ -192,12 +192,8 @@
   "boundary_bytes_f32": 121856,
   "boundary_bytes_f16": 60928
  },
- "machine": {
-  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
-  "machine": "arm64",
-  "python": "3.15.2"
- },
- "invocation": "python3 scripts/dispatch.py /private/tmp/mf16-target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf16 --out facts/dispatch.json",
+ "machine": "Darwin 27.2.0, arm64",
+ "invocation": "python3 scripts/dispatch.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer --out facts/dispatch.json",
  "summary": {
   "backends_in_id_space": 3,
   "priority_order": [

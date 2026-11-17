@@ -2,9 +2,9 @@
  "artifact": "fusion",
  "engine": {
   "version": "minfer v0.0.9",
-  "baseline": "88ffa5d",
+  "baseline": "e8445913064e2871ee3edb1582cb8af49e1c8cbd",
   "binary": "minfer",
-  "binary_bytes": 10583152,
+  "binary_bytes": 10639040,
   "prompt": "The capital of France is",
   "steps": 5
  },
@@ -143,12 +143,12 @@
     "rows": [
      {
       "rows": 1,
-      "us_three": 15.0,
-      "us_one": 14.0,
+      "us_three": 9.0,
+      "us_one": 8.0,
       "bytes_three": 97280,
       "bytes_one": 58368,
-      "gbs_three": 6.49,
-      "gbs_one": 4.17,
+      "gbs_three": 10.81,
+      "gbs_one": 7.3,
       "identical": true,
       "sample": [
        0.131382182,
@@ -171,12 +171,12 @@
      },
      {
       "rows": 34,
-      "us_three": 433.0,
-      "us_one": 405.0,
+      "us_three": 267.0,
+      "us_one": 249.0,
       "bytes_three": 3307520,
       "bytes_one": 1984512,
-      "gbs_three": 7.64,
-      "gbs_one": 4.9,
+      "gbs_three": 12.39,
+      "gbs_one": 7.97,
       "identical": true,
       "sample": [
        0.131382182,
@@ -199,12 +199,12 @@
      },
      {
       "rows": 512,
-      "us_three": 3165.0,
-      "us_one": 2927.0,
+      "us_three": 2967.0,
+      "us_one": 2829.0,
       "bytes_three": 49807360,
       "bytes_one": 29884416,
-      "gbs_three": 15.74,
-      "gbs_one": 10.21,
+      "gbs_three": 16.79,
+      "gbs_one": 10.56,
       "identical": true,
       "sample": [
        0.131382182,
@@ -227,12 +227,12 @@
      },
      {
       "rows": 4096,
-      "us_three": 23276.0,
-      "us_one": 21871.0,
+      "us_three": 23682.0,
+      "us_one": 22191.0,
       "bytes_three": 398458880,
       "bytes_one": 239075328,
-      "gbs_three": 17.12,
-      "gbs_one": 10.93,
+      "gbs_three": 16.83,
+      "gbs_one": 10.77,
       "identical": true,
       "sample": [
        0.131382182,
@@ -316,12 +316,12 @@
      },
      {
       "rows": 512,
-      "us_three": 411.0,
-      "us_one": 248.0,
+      "us_three": 413.0,
+      "us_one": 237.0,
       "bytes_three": 49807360,
       "bytes_one": 29884416,
-      "gbs_three": 121.19,
-      "gbs_one": 120.5,
+      "gbs_three": 120.6,
+      "gbs_one": 126.09,
       "identical": true,
       "sample": [
        0,
@@ -344,12 +344,12 @@
      },
      {
       "rows": 4096,
-      "us_three": 3324.0,
-      "us_one": 2031.0,
+      "us_three": 3543.0,
+      "us_one": 2162.0,
       "bytes_three": 398458880,
       "bytes_one": 239075328,
-      "gbs_three": 119.87,
-      "gbs_one": 117.71,
+      "gbs_three": 112.46,
+      "gbs_one": 110.58,
       "identical": true,
       "sample": [
        0,
@@ -409,19 +409,19 @@
   },
   "bandwidth": {
    "1": {
-    "read": 48.9,
-    "copy": 126.3,
-    "line": "membw 1024 MiB x 2 arrays, 1 thread(s): read 48.9 GB/s, copy 126.3 GB/s"
+    "read": 47.7,
+    "copy": 121.8,
+    "line": "membw 1024 MiB x 2 arrays, 1 thread(s): read 47.7 GB/s, copy 121.8 GB/s"
    },
    "4": {
-    "read": 166.0,
-    "copy": 205.6,
-    "line": "membw 1024 MiB x 2 arrays, 4 thread(s): read 166.0 GB/s, copy 205.6 GB/s"
+    "read": 181.2,
+    "copy": 218.6,
+    "line": "membw 1024 MiB x 2 arrays, 4 thread(s): read 181.2 GB/s, copy 218.6 GB/s"
    },
    "8": {
-    "read": 226.6,
-    "copy": 215.2,
-    "line": "membw 1024 MiB x 2 arrays, 8 thread(s): read 226.6 GB/s, copy 215.2 GB/s"
+    "read": 206.5,
+    "copy": 211.9,
+    "line": "membw 1024 MiB x 2 arrays, 8 thread(s): read 206.5 GB/s, copy 211.9 GB/s"
    }
   }
  },
@@ -436,12 +436,8 @@
   "failed": [],
   "count": 5
  },
- "machine": {
-  "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
-  "machine": "arm64",
-  "python": "3.15.2"
- },
- "invocation": "python3 scripts/fuse.py /private/tmp/mf15-target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /tmp/mf15 --out facts/fusion.json",
+ "machine": "Darwin 27.2.0, arm64",
+ "invocation": "python3 scripts/fuse.py /Users/yusiwen/git/mine/minfer/target/release/minfer /Users/yusiwen/.cache/myfer/qwen2.5-0.5b-instruct-q4_k_m.gguf --minfer /Users/yusiwen/git/mine/minfer --out facts/fusion.json",
  "summary": {
   "rewrites_prefill": 24,
   "orphans_prefill": 24,
@@ -449,7 +445,7 @@
   "executed_fraction": 0.8375,
   "saved_bytes_per_row": 38912,
   "saved_fraction_of_traffic": 0.4,
-  "speedup_silu_4096": 1.0642403182296192,
-  "speedup_relu_4096": 1.6366322008862628
+  "speedup_silu_4096": 1.0671894011085574,
+  "speedup_relu_4096": 1.6387604070305273
  }
 }

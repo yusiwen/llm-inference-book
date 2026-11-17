@@ -162,6 +162,16 @@ def tests(minfer):
             "count": len(named)}
 
 
+def head_rev(checkout):
+    """The commit the book is describing, read from the checkout and never typed.
+
+    This field used to be the literal string of whichever commit the script was first written at, which is how
+    `facts/dispatch.json` and `facts/fusion.json` came to claim a baseline the book had already moved past.
+    """
+    return subprocess.run(["git", "-C", str(checkout), "rev-parse", "HEAD"],
+                          capture_output=True, text=True, check=True).stdout.strip()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("binary")
@@ -182,14 +192,16 @@ def main():
     cc = os.environ.get("CC", "cc")
     doc = {
         "artifact": "fusion",
-        "engine": {"version": version, "baseline": "88ffa5d", "binary": binary.name,
+        "engine": {"version": version, "baseline": head_rev(minfer), "binary": binary.name,
                    "binary_bytes": binary.stat().st_size, "prompt": PROMPT, "steps": STEPS},
         "vocab": vocabulary(minfer),
         "structure": structure(trace),
         "kernel": kernel(cc, work),
         "tests": tests(minfer),
-        "machine": {"platform": platform.platform(), "machine": platform.machine(),
-                    "python": platform.python_version()},
+        # A string, not a dict: the provenance renderer prints this value verbatim into a page, and a dict
+        # arrived on the page as `{'platform': ...}` until it did. Python's version is not in it because the
+        # number the page reports comes from the C kernel or the engine, not from the interpreter that drove them.
+        "machine": f"{platform.system()} {platform.release()}, {platform.machine()}",
         "invocation": f"python3 scripts/fuse.py {binary} {model} --minfer {minfer} --out {args.out}",
     }
     # one number the chapter leans on, computed rather than typed: what fraction of the graph the

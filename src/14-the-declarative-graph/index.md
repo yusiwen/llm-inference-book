@@ -1,7 +1,7 @@
 # Chapter 14 · From Imperative Loop to Declarative Graph
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the node list, the shapes, the edges and the per-node statistics are read out of the trace the visualizer consumes (`scripts/graph.py`), and two node sequences are compared structurally; what is *not* here is the op vocabulary and fusion (Chapter 15), who executes a node (Chapter 16), or where its buffers come from (Chapter 17)
 > - **Build step S14**: Your forward pass rebuilt as a pure data structure: nodes, inputs, outputs, built without touching memory, then executed by a separate walk.
 > - **Rule of this book**: This chapter is the graph's shape and why it exists. The op vocabulary and fusion are Chapter 15; who executes a node is Chapter 16; where buffers come from is Chapter 17.
 

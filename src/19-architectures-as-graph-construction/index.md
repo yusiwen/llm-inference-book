@@ -1,7 +1,7 @@
 # Chapter 19 · Architectures as Graph Construction
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - one layer's node slice, the per-op counts and the family refusals come out of the engine's trace (`scripts/family.py`), and the Qwen3/Qwen2 comparison is anchored to line and test counts recomputed from the pinned checkout; what is *not* here is the graph machinery itself (Chapters 14-17)
 > - **Build step S19**: Two model architectures built from the same graph vocabulary, plus a loader that dispatches on the file's declared architecture.
 > - **Rule of this book**: The graph machinery is Chapters 14-17. This chapter is the shape of a particular family of models: what a Qwen3 layer contains that a Qwen2 layer does not, and what adding a third costs.
 

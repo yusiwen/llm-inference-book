@@ -19,6 +19,7 @@ import json
 import pathlib
 import re
 import sys
+from collections import Counter
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -45,7 +46,11 @@ def derive(root):
     citations = len(json.loads(inv_path.read_text())["citations"]) if inv_path.exists() else 0
     fig_plan = len(re.findall(r"^\| \d+\.\d+ \|", (root / "FIGURES.md").read_text(), re.M))
     fig_drawn = len(list((src / "figures").glob("*.svg"))) if (src / "figures").exists() else 0
-    stub = sum(1 for p in chapters if re.search(r"Status\*\*: stub", p.read_text()))
+    def status_of(p):
+        m = re.search(r"Status\*\*: (stub|draft|written)", p.read_text())
+        return m.group(1) if m else "unstated"
+
+    statuses = Counter(status_of(p) for p in chapters)
     return {
         "Chapters": len(chapters),
         "Lessons (checklist items under `## Lessons`)": sum(per_chapter.values()),
@@ -54,7 +59,9 @@ def derive(root):
         "Sources in the reference index": sources,
         "minfer citations tracked": citations,
         "Figures planned / drawn": f"{fig_plan} / {fig_drawn}",
-        "Status": f"{len(chapters) - stub} written / {stub} stub",
+        # Three states, not "not a stub": `draft` means a claim is known missing or wrong, and counting it as
+        # written is the kind of quiet disagreement between two parts of one system that this book calls a bug.
+        "Status": f"{statuses['written']} written / {statuses['draft']} draft / {statuses['stub']} stub",
     }, per_chapter
 
 

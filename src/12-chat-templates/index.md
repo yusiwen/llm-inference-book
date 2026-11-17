@@ -1,7 +1,7 @@
 # Chapter 12 · Chat Templates and Special Tokens
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - every case is rendered from the model's own `tokenizer.chat_template` and compared byte for byte with the reference renderer's committed output (`scripts/tmpl.py`), so one differing byte is a failure rather than a statistic; what is *not* here is the tokenizer itself (Chapter 11) or the sampler (Chapter 13)
 > - **Build step S12**: A template renderer that turns a list of messages into the exact prompt bytes the model was trained on, and refuses loudly when it cannot.
 > - **Rule of this book**: Tokenization is Chapter 11. Tool-call parsing of the model's output appears here only as far as the prompt is concerned; the sampler is Chapter 13.
 

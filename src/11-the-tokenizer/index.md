@@ -1,7 +1,7 @@
 # Chapter 11 · The Tokenizer
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the vocabulary, the merge ranks and every encoded id are compared one by one against a second tokenizer implementation (`scripts/tok.py`, `scripts/tok-check.py`), and the comparison is exact rather than averaged; what is *not* here is the template that wraps those ids (Chapter 12) or the sampler (Chapter 13)
 > - **Build step S11**: A tokenizer that loads its vocabulary from the model file and encodes and decodes text exactly as the reference does, including the awkward cases.
 > - **Rule of this book**: This chapter is text to ids and back. What wraps those ids into a prompt (templates, special tokens in a conversation) is Chapter 12; what turns logits into the next id is Chapter 13.
 

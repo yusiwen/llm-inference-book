@@ -1,7 +1,7 @@
 # Chapter 16 · Backend Assignment and the Registry
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the assignment is read out of the per-node trace and the refusals are recorded verbatim as exit codes and messages (`scripts/dispatch.py`); three backends are registered and every node of the one traced run lands on the CPU, so the histogram is one column wide by observation. What is *not* here is the same graph traced on another backend, which is Part 5's subject
 > - **Build step S16**: A backend registry with stable ids, one capability question per op, a splitter that cuts the graph into contiguous same-backend runs, and three refusals you can reproduce in three commands.
 > - **Rule of this book**: The GPU backends themselves are Part 5; the CPU one is what you have been writing since Chapter 6, and it goes into this same registry. This chapter is the seam: how an op ends up on a device, and what the engine owes you when it cannot.
 
@@ -476,5 +476,5 @@ case is the one that will look like a scheduling bug for a week.
 - [ ] Question 4: How do I know it is correct, and how do I know it is faster? (identity gate, measurement)
 
 <!-- facts: dispatch.provenance -->
-*`scripts/dispatch.py`; runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md`; on **{'platform': 'macOS-27.2.1-arm64-arm-64bit-Mach-O', 'machine': 'arm64', 'python': '3.15.2'}**; counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised. Command: see [the provenance index](../appendix/provenance.md#dispatch). Raw numbers: `facts/dispatch.json`.*
+*`scripts/dispatch.py`; runs the engine's CLI three ways with an impossible or unavailable `--backend` value and records each refusal verbatim, runs the engine's own op-support contract tests, and reads the backend assignment out of the per-node trace of a real run; the registry ids, names and priorities are parsed from the pinned source, and the op-by-backend table from `docs/SUPPORT-MATRIX.md`; on **Darwin 27.2.0, arm64**; counts of nodes per backend and of contiguous same-backend runs, from one graph per phase; the refusals are exit codes and messages, compared as values, not summarised. Command: see [the provenance index](../appendix/provenance.md#dispatch). Raw numbers: `facts/dispatch.json`.*
 <!-- /facts -->

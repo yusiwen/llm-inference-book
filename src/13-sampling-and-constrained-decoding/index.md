@@ -1,7 +1,7 @@
 # Chapter 13 · Sampling and Constrained Decoding
 
 > - **Compute tier**: ✅ any laptop
-> - **Status**: draft
+> - **Status**: written - the logits are dumped by the engine and the deterministic part of the sampler replayed in Python, then compared byte for byte with the engine's own text (`scripts/smp.py`); the funnel, mass and entropy rows come from those logits one step at a time and are never averaged. What is *not* here is the loop that calls the sampler (Chapter 20) or speculative decoding (Chapter 29)
 > - **Build step S13**: A sampler pipeline with penalties, top-k, top-p, temperature and a seed you control, plus a grammar mask that makes one class of outputs impossible.
 > - **Rule of this book**: This chapter turns scores into an id. The loop that calls it per step is Chapter 20; speculative decoding, which changes how many ids arrive at once, is Chapter 29.
 

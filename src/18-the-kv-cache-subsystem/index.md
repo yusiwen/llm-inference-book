@@ -1,7 +1,7 @@
 # Chapter 18 · The KV Cache Subsystem
 
 > - **Compute tier**: ✅ any laptop (the packed formats matter on devices; nothing here needs one)
-> - **Status**: draft
+> - **Status**: written - the region arithmetic, the sharing and defragmentation outcomes and the session file on disk are measured against the engine (`scripts/alloc.py`, `scripts/loop.py`), and the header is decoded out of the file rather than predicted; the 929-byte difference is the host blob the byte map declined to predict. What is *not* here is any device kernel that reads this cache (Chapter 25)
 > - **Build step S18**: A KV cache that can append, share a prefix between sessions, shrink, defragment, and be saved to and loaded from a versioned file.
 > - **Rule of this book**: The attention that reads the cache is Chapter 10 and its device kernels are Chapter 25. This chapter is storage: cells, spans, layout, persistence.
 
