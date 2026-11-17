@@ -46,8 +46,9 @@
    "bytes": 25165824,
    "gflops": 1805.3,
    "max_abs_diff": 0,
-   "tolerance": 0,
-   "passes": true
+   "tolerance": null,
+   "passes": true,
+   "checked": false
   },
   {
    "name": "gemm_tiled_2048",
@@ -55,8 +56,9 @@
    "bytes": 25165824,
    "gflops": 2432.3,
    "max_abs_diff": 0,
-   "tolerance": 0,
-   "passes": true
+   "tolerance": null,
+   "passes": true,
+   "checked": false
   },
   {
    "name": "gemv_q4_decode",

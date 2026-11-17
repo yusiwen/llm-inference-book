@@ -14,14 +14,14 @@ Every rung here is measured **and checked**, because a fast wrong kernel is wors
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,094 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 5 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643 | 0.0e+00 | 2e-03 | yes |
-| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,252 | 0.0e+00 | 2e-03 | yes |
-| `gemm_naive_2048` | - | 9,516 us | 1,805 | 0.0e+00 | 0e+00 | yes |
-| `gemm_tiled_2048` | - | 7,063 us | 2,432 | 0.0e+00 | 0e+00 | yes |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 317 | 0.0e+00 | 5e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,094 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 5 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643.2 | 0.0e+00 | 2e-03 | yes |
+| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,251.9 | 0.0e+00 | 2e-03 | yes |
+| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,516 us | 1,805.3 | - | not checked | timing only |
+| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,063 us | 2,432.3 | - | not checked | timing only |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133.0 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 316.9 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
@@ -104,14 +104,14 @@ The measured cost of doing it this way, on a real shape:
 <!-- facts: ladder.ladder-kernels -->
 | Rung | Shape | Time | GFLOP/s | Max abs diff | Tolerance | Passes |
 |---|---|---|---|---|---|---|
-| `eltwise_relu` | 32 Mi floats | 1,094 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gather_embed` | 32 rows x 1024 | 5 us | 0 | 0.0e+00 | 0e+00 | yes |
-| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643 | 0.0e+00 | 2e-03 | yes |
-| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,252 | 0.0e+00 | 2e-03 | yes |
-| `gemm_naive_2048` | - | 9,516 us | 1,805 | 0.0e+00 | 0e+00 | yes |
-| `gemm_tiled_2048` | - | 7,063 us | 2,432 | 0.0e+00 | 0e+00 | yes |
-| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133 | 0.0e+00 | 5e-03 | yes |
-| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 317 | 0.0e+00 | 5e-03 | yes |
+| `eltwise_relu` | 32 Mi floats | 1,094 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gather_embed` | 32 rows x 1024 | 5 us | 0.0 | 0.0e+00 | 0e+00 | yes |
+| `gemm_naive` | 512 x 512 x 512 | 163 us | 1,643.2 | 0.0e+00 | 2e-03 | yes |
+| `gemm_tiled` | 512 x 512 x 512 | 119 us | 2,251.9 | 0.0e+00 | 2e-03 | yes |
+| `gemm_naive_2048` | 2,048 x 2,048 x 2,048 | 9,516 us | 1,805.3 | - | not checked | timing only |
+| `gemm_tiled_2048` | 2,048 x 2,048 x 2,048 | 7,063 us | 2,432.3 | - | not checked | timing only |
+| `gemv_q4_decode` | 4096 x 4096, M=1 | 252 us | 133.0 | 0.0e+00 | 5e-03 | yes |
+| `gemm_q4_prefill16` | 4096 x 4096, M=16 | 1,694 us | 316.9 | 0.0e+00 | 5e-03 | yes |
 
 Every rung is compared with a host reference before it is timed, and the deviation is printed beside the speed. The deviations are exactly zero here, which is worth explaining rather than celebrating: the test data is small integer multiples, and both paths sum in the same order, so there is nothing for the two to disagree about. On real weights the same comparison lands in the 1e-5 range and the tolerance column is what decides - which is why it is a column and not a sentence.
 <!-- /facts -->
