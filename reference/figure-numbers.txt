@@ -1,0 +1,11 @@
+# Numbers that appear in a figure and are deliberately not measurements.
+# One per line, matched literally against "<value> <unit>" as it appears in the SVG.
+#
+# Chapter 1's nomogram is a scale: the ticks label the axes, and a tick is not a reading.
+10 tok/s
+25 tok/s
+50 tok/s
+100 tok/s
+# Chapter 6 draws the machine's streaming bandwidth as the line its kernels are judged against. That number is
+# Chapter 1's measurement and the machine page's, not one of Chapter 6's own artifacts.
+198 GB/s

@@ -1,0 +1,116 @@
+{
+ "artifact": "membw",
+ "geometry": {
+  "mib": 1024,
+  "threads": 10,
+  "arrays": 2
+ },
+ "read_gb_s": 218.7,
+ "copy_gb_s": 224.7,
+ "read_min": 210.2,
+ "read_max": 225.2,
+ "runs": [
+  {
+   "read_gb_s": 210.2,
+   "copy_gb_s": 224.7,
+   "arrays": 2
+  },
+  {
+   "read_gb_s": 214.4,
+   "copy_gb_s": 227.2,
+   "arrays": 2
+  },
+  {
+   "read_gb_s": 220.7,
+   "copy_gb_s": 225.5,
+   "arrays": 2
+  },
+  {
+   "read_gb_s": 218.7,
+   "copy_gb_s": 224.6,
+   "arrays": 2
+  },
+  {
+   "read_gb_s": 225.2,
+   "copy_gb_s": 223.5,
+   "arrays": 2
+  }
+ ],
+ "configs": [
+  {
+   "threads": 8,
+   "read_gb_s": 203.9,
+   "copy_gb_s": 215.8,
+   "read_min": 198.5,
+   "read_max": 212.7,
+   "runs": [
+    {
+     "read_gb_s": 212.7,
+     "copy_gb_s": 217.2,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 212.1,
+     "copy_gb_s": 215.8,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 203.9,
+     "copy_gb_s": 215.9,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 198.5,
+     "copy_gb_s": 211.9,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 199.7,
+     "copy_gb_s": 215.4,
+     "arrays": 2
+    }
+   ]
+  },
+  {
+   "threads": 10,
+   "read_gb_s": 218.7,
+   "copy_gb_s": 224.7,
+   "read_min": 210.2,
+   "read_max": 225.2,
+   "runs": [
+    {
+     "read_gb_s": 210.2,
+     "copy_gb_s": 224.7,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 214.4,
+     "copy_gb_s": 227.2,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 220.7,
+     "copy_gb_s": 225.5,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 218.7,
+     "copy_gb_s": 224.6,
+     "arrays": 2
+    },
+    {
+     "read_gb_s": 225.2,
+     "copy_gb_s": 223.5,
+     "arrays": 2
+    }
+   ]
+  }
+ ],
+ "compiler": "clang -O2",
+ "machine": "Darwin 27.2.0, arm64",
+ "invocation": "clang -O2 -o membw scripts/membw.c -lm ; ./membw 1024 N  for N in 8,10, x5 runs each",
+ "note": "A streaming read of two arrays, one pass, no model involved: this is the speed of light the kernels in Chapters 6-9 are measured against, and the denominator of Chapter 1's ceiling.",
+ "provenance": {
+  "statistic": "median of 5 runs of the C loop; min and max are kept too, because a bandwidth measured once on a laptop is a rumour"
+ }
+}

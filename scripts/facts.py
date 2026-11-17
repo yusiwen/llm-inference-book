@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "membw": ("scripts/membw-run.py",
+              "compiles and runs `scripts/membw.c` - a streaming read of two arrays with no model involved - at "
+              "each thread count in `--threads`, five runs each, and keeps the median of the reads and of the "
+              "copies with every run beside them",
+              "medians of five runs per thread count, with the minimum and maximum kept because a bandwidth "
+              "measured once on a laptop is a rumour",
+              ),
     "loop": ("scripts/loop.py",
              "runs the binary with `MINFER_REBUILD_TRACE` and `MINFER_TIMING` on and counts the graph builds "
              "per run, reads the `Prefill:`/`Generated:` lines, runs two conversation turns through one "
@@ -813,6 +820,9 @@ def render_provenance(f, name=None):
     if machine and compiler:
         machine = f"{machine}, {compiler}"
     runs = explicit.get("runs") or f.get("runs") or f.get("reps")
+    # Some artifacts keep the runs themselves (a list of samples) rather than a count; the line wants the count.
+    if isinstance(runs, (list, tuple)):
+        runs = len(runs)
     statistic = explicit.get("statistic") or statistic
     artifact = explicit.get("artifact")
     if not artifact:
@@ -1693,6 +1703,23 @@ def render_fam_deltas(f):
     return out
 
 
+def render_membw_configs(f):
+    """Appendix: one instrument, two thread counts, and the reason the machine table quotes a range."""
+    cfgs = f.get("configs") or []
+    out = ["| Threads | Read (GB/s) | Copy (GB/s) | Read range across runs |", "|---|---|---|---|"]
+    for c in cfgs:
+        out.append(f"| {c['threads']} performance threads | **{c['read_gb_s']}** | {c['copy_gb_s']} | "
+                   f"{c['read_min']} to {c['read_max']} |")
+    out.append("")
+    if len(cfgs) > 1:
+        lo, hi = min(c["read_gb_s"] for c in cfgs), max(c["read_gb_s"] for c in cfgs)
+        out.append(f"The same binary, the same working set, the same five runs each: **{lo} to {hi} GB/s** depending "
+                   f"only on how many cores are asking. That is why the table above quotes a range with a thread "
+                   f"count beside it and not a single number, and why a bandwidth figure without its thread count "
+                   f"is not a measurement of the machine - it is a measurement of one configuration of it.")
+    return out
+
+
 def render_loop_session_measured(f):
     """Chapter 18/20: the session file the engine wrote, against the field-order arithmetic."""
     m = f["multi_turn"]
@@ -2053,6 +2080,7 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "membw-configs": render_membw_configs,
     "loop-session-measured": render_loop_session_measured,
     "loop-single-turn": render_loop_single_turn,
     "loop-runs": render_loop_runs,

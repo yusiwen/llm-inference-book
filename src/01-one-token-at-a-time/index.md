@@ -192,7 +192,7 @@ The approximation in the second step is the important one: it assumes every byte
 
 Worked once, slowly, because this is the calculation every later speed claim is checked against.
 
-The 7B file in this book is Qwen2.5-7B-Instruct at Q4_K_M: 7,615,616,512 parameters, 4.68 GB on disk across two shards (*reported* from the repository listing, and confirmed with `ls -l` after downloading). The M4 Pro's CPU-side measured read bandwidth is 198 GB/s. One token therefore costs at least `4.68 / 198` seconds = 23.6 milliseconds, and `1 / 0.0236` = **42.3 tokens per second** (arithmetic on a measured input).
+The 7B file in this book is Qwen2.5-7B-Instruct at Q4_K_M: 7,615,616,512 parameters, 4.68 GB on disk across two shards (*reported* from the repository listing, and confirmed with `ls -l` after downloading). The M4 Pro's CPU-side read bandwidth is **198 GB/s**, the figure the appendix's machine table records for ten performance threads, where five runs ranged 184 to 202 (`scripts/membw-run.py` regenerates it; the machine page carries the same instrument run at two thread counts, and the gap between them is why that table quotes a range rather than a point). One token therefore costs at least `4.68 / 198` seconds = 23.6 milliseconds, and `1 / 0.0236` = **42.3 tokens per second** (arithmetic on a measured input).
 
 Notice what the file's size just taught you: 4.68 GB for 7.6 billion weights is 4.92 bits per weight, not the 4.5 that the format's name suggests, and not the 4.0 GB the outline of this chapter first estimated. A quantization name describes a recipe - some tensors kept at six bits, some at four - so the file is the only honest denominator. That is the whole argument of Chapter 2, arriving early.
 

@@ -52,6 +52,19 @@ Two decisions a reader should not have to guess:
 
 Measured 2026-11-13. The M4 Pro ran with the author's own session on it (load average 4.4); the NUC11 and the GB10 were idle (load 0.07 and 1.0, GPU at 0%). Five runs each; the spread is in brackets where more than one run exists.
 
+That date and load average are not decoration. The same instrument, re-run later by `scripts/membw-run.py`, which writes `facts/membw.json`, gives a different answer:
+
+<!-- facts: membw.membw-configs -->
+| Threads | Read (GB/s) | Copy (GB/s) | Read range across runs |
+|---|---|---|---|
+| 8 performance threads | **203.9** | 215.8 | 198.5 to 212.7 |
+| 10 performance threads | **218.7** | 224.7 | 210.2 to 225.2 |
+
+The same binary, the same working set, the same five runs each: **203.9 to 218.7 GB/s** depending only on how many cores are asking. That is why the table above quotes a range with a thread count beside it and not a single number, and why a bandwidth figure without its thread count is not a measurement of the machine - it is a measurement of one configuration of it.
+<!-- /facts -->
+
+Read the two tables together and the single numbers in the first one stop looking like properties of the hardware. The same binary on the same machine, an hour apart, does not have to agree with itself - which is why the first table carries a range and a thread count beside it, and why a chapter that leans on a bandwidth has to say where that bandwidth came from.
+
 ## Why these disagree with the numbers on the box
 
 Six reasons, in the order they matter when someone asks why your measurement is lower than the web page's.
@@ -90,6 +103,12 @@ The last row is why a server without a GPU is not a substitute, and the GB10's t
 ## Adding a machine
 
 One row, one command, one date. If the command was not run, the row says "not measured" - an empty cell that nobody can mistake for a number is worth more than a spec sheet pasted in.
+
+## Where the numbers came from
+
+<!-- facts: membw.provenance -->
+*`scripts/membw-run.py`; compiles and runs `scripts/membw.c` - a streaming read of two arrays with no model involved - at each thread count in `--threads`, five runs each, and keeps the median of the reads and of the copies with every run beside them; on **Darwin 27.2.0, arm64, clang -O2**; 5 runs; median of 5 runs of the C loop; min and max are kept too, because a bandwidth measured once on a laptop is a rumour. Command: `clang -O2 -o membw scripts/membw.c -lm ; ./membw 1024 N  for N in 8,10, x5 runs each`. Raw numbers: `facts/membw.json`.*
+<!-- /facts -->
 
 ## Reading
 

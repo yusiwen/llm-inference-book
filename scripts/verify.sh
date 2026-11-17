@@ -151,7 +151,15 @@ echo "== 17. no lesson explains the engine without quoting it =="
 python3 scripts/codecheck.py --coverage
 
 echo
-echo "== 18. instrument dependencies (advisory; the gate itself needs none of them) =="
+echo "== 18. every number in a figure comes from that chapter's artifact =="
+# A facts block is regenerated; a figure's caption is hand-drawn text and nothing regenerates it. Chapter 20's
+# two diagrams were still saying 4.31 ms after a re-measurement moved the chapter to 3.98 - including in the
+# aria-label a screen reader reads. Numbers deliberately not from a measurement are listed in
+# reference/figure-numbers.txt, which is the only escape hatch.
+python3 scripts/fignumbers.py
+
+echo
+echo "== 19. instrument dependencies (advisory; the gate itself needs none of them) =="
 # Steps 1-17 need nothing but the standard library. The instruments that write `facts/*.json` need regex,
 # jinja2, numpy and tokenizers, and they are not part of this gate - which is how three measurement runs died
 # on `ModuleNotFoundError: No module named 'regex'` while this script reported "all checks passed". This step
