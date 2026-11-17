@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 312" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The five crossings of the Rust-CUDA seam: allocate, own, report, wait and link. Each row shows the cheap wrong answer and what that answer costs when it is discovered later. Four of the five are closed in the engine; the wait is not, and that is the chapter's ask.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 11px; opacity: .9; }
+    .fig-a-ok   { fill: #3f7f76; fill-opacity: .42; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-open { fill: #b85c4d; fill-opacity: .42; stroke: var(--quote-border, #4a6577); stroke-width: 1.2; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">FIVE CROSSINGS, ONE HAND-WRITTEN BOUNDARY</text>
+  <text class="g-s" x="24" y="44">each row is a choice that looks obvious and costs a day a thousand tokens later</text>
+  <text class="g-lbl" x="155" y="72" text-anchor="middle">crossing</text>
+  <text class="g-lbl" x="420" y="72" text-anchor="middle">the cheap answer</text>
+  <text class="g-lbl" x="660" y="72" text-anchor="middle">what it costs later</text>
+  <line class="g-rule" x1="24" y1="80" x2="786" y2="80"/>
+  <rect x="80" y="90" width="150" height="30" rx="2" class="fig-a-ok"/>
+  <text class="g-m" x="155" y="110" text-anchor="middle">allocate</text>
+  <text class="g-m" x="250" y="102">cudaMalloc per op</text>
+  <text class="g-m" x="250" y="116">a sync point per token</text>
+  <text class="g-m" x="560" y="102">thousands of stalls, and</text>
+  <text class="g-m" x="560" y="116">a peak nobody predicted</text>
+  <rect x="80" y="130" width="150" height="30" rx="2" class="fig-a-ok"/>
+  <text class="g-m" x="155" y="150" text-anchor="middle">own</text>
+  <text class="g-m" x="250" y="142">free when the pointer</text>
+  <text class="g-m" x="250" y="156">goes out of scope</text>
+  <text class="g-m" x="560" y="142">a live capture reads</text>
+  <text class="g-m" x="560" y="156">memory that was returned</text>
+  <rect x="80" y="170" width="150" height="30" rx="2" class="fig-a-ok"/>
+  <text class="g-m" x="155" y="190" text-anchor="middle">report</text>
+  <text class="g-m" x="250" y="182">ignore the code, or check</text>
+  <text class="g-m" x="250" y="196">it at the next sync</text>
+  <text class="g-m" x="560" y="182">the error blames the</text>
+  <text class="g-m" x="560" y="196">wrong kernel, far away</text>
+  <rect x="80" y="210" width="150" height="30" rx="2" class="fig-a-open"/>
+  <text class="g-m" x="155" y="230" text-anchor="middle">wait</text>
+  <text class="g-m" x="250" y="222">cudaStreamSynchronize</text>
+  <text class="g-m" x="250" y="236">(there is no timeout)</text>
+  <text class="g-m" x="560" y="222">a wedged kernel hangs</text>
+  <text class="g-m" x="560" y="236">the process with no exit</text>
+  <rect x="80" y="250" width="150" height="30" rx="2" class="fig-a-ok"/>
+  <text class="g-m" x="155" y="270" text-anchor="middle">link</text>
+  <text class="g-m" x="250" y="262">"it built, ship it"</text>
+  <text class="g-m" x="560" y="262">the deployment is missing</text>
+  <text class="g-m" x="560" y="276">a soname, and finds out late</text>
+  <line class="g-rule" x1="24" y1="292" x2="786" y2="292"/>
+  <text class="g-m" x="24" y="312">Four of the five are closed in the engine this book reads; the fifth is not, and the chapter says so.</text>
+</svg>

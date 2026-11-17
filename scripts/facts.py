@@ -667,6 +667,13 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "cuda-seam": ("scripts/seam/seam.cu",
+                  "asks the device for a terabyte, then runs one two-second kernel twice - once behind "
+                  "`cudaStreamSynchronize`, once behind a `cudaStreamQuery` poll with a host-owned deadline - "
+                  "and reads `ldd` off the resulting binary",
+                  "the error name and string for the failed allocation, the host's blocked milliseconds, the "
+                  "poll's elapsed milliseconds and outcome, and the library list",
+                  ),
     "cuda-launch": ("scripts/cuda/launch_sheet.cu",
                     "compiles five kernels with the machine's own `nvcc` and times each one with CUDA events "
                     "over 20 repetitions, the streaming copy first because every later prediction divides by it",
@@ -1721,6 +1728,45 @@ def render_fam_deltas(f):
     return out
 
 
+def render_seam_failures(f):
+    """Chapter 23: the three failures a seam has to survive, made to happen on purpose."""
+    a, b, w = f["alloc"], f["blocking_wait"], f["polled_wait"]
+    out = ["| Crossing | What was asked of it | What came back |", "|---|---|---|",
+           f"| allocate | `cudaMalloc` for {a['requested_bytes'] / (1 << 40):.0f} TiB on a device with none to "
+           f"give | `{a['error_name']}` - \"{a['error_string']}\" |",
+           f"| wait (blocking) | one kernel that busy-waits {f['kernel_ms']:,} ms, behind "
+           f"`cudaStreamSynchronize` | the host blocked for **{b['blocked_ms']:,.0f} ms**, and no API to ask it "
+           f"to come back sooner |",
+           f"| wait (polled) | the same kernel, behind `cudaStreamQuery` against a "
+           f"{w['deadline_ms']:.0f} ms deadline | **{w['elapsed_ms']:,.0f} ms**, then *{w['outcome']}* |"]
+    out.append("")
+    out.append(f"The first row is the argument for wrapping every call: CUDA's own message is \"out of memory\" - "
+               f"true, and useless. It does not say what was asked for, by which model, or how much was left. A "
+               f"seam that returns `cudaErrorMemoryAllocation` upward has thrown away the only three facts that "
+               f"make the failure actionable, so the wrapper's job is to put them back.")
+    out.append("")
+    out.append(f"The last two rows are the same kernel with two different waits, and they disagree by "
+               f"{b['blocked_ms'] - w['elapsed_ms']:,.0f} ms. There is no `cudaStreamSynchronizeWithTimeout` to "
+               f"call, so a backend that must survive a wedged device owns a clock and polls; one that calls "
+               f"the blocking version has decided that a hung kernel is allowed to hang the process.")
+    return out
+
+
+def render_seam_link(f):
+    """Chapter 23: what the binary needs at run time, read off the binary."""
+    libs = f["link"]["ldd"]
+    rows = ["| `ldd` on the built binary |", "|---|"]
+    for line in libs:
+        rows.append(f"| `{line.strip()[:72]}` |")
+    rows.append("")
+    rows.append(f"Six lines, and **not one of them is a CUDA library**. No `libcudart.so`, and no `libcuda.so` "
+               f"either - the runtime is inside the executable and the driver is opened by name at run time. That "
+               f"is not luck: it is the default `nvcc` behaviour, and it is the reason a binary built here runs on "
+               f"a machine with a driver and no toolkit. The cost is that a missing driver becomes a *runtime* "
+               f"error instead of a load error, which is exactly the trade this chapter's last lesson is about.")
+    return rows
+
+
 def render_cuda_launch_sheet(f):
     """Chapter 22: the launch sheet - bytes, prediction, measurement, and the ratio that asks why."""
     rows = ["| Kernel | Bytes moved | Predicted | Measured | GB/s | of stream | Measured / predicted |",
@@ -2206,6 +2252,8 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "seam-failures": render_seam_failures,
+    "seam-link": render_seam_link,
     "cuda-launch-sheet": render_cuda_launch_sheet,
     "cuda-device": render_cuda_device,
     "metal-vs-cpu": render_metal_vs_cpu,

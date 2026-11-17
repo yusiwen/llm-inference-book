@@ -1,0 +1,39 @@
+{
+ "device": "NVIDIA GB10",
+ "compute_cap": "12.1",
+ "sm_mhz": 2418,
+ "alloc": {
+  "requested_bytes": 1099511627776,
+  "ok": false,
+  "error_name": "cudaErrorMemoryAllocation",
+  "error_string": "out of memory"
+ },
+ "blocking_wait": {
+  "requested_kernel_ms": 2000,
+  "blocked_ms": 1924.2
+ },
+ "polled_wait": {
+  "deadline_ms": 500,
+  "elapsed_ms": 500.0,
+  "outcome": "gave up"
+ },
+ "exit": 2,
+ "link": {
+  "ldd": [
+   "linux-vdso.so.1 (0x0000e4e489c08000)",
+   "libstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e4e489860000)",
+   "libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e4e489820000)",
+   "libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e4e489660000)",
+   "/lib/ld-linux-aarch64.so.1 (0x0000e4e489bc0000)",
+   "libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e4e4895b0000)"
+  ],
+  "libcudart": null,
+  "libcuda_driver": null
+ },
+ "kernel_ms": 2000,
+ "host": "yusiwen@192.168.2.40",
+ "arch": "sm_121",
+ "process_exit": 2,
+ "invocation": "scp scripts/seam/seam.cu yusiwen@192.168.2.40:/tmp/ch23-seam/ ; /usr/local/cuda/bin/nvcc -O3 -arch=sm_121 -o seam seam.cu ; ./seam 2000 500 ; ldd ./seam",
+ "note": "The polled wait is the only one that can end on the host's terms: CUDA has no synchronise-with-timeout, so a backend that must survive a wedged device polls `cudaStreamQuery` against a clock it owns. The blocking wait is measured here as the thing that cannot."
+}
