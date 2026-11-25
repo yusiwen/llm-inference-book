@@ -22,7 +22,8 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 
 | Key | Work | Checked | Used in |
 |---|---|---|---|
-| `[roofline]` | Williams, Waterman and Patterson, *Roofline: an insightful visual performance model for multicore architectures* (CACM, 2009) - no arXiv ID (journal paper) | no arXiv ID | 1, 15, 16, 17 |
+| `[roofline]` | Williams, Waterman and Patterson, *Roofline: an insightful visual performance model for multicore architectures* (CACM, 2009) - no arXiv ID (journal paper) | no arXiv ID | 1, 15, 16, 17, 26 |
+| `[amdahl]` | Amdahl, *Validity of the single processor approach to achieving large scale computing capabilities* (AFIPS, 1967), DOI 10.1145/1465482.1465560 - no arXiv ID (conference paper) | no arXiv ID | 26 |
 | `[scaling-inference]` | Pope et al., *Efficiently Scaling Transformer Inference* (2022) - arXiv:2211.05102 | arXiv API | 1, 8, 14, 15, 16, 20 |
 | `[kbit]` | Dettmers and Zettlemoyer, *The case for 4-bit precision: k-bit Inference Scaling Laws* (2022) - arXiv:2212.09720 | arXiv API | 4, 5 |
 | `[gqa]` | Ainslie et al., *GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints* (2023) - arXiv:2305.13245 | arXiv API | 10 |
@@ -59,7 +60,7 @@ Not required, and not a syllabus. If you read three things before Chapter 1: the
 | `[ggml-quant]` | The ggml quantized block layouts and the k-quant design notes, in the ggml repository - no arXiv ID (specification) | no arXiv ID | 3, 4, 5, 6 |
 | `[cuda-guide]` | *CUDA C++ Programming Guide*, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | 22, 23, 25 |
 | `[ptx]` | *PTX ISA*, NVIDIA - no arXiv ID (vendor manual; the `mma` and `cp.async` instructions) | no arXiv ID | - |
-| `[nsight]` | *Nsight Compute* user guide, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | 26 |
+| `[nsight]` | *Nsight Compute* user guide, NVIDIA - no arXiv ID (vendor manual) | no arXiv ID | - |
 | `[arm-sdot]` | *Arm Architecture Reference Manual* and the ACLE integer dot-product instructions (`SDOT`, `SMMLA`) - no arXiv ID (vendor manual) | no arXiv ID | 7 |
 | `[metal]` | *Metal Shading Language Specification*, Apple - no arXiv ID (vendor manual) | no arXiv ID | 21 |
 

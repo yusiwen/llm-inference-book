@@ -1,0 +1,942 @@
+{
+ "artifact": "campaign",
+ "source": "/Users/yusiwen/git/mine/minfer/docs/cuda_optimization_steps",
+ "source_rev": "c08589d",
+ "steps": 113,
+ "verdicts": {
+  "LANDED": 43,
+  "REVERTED": 15,
+  "MEAS-ONLY": 3,
+  "CLOSED": 2,
+  "REVERTED / MEAS-ONLY": 1
+ },
+ "unmarked": 49,
+ "unmarked_examples": [
+  "100-qs-plane-drift",
+  "101-steady-state-method",
+  "102-draft-scale-sweep",
+  "103-q40-q80-mmvq"
+ ],
+ "landed": 43,
+ "not_landed": 70,
+ "reverted": 16,
+ "landed_pct": 38.1,
+ "reverted_pct": 14.2,
+ "with_preregistered_bar": 20,
+ "without_preregistered_bar": 93,
+ "bar_pct": 17.7,
+ "with_verification_section": 102,
+ "with_result_block": 101,
+ "median_lines": 230,
+ "date_range": [
+  "2026-07-15",
+  "2026-11-24"
+ ],
+ "rows": [
+  {
+   "doc": "01-phase7-cuda-backend",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 181
+  },
+  {
+   "doc": "02-wmma-f16-prefill-gemm-8m",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 291
+  },
+  {
+   "doc": "03-fa-tiled-prefill-attention-8n",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 256
+  },
+  {
+   "doc": "04-decode-start-stall-8o",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 230
+  },
+  {
+   "doc": "05-persistent-f16-cache-8p",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 302
+  },
+  {
+   "doc": "06-decode-mmvq-8e",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 272
+  },
+  {
+   "doc": "07-r3-small-model-overhead",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 323
+  },
+  {
+   "doc": "08-r1-int8-mmq-prefill-gemm",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 360
+  },
+  {
+   "doc": "09-r2-mmvq-weight-streaming",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 286
+  },
+  {
+   "doc": "10-r4-split-attention-dim-parallel",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 347
+  },
+  {
+   "doc": "100-qs-plane-drift",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 83
+  },
+  {
+   "doc": "101-steady-state-method",
+   "verdict": null,
+   "bar": false,
+   "verification": false,
+   "result_block": false,
+   "lines": 59
+  },
+  {
+   "doc": "102-draft-scale-sweep",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 75
+  },
+  {
+   "doc": "103-q40-q80-mmvq",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 83
+  },
+  {
+   "doc": "104-q80-p32-split-plane",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 85
+  },
+  {
+   "doc": "105-device-tier-tables",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 74
+  },
+  {
+   "doc": "106-query-formula-gates",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 77
+  },
+  {
+   "doc": "107-c4-packed-q8-kv-cuda",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 238
+  },
+  {
+   "doc": "108-c4-dp4a-packed-q8-kv-cuda",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 330
+  },
+  {
+   "doc": "109-c4-packed-q8-kv-l1-request",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 354
+  },
+  {
+   "doc": "11-p5-gemm-tiles-fa-rewrite",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 341
+  },
+  {
+   "doc": "110-c4-pack-q8-decode-stall-attribution",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 263
+  },
+  {
+   "doc": "111-c4-packed-decode-epilogue-and-two-cell",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 133
+  },
+  {
+   "doc": "112-c4-packed-decode-four-cells-per-warp",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 184
+  },
+  {
+   "doc": "113-c4-packed-decode-metal-fused-epilogue",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 227
+  },
+  {
+   "doc": "12-r5-r6-rerank-rewrite-spec",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 285
+  },
+  {
+   "doc": "13-r7-r8-raw-byte-kernel",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 374
+  },
+  {
+   "doc": "14-r9-llama-mmq-reference",
+   "verdict": "MEAS-ONLY",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 369
+  },
+  {
+   "doc": "15-r10-r11-inner-loop-port",
+   "verdict": "REVERTED / MEAS-ONLY",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 181
+  },
+  {
+   "doc": "16-r12-warp-tile-ldmatrix",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 236
+  },
+  {
+   "doc": "17-staging-shape-family",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 159
+  },
+  {
+   "doc": "18-r13-counter-forensics",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 256
+  },
+  {
+   "doc": "19-r14-b-fragments-ldmatrix",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 328
+  },
+  {
+   "doc": "20-r15-f32-acc-mma-rank1",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 212
+  },
+  {
+   "doc": "21-r16-narrow-kernel-rank1-fold",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 170
+  },
+  {
+   "doc": "22-r17-wide-warp-remap",
+   "verdict": "REVERTED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 169
+  },
+  {
+   "doc": "23-r18-load-time-b-preexpansion",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 255
+  },
+  {
+   "doc": "24-r19-weight-l2-residency",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 249
+  },
+  {
+   "doc": "25-r20-split-phase-a-staging",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 314
+  },
+  {
+   "doc": "26-r21-coalesced-block-linear-a",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 216
+  },
+  {
+   "doc": "27-r22-qa8-xor-swizzle",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 246
+  },
+  {
+   "doc": "28-r23-f16-wall-decomposition",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 201
+  },
+  {
+   "doc": "29-r24-scheduling-ladder",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 255
+  },
+  {
+   "doc": "30-r25-sass-opcode-census",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 209
+  },
+  {
+   "doc": "31-r28-nb-kernel-2blocks",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 412
+  },
+  {
+   "doc": "32-r29-nb-kd-loop-unroll",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 249
+  },
+  {
+   "doc": "33-r30-swar-unpack",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 252
+  },
+  {
+   "doc": "34-r31-qmajor-sda-repack",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 270
+  },
+  {
+   "doc": "35-r32-finite-lever-sweep",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 177
+  },
+  {
+   "doc": "36-r33-hybrid-inner-loop",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 212
+  },
+  {
+   "doc": "37-r34-quantize-transpose-prepass",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 243
+  },
+  {
+   "doc": "38-r35-scale-predecode",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 215
+  },
+  {
+   "doc": "39-r36-a-frag-wavefront",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 225
+  },
+  {
+   "doc": "40-r37-post-parity-attribution",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 273
+  },
+  {
+   "doc": "41-r38-q6k-bt-rawbyte-mma",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 276
+  },
+  {
+   "doc": "42-r39-q6k-kdr2-double-buffer",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 234
+  },
+  {
+   "doc": "43-r40-third-resident-block",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 185
+  },
+  {
+   "doc": "44-r41-q6k-bexpand-uint4",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 275
+  },
+  {
+   "doc": "45-r42-stage-wide-dsc-read",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 178
+  },
+  {
+   "doc": "46-r43-pc-sampling-attribution",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 252
+  },
+  {
+   "doc": "47-r44-wexp-stride-mismatch",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 265
+  },
+  {
+   "doc": "48-r45-cpasync-q6k-a-staging",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 201
+  },
+  {
+   "doc": "49-r46-fap1-fa-audit",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 268
+  },
+  {
+   "doc": "50-r47-converged-wall-decomposition",
+   "verdict": "MEAS-ONLY",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 152
+  },
+  {
+   "doc": "51-r48-fap2-register-softmax",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 246
+  },
+  {
+   "doc": "52-r49-a-quantize-shared-dedup",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 247
+  },
+  {
+   "doc": "53-r50-fa-tkv-16",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 178
+  },
+  {
+   "doc": "54-r51-producer-fused-a-quantize",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 250
+  },
+  {
+   "doc": "55-r52-skip-write-mode2",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 222
+  },
+  {
+   "doc": "56-r53-q6k-wexp-cpasync-bundle",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 238
+  },
+  {
+   "doc": "57-r54-q6k-exp-optout",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 221
+  },
+  {
+   "doc": "58-r55-swiglu-roofline-prefill-graph",
+   "verdict": "CLOSED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 198
+  },
+  {
+   "doc": "59-r56-q6k-a-cpasync-wdsc",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 230
+  },
+  {
+   "doc": "60-r57-fa-kv-staging-db",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 149
+  },
+  {
+   "doc": "61-r58-q4k-bt-cpasync-transplant",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 290
+  },
+  {
+   "doc": "62-r59-q4k-wdsc-plane",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 274
+  },
+  {
+   "doc": "63-r59b-clean-remeasure",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 205
+  },
+  {
+   "doc": "64-r60-promotion-default-on",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 321
+  },
+  {
+   "doc": "65-d1-decode-attribution",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 306
+  },
+  {
+   "doc": "66-d2-kv-register-staging",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 335
+  },
+  {
+   "doc": "67-d3-14b-attribution-bitwise-mmvq",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 343
+  },
+  {
+   "doc": "68-d3a-fattn-rewrite-rpw",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 387
+  },
+  {
+   "doc": "69-d3-4-hybrid-rpw-dispatch",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 297
+  },
+  {
+   "doc": "70-d3-5-fused-producer-a-quantize",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 360
+  },
+  {
+   "doc": "71-d3-6-gqa-batching-reverted",
+   "verdict": "REVERTED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 277
+  },
+  {
+   "doc": "72-d3-7-attnv-mmvq-rms",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 257
+  },
+  {
+   "doc": "73-d3-8-fusedqkv-port",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 306
+  },
+  {
+   "doc": "74-d4-2-b0-correctness-fix",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 250
+  },
+  {
+   "doc": "75-d4-3-attention-attempt2-artifact",
+   "verdict": "CLOSED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 174
+  },
+  {
+   "doc": "76-d4-4-dpl-q6k-final",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 242
+  },
+  {
+   "doc": "77-verification-methodology",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 218
+  },
+  {
+   "doc": "78-phase8-correctness-batch",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 207
+  },
+  {
+   "doc": "79-phase8-coverage-batch",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 204
+  },
+  {
+   "doc": "80-d5-0-cost-model",
+   "verdict": "MEAS-ONLY",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 166
+  },
+  {
+   "doc": "81-d5-1a-verify-gate-measured",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 332
+  },
+  {
+   "doc": "82-small-m-multi-token-mmvq",
+   "verdict": "LANDED",
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 254
+  },
+  {
+   "doc": "83-d5-r-stage1-spec-loop",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 224
+  },
+  {
+   "doc": "84-d5-r-stage2-dual-engine-battery",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 102
+  },
+  {
+   "doc": "85-d5-r-stage3-verify-marginal-ledger",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 116
+  },
+  {
+   "doc": "86-d5-r-stage4a-attention-verify-shapes",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 83
+  },
+  {
+   "doc": "87-d5-r-stage4b-multi-mmvq-nt16-closed",
+   "verdict": null,
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 106
+  },
+  {
+   "doc": "88-d5-r-stage5-final-battery",
+   "verdict": "LANDED",
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 87
+  },
+  {
+   "doc": "89-d5-r-row-marginal-localization",
+   "verdict": null,
+   "bar": false,
+   "verification": false,
+   "result_block": true,
+   "lines": 128
+  },
+  {
+   "doc": "90-d5-r-rrows-per-block-closed",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 95
+  },
+  {
+   "doc": "91-mma-path-block-starvation",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 53
+  },
+  {
+   "doc": "92-ksplit-shipped-flip-resolved-no",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": true,
+   "lines": 60
+  },
+  {
+   "doc": "93-draft-quant-and-greedy-identity",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 45
+  },
+  {
+   "doc": "94-greedy-identity-and-d8-crossing",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": true,
+   "lines": 49
+  },
+  {
+   "doc": "95-adaptive-draft-depth",
+   "verdict": null,
+   "bar": true,
+   "verification": false,
+   "result_block": false,
+   "lines": 126
+  },
+  {
+   "doc": "96-nt9-profile-phase0",
+   "verdict": null,
+   "bar": true,
+   "verification": false,
+   "result_block": false,
+   "lines": 76
+  },
+  {
+   "doc": "97-spec-conversation-server",
+   "verdict": null,
+   "bar": false,
+   "verification": true,
+   "result_block": false,
+   "lines": 132
+  },
+  {
+   "doc": "98-bt-cpasync-null",
+   "verdict": null,
+   "bar": true,
+   "verification": true,
+   "result_block": false,
+   "lines": 109
+  },
+  {
+   "doc": "99-fastverify-p0-p1",
+   "verdict": null,
+   "bar": true,
+   "verification": false,
+   "result_block": false,
+   "lines": 95
+  }
+ ],
+ "note": "The bar count is deliberately strict. 'bar' also appears in these records as a tolerance ('bar +/-1%') or as a roofline reference; counting those would turn 20 into something larger and would answer a different question. What is counted is a decision threshold stated before the measurement, and the campaign's own house rule asks for exactly that."
+}

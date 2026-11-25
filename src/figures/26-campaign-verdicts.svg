@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 296" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The campaign's record by verdict: most step records landed, a sixth were reverted on purpose, a few are measurement only, and a large share carry no verdict at all.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .95; }
+    .fig-a-land { fill: #4f7a3a; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .fig-a-rev  { fill: #b85c4d; fill-opacity: .55; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .fig-a-meas { fill: #4d86b8; fill-opacity: .50; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .fig-a-none { fill: #7a7a8c; fill-opacity: .40; stroke: var(--quote-border, #4a6577); stroke-width: .6; }
+    .g-axis { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .55; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">THE RECORD BY VERDICT</text>
+  <text class="g-s" x="24" y="44">most levers do not survive, and the ones that do not are the part worth keeping</text>
+  <text class="g-lbl" x="24" y="86">landed</text>
+  <rect x="150" y="72" width="276" height="22" class="fig-a-land"/>
+  <text class="g-m" x="436" y="88">the levers that survived their own gate</text>
+  <text class="g-lbl" x="24" y="126">reverted</text>
+  <rect x="150" y="112" width="103" height="22" class="fig-a-rev"/>
+  <text class="g-m" x="263" y="128">measured, then deliberately put back</text>
+  <text class="g-lbl" x="24" y="166">measurement only</text>
+  <rect x="150" y="152" width="26" height="22" class="fig-a-meas"/>
+  <text class="g-m" x="186" y="168">the question was answered, nothing was kept</text>
+  <text class="g-lbl" x="24" y="206">no verdict in the title</text>
+  <rect x="150" y="192" width="314" height="22" class="fig-a-none"/>
+  <text class="g-m" x="474" y="208">the record set's own defect rate</text>
+  <line class="g-axis" x1="150" y1="228" x2="700" y2="228"/>
+  <text class="g-m" x="150" y="244">one record</text>
+  <line class="g-rule" x1="24" y1="258" x2="786" y2="258"/>
+  <text class="g-m" x="24" y="276">Bar lengths are counts from the artifact, not percentages of a total: the last bar is the one no summary</text>
+  <text class="g-m" x="24" y="290">of a campaign prints, and it is why this chapter audits the record instead of repeating its wins.</text>
+</svg>

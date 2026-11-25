@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 810 318" width="100%" style="max-width:100%;height:auto"
+  role="img" aria-label="The gate chain a lever passes: a hypothesis and its predicted counts, one change, then correctness, identity and a delta above the noise floor, ending in land or revert.">
+  <style>
+    .g-cap { fill: var(--fg, #cfdae5); font-size: 11px; letter-spacing: .10em; opacity: .94; }
+    .g-s   { fill: var(--fg, #cfdae5); font-size: 11.5px; opacity: .94; }
+    .g-m   { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .82; }
+    .g-lbl { fill: var(--fg, #cfdae5); font-size: 10.5px; opacity: .95; }
+    .fig-a-step { fill: #4d86b8; fill-opacity: .40; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-gate { fill: #3f7f76; fill-opacity: .42; stroke: var(--quote-border, #4a6577); stroke-width: .8; }
+    .fig-a-land { fill: #4f7a3a; fill-opacity: .50; stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .fig-a-rev  { fill: #b85c4d; fill-opacity: .48; stroke: var(--quote-border, #4a6577); stroke-width: 1; }
+    .g-arrow { stroke: var(--quote-border, #4a6577); stroke-width: 1.2; opacity: .8; fill: none; }
+    .g-rule { stroke: var(--quote-border, #4a6577); stroke-width: 1; opacity: .5; }
+  </style>
+  <text class="g-cap" x="24" y="24">THE GATE CHAIN</text>
+  <text class="g-s" x="24" y="44">a lever is not a change; it is a change plus the evidence that it may stay</text>
+  <rect x="24" y="70" width="152" height="46" rx="2" class="fig-a-step"/>
+  <text class="g-lbl" x="100" y="90" text-anchor="middle">1 hypothesis</text>
+  <text class="g-m" x="100" y="106" text-anchor="middle">the mechanism, one sentence</text>
+  <rect x="184" y="70" width="152" height="46" rx="2" class="fig-a-step"/>
+  <text class="g-lbl" x="260" y="90" text-anchor="middle">2 predicted counts</text>
+  <text class="g-m" x="260" y="106" text-anchor="middle">the arithmetic, first</text>
+  <rect x="344" y="70" width="152" height="46" rx="2" class="fig-a-step"/>
+  <text class="g-lbl" x="420" y="90" text-anchor="middle">3 one lever</text>
+  <text class="g-m" x="420" y="106" text-anchor="middle">and a bar, stated now</text>
+  <rect x="504" y="70" width="130" height="46" rx="2" class="fig-a-gate"/>
+  <text class="g-lbl" x="569" y="90" text-anchor="middle">4 correctness</text>
+  <text class="g-m" x="569" y="106" text-anchor="middle">equal by any measure</text>
+  <rect x="642" y="70" width="144" height="46" rx="2" class="fig-a-gate"/>
+  <text class="g-lbl" x="714" y="90" text-anchor="middle">5 identity</text>
+  <text class="g-m" x="714" y="106" text-anchor="middle">bitwise, where contracted</text>
+  <path class="g-arrow" d="M178 93 L182 93 M338 93 L342 93 M498 93 L502 93 M636 93 L640 93"/>
+  <rect x="504" y="140" width="282" height="46" rx="2" class="fig-a-gate"/>
+  <text class="g-lbl" x="645" y="160" text-anchor="middle">6 delta above the noise floor</text>
+  <text class="g-m" x="645" y="176" text-anchor="middle">larger than the spread of its own re-runs</text>
+  <path class="g-arrow" d="M714 118 L714 138"/>
+  <rect x="504" y="210" width="130" height="40" rx="2" class="fig-a-land"/>
+  <text class="g-lbl" x="569" y="235" text-anchor="middle">land</text>
+  <rect x="656" y="210" width="130" height="40" rx="2" class="fig-a-rev"/>
+  <text class="g-lbl" x="721" y="229" text-anchor="middle">revert</text>
+  <text class="g-m" x="721" y="243" text-anchor="middle">or inconclusive</text>
+  <path class="g-arrow" d="M600 188 L569 208 M680 188 L715 208"/>
+  <line class="g-rule" x1="24" y1="196" x2="480" y2="196"/>
+  <text class="g-m" x="24" y="216">Links 4 and 5 are cheap and get done: nine records in ten carry a</text>
+  <text class="g-m" x="24" y="232">verification section. Link 3's bar is the expensive one, because it has to</text>
+  <text class="g-m" x="24" y="248">be chosen before the answer is known - and only one campaign record in six</text>
+  <text class="g-m" x="24" y="264">can still show one. Choosing it afterwards is a rationalization, not a gate.</text>
+  <text class="g-m" x="24" y="286">The right-hand exit is not failure: "inconclusive" is a verdict, and a record that says so</text>
+  <text class="g-m" x="24" y="302">is worth more than one that quietly says nothing.</text>
+</svg>

@@ -667,6 +667,12 @@ K_FORMATS = {
 # already carries them, and only the script path and the statistic are declared, once, below.
 
 INSTRUMENTS = {
+    "campaign": ("docs/cuda_optimization_steps/ in minfer (parsed by scripts/campaign.py; no GPU needed)",
+                 "parses every step record in the engine's campaign directory for its verdict, whether it "
+                 "records a decision bar before the measurement, and whether it carries a verification section",
+                 "the count of step records by verdict, the share that landed, reverted or carry no verdict, "
+                 "the number that record a pre-registered bar, and the median length of a record",
+                 ),
     "gemv-scale": ("scripts/probe/gemv_scale.cu",
                    "runs the same GEMV twice - one thread per row, then one warp per row with a __shfl_down "
                    "reduction - at 1024, 4096 and 8192 square weights, and measures the machine's own streaming "
@@ -1808,6 +1814,48 @@ def render_attn_graph(f):
     return out
 
 
+def render_campaign_verdicts(f):
+    """Chapter 26: what a real campaign's record contains, counted."""
+    v = f["verdicts"]
+    out = ["| Verdict in the record | Count | Share of 113 |", "|---|---|---|"]
+    order = ["LANDED", "REVERTED", "REVERTED / MEAS-ONLY", "MEAS-ONLY", "CLOSED"]
+    for k in order:
+        if k in v:
+            out.append(f"| `{k}` | {v[k]} | {v[k] / f['steps'] * 100:.1f}% |")
+    out.append(f"| no verdict in the title | {f['unmarked']} | {f['unmarked'] / f['steps'] * 100:.1f}% |")
+    out.append(f"| **total** | **{f['steps']}** | |")
+    out.append("")
+    out.append(f"**{f['landed_pct']} per cent landed.** That is the number a reader should take from a campaign "
+               f"record, and it is the one an article about optimisation never prints: {f['not_landed']} of "
+               f"{f['steps']} levers did not survive, {f['reverted']} of them because they were measured and "
+               f"reverted on purpose, and a further {f['unmarked']} carry no verdict in their title at all - "
+               f"the record set is itself an artifact with a defect rate.")
+    return out
+
+
+def render_campaign_discipline(f):
+    """Chapter 26: whether the campaign follows its own stated house rule."""
+    out = ["| What the record set shows | Count | Share |", "|---|---|---|",
+           f"| states a decision bar **before** the measurement | **{f['with_preregistered_bar']}** | "
+           f"{f['bar_pct']}% |",
+           f"| no pre-registered bar | {f['without_preregistered_bar']} | "
+           f"{100 - f['bar_pct']:.1f}% |",
+           f"| carries a verification section | {f['with_verification_section']} | "
+           f"{f['with_verification_section'] / f['steps'] * 100:.1f}% |",
+           f"| opens with a `Result` block (the claim, before the prose) | {f['with_result_block']} | "
+           f"{f['with_result_block'] / f['steps'] * 100:.1f}% |",
+           f"| median length | {f['median_lines']} lines | |"]
+    out.append("")
+    out.append(f"This is the chapter's uncomfortable table, and it is here because the campaign states its own "
+               f"house rule - *a bar named before measuring* - and a rule that is stated is not a rule that is "
+               f"followed. **{f['bar_pct']} per cent** of the records can show the bar. Verification is in far "
+               f"better shape ({f['with_verification_section'] / f['steps'] * 100:.0f} per cent), which is the "
+               f"expected asymmetry: checking that a kernel is still correct is mechanical, and deciding in "
+               f"advance how much faster it has to be is a judgement that is easy to make after the fact and "
+               f"impossible to distinguish from an excuse.")
+    return out
+
+
 def render_gemv_scale(f):
     """Chapter 22: the access-pattern claim, checked against a counterfactual and across sizes."""
     rs = f["results"]
@@ -2432,6 +2480,8 @@ BLOCKS = {
     "fam-cost": render_fam_cost,
     "fam-deltas": render_fam_deltas,
     "loop-cost": render_loop_cost,
+    "campaign-verdicts": render_campaign_verdicts,
+    "campaign-discipline": render_campaign_discipline,
     "gemv-scale": render_gemv_scale,
     "attn-prefill": render_attn_prefill,
     "attn-decode": render_attn_decode,
