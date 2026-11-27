@@ -12,7 +12,7 @@ Read 2026-11-12 at commit of this repository that first contains this page.
 | Chapters | 29 | `ls -d src/[0-9][0-9]-*/ \| wc -l` |
 | Lessons (checklist items under `## Lessons`) | 146 | counted per page by `scripts/probe.py` |
 | Pages under `src/` | 44 | `find src -name '*.md' \| wc -l` |
-| Prose bytes under `src/` | 950994 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
+| Prose bytes under `src/` | 954434 | `find src -name '*.md' \| xargs wc -c \| tail -1` |
 | Status | 26 written / 0 draft / 3 stub | `rg -o --no-filename 'Status\*\*: \S+' src/[0-9][0-9]-*/index.md \| sort \| uniq -c` |
 | Sources in the reference index | 31 | `python3 scripts/references.py` (prints the count) |
 | minfer citations tracked | 131 | `python3 scripts/minfer-drift.py --check-inventory reference/baseline-citations.json` |
